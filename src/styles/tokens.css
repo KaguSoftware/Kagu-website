@@ -1,0 +1,111 @@
+/*
+  Kagu design tokens — locked.
+  CSS custom properties consumed by Tailwind v4 @theme inline
+  and JS via src/lib/brand.config.ts.
+*/
+
+:root {
+  /* ---------- Color ---------- */
+  --mint-deep:  #95DDCB;   /* primary interactive accent */
+  --mint-soft:  #BFEDDF;
+  --mint-pale:  #D2EFDF;
+  --neutral:    #C4C4C5;   /* hairlines */
+  --slate-ink:  #7B7689;   /* display type */
+  --paper:      #F4FBF7;   /* page base — lightened from #ECFAF4 for less mint cast */
+  --ink:        #1A1820;   /* body text */
+
+  /* Semantic aliases */
+  --color-bg:           var(--paper);
+  --color-text:         var(--ink);
+  --color-display:      var(--slate-ink);
+  --color-accent:       var(--mint-deep);
+  --color-surface-1:    var(--mint-pale);
+  --color-surface-2:    var(--mint-soft);
+  --color-surface-3:    var(--mint-deep);
+  --color-hairline:     var(--neutral);
+
+  /* ---------- Type scale (1.333 — perfect fourth, fluid) ---------- */
+  --type-xs:    clamp(0.6875rem, 0.66rem + 0.13vw, 0.75rem);
+  --type-sm:    clamp(0.8125rem, 0.78rem + 0.16vw, 0.875rem);
+  --type-base:  clamp(0.9375rem, 0.91rem + 0.12vw, 1rem);
+  --type-md:    clamp(1.0625rem, 1.02rem + 0.21vw, 1.125rem);
+  --type-lg:    clamp(1.25rem, 1.18rem + 0.32vw, 1.375rem);
+  --type-xl:    clamp(1.5rem, 1.39rem + 0.55vw, 1.75rem);
+  --type-2xl:   clamp(1.875rem, 1.7rem + 0.84vw, 2.375rem);
+  --type-3xl:   clamp(2.25rem, 1.99rem + 1.31vw, 3.125rem);
+  --type-4xl:   clamp(2.75rem, 2.36rem + 1.95vw, 4.1875rem);
+  --type-5xl:   clamp(3.25rem, 2.71rem + 2.7vw, 5.5625rem);
+  --type-6xl:   clamp(3.75rem, 2.99rem + 3.83vw, 7.4375rem);
+  --type-7xl:   clamp(4.5rem, 3.3rem + 6vw, 9.875rem);
+  --type-8xl:   clamp(5.5rem, 3.6rem + 9.5vw, 13.1875rem);
+
+  /* Leading */
+  --leading-tight:    1.05;
+  --leading-snug:     1.18;
+  --leading-normal:   1.45;
+  --leading-relaxed:  1.65;
+
+  /* Tracking */
+  --tracking-display:  -0.025em;
+  --tracking-tight:    -0.012em;
+  --tracking-normal:   0;
+  --tracking-wide:     0.04em;
+  --tracking-eyebrow:  0.18em;
+
+  /* ---------- Spacing (4px base, fluid where meaningful) ---------- */
+  --space-1:   0.25rem;
+  --space-2:   0.5rem;
+  --space-3:   0.75rem;
+  --space-4:   1rem;
+  --space-5:   1.25rem;
+  --space-6:   1.5rem;
+  --space-8:   2rem;
+  --space-10:  2.5rem;
+  --space-12:  3rem;
+  --space-16:  4rem;
+  --space-20:  5rem;
+  --space-24:  clamp(4rem, 3rem + 3vw, 6rem);
+  --space-32:  clamp(5rem, 3.5rem + 4.5vw, 8rem);
+  --space-40:  clamp(6rem, 4rem + 6vw, 10rem);
+  --space-48:  clamp(7rem, 4.5rem + 7.5vw, 12rem);
+  --space-64:  clamp(8rem, 5rem + 10vw, 16rem);
+
+  /* Section rhythm */
+  --section-y:        clamp(5rem, 3.5rem + 6vw, 9rem);
+  --container-x:      clamp(1.25rem, 0.5rem + 3vw, 2.5rem);
+  --container-max:    96rem;          /* 1536 */
+
+  /* ---------- Radius (intentional, not default) ---------- */
+  --radius-none:  0;
+  --radius-xs:    2px;
+  --radius-sm:    4px;
+  --radius-md:    8px;
+
+  /* ---------- Motion (locked per brief) ---------- */
+  --ease-arc:        cubic-bezier(0.6, 0.01, 0.05, 0.95);
+  --ease-out-expo:   cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quint:  cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-curtain:    cubic-bezier(0.76, 0, 0.24, 1);
+  --ease-snap:       cubic-bezier(0.4, 0, 0.2, 1);
+
+  --dur-instant:  160ms;
+  --dur-quick:    280ms;
+  --dur-base:     600ms;
+  --dur-reveal:   1000ms;
+  --dur-mask:     1300ms;
+  --dur-loader:   2200ms;
+
+  --stag-word:    60ms;
+  --stag-line:    120ms;
+  --stag-block:   200ms;
+  --stag-list:    80ms;
+
+  /* ---------- Z-index scale ---------- */
+  --z-base:       0;
+  --z-raised:     10;
+  --z-sticky:     20;
+  --z-nav:        30;
+  --z-overlay:    50;
+  --z-cursor:     90;
+  --z-curtain:    100;
+}

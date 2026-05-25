@@ -1,0 +1,45 @@
+/*
+  Next 16 / React <ViewTransition> styles — SHARED-ELEMENT MORPHS ONLY.
+  Route-level page-curtain transitions are handled by GSAP (per brief M12).
+  This file exists for shared-element morphs between paired ViewTransition
+  elements (e.g. work-card thumbnail → case-study hero), which the brief
+  did not explicitly cover and which GSAP would require FLIP for.
+
+  If we end up not using shared-element morphs at all, delete this file
+  and remove experimental.viewTransition from next.config.ts.
+*/
+
+::view-transition-group(.morph) {
+  animation-duration: var(--dur-mask);
+  animation-timing-function: var(--ease-curtain);
+}
+::view-transition-image-pair(.morph) {
+  animation-name: kagu-via-blur;
+}
+
+/* Site header — never animate even if View Transitions are active */
+::view-transition-group(site-header) {
+  animation: none;
+  z-index: var(--z-nav);
+}
+::view-transition-old(site-header) {
+  display: none;
+}
+::view-transition-new(site-header) {
+  animation: none;
+}
+
+@keyframes kagu-via-blur {
+  30% {
+    filter: blur(3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}

@@ -1,26 +1,136 @@
 @import "tailwindcss";
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@import "../styles/tokens.css";
+@import "../styles/view-transitions.css";
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Colors → expose every token to Tailwind */
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-slate-ink: var(--slate-ink);
+  --color-mint-deep: var(--mint-deep);
+  --color-mint-soft: var(--mint-soft);
+  --color-mint-pale: var(--mint-pale);
+  --color-neutral: var(--neutral);
+
+  /* Fonts — mono-led system. Space Mono carries display + labels. Public Sans body. */
+  --font-display: var(--font-space-mono), ui-monospace, monospace;
+  --font-sans: var(--font-body), system-ui, sans-serif;
+  --font-mono: var(--font-space-mono), ui-monospace, monospace;
+
+  /* Type scale */
+  --text-xs: var(--type-xs);
+  --text-sm: var(--type-sm);
+  --text-base: var(--type-base);
+  --text-md: var(--type-md);
+  --text-lg: var(--type-lg);
+  --text-xl: var(--type-xl);
+  --text-2xl: var(--type-2xl);
+  --text-3xl: var(--type-3xl);
+  --text-4xl: var(--type-4xl);
+  --text-5xl: var(--type-5xl);
+  --text-6xl: var(--type-6xl);
+  --text-7xl: var(--type-7xl);
+  --text-8xl: var(--type-8xl);
+
+  /* Spacing */
+  --spacing: 0.25rem; /* 4px base unit for Tailwind p-/m-/gap- math */
+
+  /* Easings */
+  --ease-arc: cubic-bezier(0.6, 0.01, 0.05, 0.95);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-curtain: cubic-bezier(0.76, 0, 0.24, 1);
+  --ease-snap: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--type-base);
+  line-height: var(--leading-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--mint-deep);
+  color: var(--ink);
+}
+
+/* Display type defaults — mono-led, tighter tracking + no negative letter-spacing */
+h1, h2, h3, h4, .display {
+  font-family: var(--font-display);
+  color: var(--color-display);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+  font-weight: 500;
+}
+
+/* Eyebrows / small focal labels */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--type-xs);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--slate-ink);
+}
+
+/* Hairline divider */
+.hairline {
+  border-color: var(--color-hairline);
+}
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid var(--mint-deep);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Form field states — per INTERACTION_GRAMMAR.md §4 */
+.kagu-field input:hover,
+.kagu-field textarea:hover {
+  border-bottom-color: var(--slate-ink);
+}
+.kagu-field input:focus-visible,
+.kagu-field textarea:focus-visible {
+  border-bottom: 1.5px solid var(--mint-deep);
+  outline: none;
+  caret-color: var(--mint-deep);
+}
+.kagu-field:focus-within label {
+  color: var(--ink);
+}
+
+/* Skip link */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: var(--space-4);
+  background: var(--ink);
+  color: var(--paper);
+  padding: var(--space-2) var(--space-4);
+  font-family: var(--font-mono);
+  font-size: var(--type-sm);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-eyebrow);
+  z-index: var(--z-overlay);
+  transition: top 180ms var(--ease-arc);
+}
+.skip-link:focus {
+  top: var(--space-4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
