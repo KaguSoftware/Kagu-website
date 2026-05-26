@@ -118,19 +118,6 @@ export function ApproachSection() {
                 data-step
                 style={{ minHeight: "40vh" }}
               >
-                {/* mobile numeral inline */}
-                <div
-                  className="display md:hidden"
-                  style={{
-                    fontSize: "var(--type-7xl)",
-                    color: "var(--slate-ink)",
-                    lineHeight: 0.85,
-                    marginBottom: "var(--space-6)",
-                  }}
-                  aria-hidden
-                >
-                  {step.number}
-                </div>
                 <SectionRise amount={0.3} delay={0.05 * i}>
                   <h3
                     className="display"
