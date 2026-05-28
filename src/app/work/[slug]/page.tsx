@@ -4,6 +4,7 @@ import { cases, getCase } from "@/data/cases";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { ViewTransition } from "@/lib/view-transition";
 import { CaseCover } from "@/components/cases/CaseCover";
+import { CaseReel } from "@/components/cases/CaseReel";
 
 export function generateStaticParams() {
   return cases.map((c) => ({ slug: c.slug }));
@@ -33,13 +34,10 @@ export default async function CaseStudyPage({ params }: PageProps) {
 
   return (
     <>
-      {/* Hero — title overlay on a full-bleed screenshot. Morph target. */}
+      {/* Top bar — back link only; the reel below carries the title. */}
       <section
-        style={{
-          background: "var(--paper)",
-          position: "relative",
-        }}
-        className="px-(--container-x) pt-(--space-12) pb-(--space-12)"
+        style={{ background: "var(--paper)", position: "relative" }}
+        className="px-(--container-x) pt-(--space-12) pb-(--space-6)"
       >
         <div className="w-full max-w-(--container-max) mx-auto">
           <Link
@@ -51,46 +49,56 @@ export default async function CaseStudyPage({ params }: PageProps) {
               letterSpacing: "var(--tracking-eyebrow)",
               textTransform: "uppercase",
               color: "var(--ink)",
-              marginBottom: "var(--space-8)",
             }}
           >
             <span aria-hidden style={{ width: 28, height: 1, background: "currentColor" }} />
             All work
           </Link>
-
-          <h1
-            className="display"
-            style={{
-              fontSize: "var(--type-7xl)",
-              lineHeight: 0.9,
-              maxWidth: "14ch",
-              marginBottom: "var(--space-12)",
-              letterSpacing: "var(--tracking-tight)",
-            }}
-          >
-            {caseData.client}
-          </h1>
-
-          {/* Cover — the morph target. Full-bleed within container. */}
-          <div
-            className="relative"
-            style={{
-              aspectRatio: "16 / 9",
-              overflow: "hidden",
-              border: "1px solid var(--neutral)",
-            }}
-          >
-            <ViewTransition name={`work-${caseData.slug}-cover`}>
-              <CaseCover
-                url={caseData.url}
-                label={caseData.cover.label}
-                bg={caseData.cover.bg}
-                labelSize="var(--type-8xl)"
-              />
-            </ViewTransition>
-          </div>
         </div>
       </section>
+
+      {/* Feature reel — sits where the static cover used to. If a case has no
+          features or thumbnail yet, fall back to the color-block CaseCover. */}
+      {caseData.thumbnail || (caseData.features && caseData.features.length > 0) ? (
+        <CaseReel caseData={caseData} index={idx} size="large" />
+      ) : (
+        <section
+          style={{ background: "var(--paper)" }}
+          className="px-(--container-x) pb-(--space-12)"
+        >
+          <div className="w-full max-w-(--container-max) mx-auto">
+            <h1
+              className="display"
+              style={{
+                fontSize: "var(--type-7xl)",
+                lineHeight: 0.9,
+                maxWidth: "14ch",
+                marginBottom: "var(--space-12)",
+                letterSpacing: "var(--tracking-tight)",
+              }}
+            >
+              {caseData.client}
+            </h1>
+            <div
+              className="relative"
+              style={{
+                aspectRatio: "16 / 9",
+                overflow: "hidden",
+                border: "1px solid var(--neutral)",
+              }}
+            >
+              <ViewTransition name={`work-${caseData.slug}-cover`}>
+                <CaseCover
+                  url={caseData.url}
+                  label={caseData.cover.label}
+                  bg={caseData.cover.bg}
+                  labelSize="var(--type-8xl)"
+                />
+              </ViewTransition>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Meta strip */}
       <section

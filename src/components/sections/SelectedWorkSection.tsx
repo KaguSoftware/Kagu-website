@@ -20,6 +20,7 @@ import { MaskSweep, type SweepDirection } from "@/components/motion/MaskSweep";
 import { Eyebrow } from "@/components/layout/Eyebrow";
 import { ViewTransition } from "@/lib/view-transition";
 import { CaseCover } from "@/components/cases/CaseCover";
+import { CaseReel } from "@/components/cases/CaseReel";
 
 const COVER_BG: Record<string, string> = {
   "mint-pale": "var(--mint-pale)",
@@ -79,6 +80,9 @@ export function SelectedWorkSection() {
             not noise. */}
         <div className="flex flex-col gap-(--space-40)">
           {cases.map((c, i) => {
+            if (c.thumbnail) {
+              return <CaseReel key={c.slug} caseData={c} index={i} preview />;
+            }
             const isOdd = i % 2 === 1;
             const sweepDir: SweepDirection = isOdd ? "left" : "right";
             return (

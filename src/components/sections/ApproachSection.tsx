@@ -11,7 +11,7 @@
 */
 
 import { useEffect, useRef, useState } from "react";
-import { ScrollTrigger } from "@/lib/gsap";
+import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useReducedMotion } from "motion/react";
 import { approach } from "@/data/approach";
 import { SectionRise } from "@/components/motion/SectionRise";
@@ -29,30 +29,41 @@ export function ApproachSection() {
     const pinEl = pinRef.current;
     if (!stepsEl || !pinEl) return;
 
-    // Pin the numeral column for the duration of the steps stack
-    const pinTrigger = ScrollTrigger.create({
-      trigger: stepsEl,
-      start: "top top+=88", // header height
-      end: "bottom bottom",
-      pin: pinEl,
-      pinSpacing: false,
+    // gsap.matchMedia: only pin the sticky numeral on md+ where the column
+    // is actually rendered (it's display: none on mobile). On mobile, only
+    // the per-step triggers run so step copy still animates if needed.
+    const mm = gsap.matchMedia();
+
+    mm.add("(min-width: 768px)", () => {
+      const pinTrigger = ScrollTrigger.create({
+        trigger: stepsEl,
+        start: "top top+=88",
+        end: "bottom bottom",
+        pin: pinEl,
+        pinSpacing: false,
+        invalidateOnRefresh: true,
+      });
+
+      const stepEls = Array.from(stepsEl.querySelectorAll<HTMLElement>("[data-step]"));
+      const stepTriggers = stepEls.map((el, i) =>
+        ScrollTrigger.create({
+          trigger: el,
+          start: "top center",
+          end: "bottom center",
+          invalidateOnRefresh: true,
+          onEnter: () => setActiveIndex(i),
+          onEnterBack: () => setActiveIndex(i),
+        }),
+      );
+
+      return () => {
+        pinTrigger.kill();
+        stepTriggers.forEach((t) => t.kill());
+      };
     });
 
-    // One trigger per step that updates activeIndex
-    const stepEls = Array.from(stepsEl.querySelectorAll<HTMLElement>("[data-step]"));
-    const stepTriggers = stepEls.map((el, i) =>
-      ScrollTrigger.create({
-        trigger: el,
-        start: "top center",
-        end: "bottom center",
-        onEnter: () => setActiveIndex(i),
-        onEnterBack: () => setActiveIndex(i),
-      }),
-    );
-
     return () => {
-      pinTrigger.kill();
-      stepTriggers.forEach((t) => t.kill());
+      mm.revert();
     };
   }, [reduced]);
 
@@ -84,8 +95,8 @@ export function ApproachSection() {
           {/* Pinned numeral column */}
           <div
             ref={pinRef}
-            className="md:col-span-4 hidden md:block"
-            style={{ minHeight: "60vh", display: "flex", alignItems: "center" }}
+            className="md:col-span-4 hidden md:flex"
+            style={{ minHeight: "60vh", alignItems: "center" }}
           >
             <div style={{ position: "relative", height: "1em", width: "100%" }}>
               {approach.map((step, i) => (

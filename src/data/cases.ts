@@ -5,6 +5,15 @@
   Replace coverColor with a Cloudinary/uploaded URL later if photos arrive.
 */
 
+export type CaseFeature = {
+  image: string;
+  title: string;
+  description: string;
+  /** Override the case-level device for this single frame. Lets a mostly-mobile
+   *  case end on a desktop admin shot, etc. */
+  device?: "desktop" | "mobile";
+};
+
 export type Case = {
   slug: string;
   client: string;
@@ -20,6 +29,10 @@ export type Case = {
     bg: "mint-pale" | "mint-soft" | "mint-deep" | "slate-ink" | "paper";
     label: string;
   };
+  thumbnail?: string;
+  features?: readonly CaseFeature[];
+  /** "mobile" renders screenshots inside a phone frame and drops the browser chrome. */
+  device?: "desktop" | "mobile";
 };
 
 export const cases: readonly Case[] = [
@@ -40,6 +53,33 @@ export const cases: readonly Case[] = [
       "The whole system runs on the Vercel + Supabase free tier comfortably, by design. Sabrina pays for hospitality, not for infrastructure.",
     ],
     cover: { bg: "mint-soft", label: "Sabrina Turizm" },
+    thumbnail: "/cases/sabrina-turizm/Thumbnail.png",
+    features: [
+      {
+        image: "/cases/sabrina-turizm/customPackageBuilder.png",
+        title: "Custom package builder",
+        description:
+          "Guests assemble their own itinerary through a friendly UI with clear copy and explanatory motion — more travelers chose to build their own package than to take a group tour.",
+      },
+      {
+        image: "/cases/sabrina-turizm/TourPlanAutoPDF.png",
+        title: "Tour plan, auto-PDF",
+        description:
+          "The moment an admin finalizes a tour, the platform generates a downloadable PDF plan — saving both staff and guests a round-trip of emails.",
+      },
+      {
+        image: "/cases/sabrina-turizm/WhatsappFullMessage.png",
+        title: "Full-context WhatsApp handoff",
+        description:
+          "Selections become a structured WhatsApp message: guests don't have to remember what they picked, and staff don't have to re-collect details to quote.",
+      },
+      {
+        image: "/cases/sabrina-turizm/VoucherGenerator.png",
+        title: "Voucher generator with AI translation",
+        description:
+          "Admins generate vouchers in a click — autofilled from the booked package, with built-in AI translation so guests get their voucher in their own language.",
+      },
+    ],
   },
   {
     slug: "upperdeck",
@@ -58,6 +98,35 @@ export const cases: readonly Case[] = [
       "Built in five weeks. Live the day the lease started.",
     ],
     cover: { bg: "mint-pale", label: "UpperDeck" },
+    thumbnail: "/cases/upperdeck/ThumbnailUp.png",
+    device: "mobile",
+    features: [
+      {
+        image: "/cases/upperdeck/Bell.png",
+        title: "Call-a-waiter bell",
+        description:
+          "At peak hours, guests struggled to flag down a server. The bell sends a tap-to-call message straight to the floor — no waving, no missed bills, no confusion at the pass.",
+      },
+      {
+        image: "/cases/upperdeck/Cart.png",
+        title: "Persistent cart",
+        description:
+          "Customers don't have to remember the exact item name, add-ons, or modifiers they picked. The cart carries it, so the order lands at the waiter clean — no pause, no scroll-back, no re-asking.",
+      },
+      {
+        image: "/cases/upperdeck/AddOns.png",
+        title: "Quiet add-on suggestions",
+        description:
+          "Upsell prompts surface inside the existing flow as a small inline suggestion — never a pop-up. Order total rises without the guest feeling pushed.",
+      },
+      {
+        image: "/cases/upperdeck/Hero.png",
+        title: "Admin promotions",
+        description:
+          "Admins set a promotion once; the discount auto-applies to the product, and a quick scroll-to-product link skips the customer straight to the deal.",
+        device: "desktop",
+      },
+    ],
   },
   {
     slug: "genbuzz",
@@ -76,6 +145,39 @@ export const cases: readonly Case[] = [
       "Auth via Supabase, persistence per user, one-click PDF export. The kind of tool you stop noticing because it stops being in your way.",
     ],
     cover: { bg: "slate-ink", label: "GenBuzz" },
+    thumbnail: "/cases/genbuzz/ThumbnailGen.png",
+    features: [
+      {
+        image: "/cases/genbuzz/MultiDocType.png",
+        title: "Multi-document support",
+        description:
+          "Proposals, contracts, invoices, letters — every doc the operator runs on lives in one tool. No second tab, no second subscription.",
+      },
+      {
+        image: "/cases/genbuzz/aiGeneration.jpg",
+        title: "AI-drafted in seconds",
+        description:
+          "A one-sentence brief is enough. The model returns a full first draft of the requested document in seconds — ready to refine, not start from scratch.",
+      },
+      {
+        image: "/cases/genbuzz/reorder.png",
+        title: "Reorderable sections",
+        description:
+          "Drag sections to match a client's priorities — pricing first for some, timeline first for others. The doc bends to the pitch, not the other way around.",
+      },
+      {
+        image: "/cases/genbuzz/MultiLang.png",
+        title: "Multilingual generation + PDF",
+        description:
+          "Generate and export the same document in multiple languages with one click. The PDF lands ready to send — no copy/paste into a translator.",
+      },
+      {
+        image: "/cases/genbuzz/saves.png",
+        title: "Saved, shared, retrievable",
+        description:
+          "Every document is saved per user and surfaced to admins. Authors revisit and reuse; admins see the full library without asking around.",
+      },
+    ],
   },
   {
     slug: "vize-makinesi",
@@ -94,6 +196,27 @@ export const cases: readonly Case[] = [
       "Multilingual (Turkish + English) by default, since the audience is half-and-half.",
     ],
     cover: { bg: "mint-deep", label: "Vize Makinesi" },
+    thumbnail: "/cases/vize-makinesi/ThumbnailVize.png",
+    features: [
+      {
+        image: "/cases/vize-makinesi/ClearInfo.png",
+        title: "All visa info, one screen",
+        description:
+          "Requirements, documents, processing times, and fees collected in one structured view per country — applicants land on what they need without digging through a Q&A.",
+      },
+      {
+        image: "/cases/vize-makinesi/Blog.png",
+        title: "Short country briefs",
+        description:
+          "Bite-sized posts on each destination — climate, culture, recent policy changes, traveller tips. Helps applicants pick the right country to apply to, not just the right visa, and gives the site a reason to come back to between applications.",
+      },
+      {
+        image: "/cases/vize-makinesi/embeddedCalculation.png",
+        title: "Cascade rule, in-page",
+        description:
+          "The Cascade-rule eligibility check runs right on the site through a handful of clear inputs. Applicants get an immediate read; consultants stop being a calculator.",
+      },
+    ],
   },
 ] as const;
 
