@@ -49,6 +49,8 @@ export function SelectedWorkSection() {
                 lineHeight: 0.95,
                 marginTop: "var(--space-6)",
                 maxWidth: "14ch",
+                overflowWrap: "break-word",
+                hyphens: "auto",
               }}
             >
               Four operators, in production.

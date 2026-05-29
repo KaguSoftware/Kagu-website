@@ -29,16 +29,16 @@ export function ApproachSection() {
     const pinEl = pinRef.current;
     if (!stepsEl || !pinEl) return;
 
-    // gsap.matchMedia: only pin the sticky numeral on md+ where the column
-    // is actually rendered (it's display: none on mobile). On mobile, only
-    // the per-step triggers run so step copy still animates if needed.
+    // Pin the sticky numeral on all sizes. Desktop pin holds longer
+    // ("bottom+=200 bottom") so the final "4" lingers a beat past the
+    // last step before releasing.
     const mm = gsap.matchMedia();
 
-    mm.add("(min-width: 768px)", () => {
+    const buildTriggers = (pinEnd: string) => {
       const pinTrigger = ScrollTrigger.create({
         trigger: stepsEl,
         start: "top top+=88",
-        end: "bottom bottom",
+        end: pinEnd,
         pin: pinEl,
         pinSpacing: false,
         invalidateOnRefresh: true,
@@ -60,7 +60,10 @@ export function ApproachSection() {
         pinTrigger.kill();
         stepTriggers.forEach((t) => t.kill());
       };
-    });
+    };
+
+    mm.add("(min-width: 768px)", () => buildTriggers("bottom+=200 bottom"));
+    mm.add("(max-width: 767px)", () => buildTriggers("bottom bottom"));
 
     return () => {
       mm.revert();
@@ -74,8 +77,8 @@ export function ApproachSection() {
       className="px-(--container-x) py-(--section-y)"
     >
       <div className="w-full max-w-(--container-max) mx-auto">
-        <SectionRise className="grid grid-cols-1 md:grid-cols-12 gap-8 mb-(--space-32) items-end">
-          <div className="md:col-span-7">
+        <SectionRise className="grid grid-cols-12 gap-4 md:gap-8 mb-(--space-32) items-end">
+          <div className="col-span-9 col-start-4 md:col-span-7 md:col-start-1">
             <Eyebrow number="04">Approach</Eyebrow>
             <h2
               className="display"
@@ -84,6 +87,8 @@ export function ApproachSection() {
                 lineHeight: 0.95,
                 marginTop: "var(--space-6)",
                 maxWidth: "13ch",
+                overflowWrap: "break-word",
+                hyphens: "auto",
               }}
             >
               Four steps. Same every time.
@@ -91,11 +96,11 @@ export function ApproachSection() {
           </div>
         </SectionRise>
 
-        <div ref={stepsRef} className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-          {/* Pinned numeral column */}
+        <div ref={stepsRef} className="grid grid-cols-12 gap-4 md:gap-8 items-start">
+          {/* Pinned numeral column — visible on all sizes, pinned via gsap */}
           <div
             ref={pinRef}
-            className="md:col-span-4 hidden md:flex"
+            className="col-span-3 md:col-span-4 flex"
             style={{ minHeight: "60vh", alignItems: "center" }}
           >
             <div style={{ position: "relative", height: "1em", width: "100%" }}>
@@ -106,7 +111,7 @@ export function ApproachSection() {
                   style={{
                     position: "absolute",
                     inset: 0,
-                    fontSize: "var(--type-7xl)",
+                    fontSize: "clamp(3.5rem, 12vw, var(--type-7xl))",
                     color: "var(--slate-ink)",
                     lineHeight: 0.85,
                     fontVariantNumeric: "tabular-nums",
@@ -122,7 +127,7 @@ export function ApproachSection() {
           </div>
 
           {/* Steps stack */}
-          <div className="md:col-span-7 md:col-start-6 flex flex-col gap-(--space-40)">
+          <div className="col-span-9 md:col-span-7 md:col-start-6 flex flex-col gap-(--space-40)">
             {approach.map((step, i) => (
               <article
                 key={step.number}

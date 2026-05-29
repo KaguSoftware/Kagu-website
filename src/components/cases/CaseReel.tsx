@@ -74,13 +74,36 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
     counterSize: isLarge ? "var(--type-sm)" : "var(--type-xs)",
     imageCol: `md:col-span-8 ${reversed ? "md:col-start-5 md:row-start-1" : ""}`,
     copyCol: `md:col-span-4 ${reversed ? "md:col-start-1 md:row-start-1" : ""}`,
-    copyMinHeight: isLarge ? "20em" : "16em",
   };
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
+  const copyFrameRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [active, setActive] = useState(0);
   const [ratios, setRatios] = useState<Record<number, number>>({});
+  const [copyHeight, setCopyHeight] = useState<number | undefined>(undefined);
+  const [isMobile, setIsMobile] = useState(false);
   const reduced = useReducedMotion();
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 768px)");
+    const handler = () => setIsMobile(mq.matches);
+    handler();
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  // Measure the active copy frame so the column animates to its content
+  // height — short frames (e.g. "View details") don't leave a tall gap.
+  useEffect(() => {
+    const el = copyFrameRefs.current[active];
+    if (!el) return;
+    const measure = () => setCopyHeight(el.scrollHeight);
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [active]);
 
   const features = caseData.features ?? [];
   const frameDevice = (f: Frame): "desktop" | "mobile" =>
@@ -127,7 +150,9 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
 
   const total = frames.length;
   // Shorter hold in preview (homepage) so the section doesn't dominate the page.
-  const HOLD_PER_FRAME = preview ? 0.25 : 1;
+  // Mobile case-page reels also get a shorter hold — pinning for 5+ viewports
+  // is exhausting at phone scale.
+  const HOLD_PER_FRAME = preview ? 0.25 : isMobile ? 0.55 : 1;
 
   useEffect(() => {
     if (reduced || total === 0) return;
@@ -195,7 +220,6 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
       <div
         ref={stageRef}
         style={{
-          height: "100vh",
           minHeight: "100svh",
           display: "flex",
           flexDirection: "column",
@@ -203,16 +227,16 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
           position: "relative",
           zIndex: 1,
           isolation: "isolate",
-          // Top padding clears the sticky header (64px) plus breathing room
-          // so the phone's dynamic-island pill doesn't tuck behind the nav.
-          paddingTop: 91,
+          // Top padding clears the sticky header (64px) plus breathing room.
+          // Clamp lets mobile reclaim a bit of vertical room.
+          paddingTop: "clamp(76px, 9vh, 91px)",
         }}
         className="px-(--container-x) pb-(--space-12)"
       >
         <div className="w-full max-w-(--container-max) mx-auto h-full flex flex-col">
           {/* Top meta row */}
-          <div className="grid grid-cols-2 md:grid-cols-12 gap-4 items-baseline">
-            <div className="col-span-1 md:col-span-6">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-baseline">
+            <div className="md:col-span-6">
               <span
                 className="font-mono block"
                 style={{
@@ -230,14 +254,13 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                   fontSize: tokens.clientSize,
                   lineHeight: 1,
                   marginTop: "var(--space-2)",
-                  whiteSpace: "nowrap",
                 }}
               >
                 {caseData.client}
               </h3>
             </div>
             {!preview && (
-              <div className="col-span-1 md:col-span-3 md:col-start-10 md:text-right">
+              <div className="hidden md:block md:col-span-3 md:col-start-10 md:text-right">
                 <span
                   className="font-mono"
                   style={{
@@ -256,7 +279,7 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
 
           {/* Stage: screenshot + copy */}
           <div
-            className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center flex-1"
+            className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 items-center flex-1"
             style={{ marginTop: "var(--space-8)", minHeight: 0 }}
           >
             {/* Screenshot stack */}
@@ -312,7 +335,7 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                         whiteSpace: "nowrap",
                         overflow: "hidden",
                         textOverflow: "ellipsis",
-                        maxWidth: "60%",
+                        maxWidth: "min(75%, 320px)",
                         margin: "0 auto",
                       }}
                     >
@@ -323,7 +346,7 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
               })()}
 
               {/* Frame stage. Aspect tracks the active frame's device:
-                  - mobile: 16/10 so the phone has breathing room
+                  - mobile: 4/5 so the phone has breathing room
                   - desktop: the natural image ratio (smoothly animated) */}
               <div
                 style={{
@@ -331,7 +354,7 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                   width: "100%",
                   aspectRatio:
                     (frames[active] && frameDevice(frames[active]) === "mobile")
-                      ? 16 / 10
+                      ? 4 / 5
                       : ratios[active] ?? 16 / 10,
                   overflow: "hidden",
                   background: "transparent",
@@ -428,7 +451,8 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                               overflow: "hidden",
                               background: CTA_BG[f.ctaBg ?? "mint-soft"],
                               color: CTA_FG[f.ctaBg ?? "mint-soft"],
-                              padding: "44px 22px 28px",
+                              padding:
+                                "clamp(34px, 12%, 48px) clamp(16px, 7%, 26px) clamp(20px, 8%, 30px)",
                               textDecoration: "none",
                             }}
                           >
@@ -449,7 +473,7 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                               className="font-mono"
                               style={{
                                 position: "relative",
-                                fontSize: 10,
+                                fontSize: "clamp(9px, 1.6%, 11px)",
                                 letterSpacing: "var(--tracking-eyebrow)",
                                 textTransform: "uppercase",
                                 opacity: 0.7,
@@ -465,13 +489,13 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                                 zIndex: 1,
                                 display: "flex",
                                 flexDirection: "column",
-                                gap: 16,
+                                gap: "clamp(10px, 4%, 18px)",
                               }}
                             >
                               <span
                                 className="display"
                                 style={{
-                                  fontSize: "clamp(28px, 3.5vw, 44px)",
+                                  fontSize: "clamp(22px, 7vw, 40px)",
                                   lineHeight: 0.95,
                                   letterSpacing: "var(--tracking-tight)",
                                   color: "inherit",
@@ -487,7 +511,7 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                                 <span
                                   style={{
                                     display: "inline-block",
-                                    width: 36,
+                                    width: "clamp(28px, 10%, 44px)",
                                     height: 2,
                                     background: "currentColor",
                                     transition: "width 420ms cubic-bezier(0.22,1,0.36,1)",
@@ -503,7 +527,7 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                               className="font-mono"
                               style={{
                                 position: "relative",
-                                fontSize: 10,
+                                fontSize: "clamp(9px, 1.6%, 11px)",
                                 letterSpacing: "var(--tracking-eyebrow)",
                                 textTransform: "uppercase",
                                 opacity: 0.7,
@@ -514,7 +538,7 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                               Open case →
                             </span>
                             <style>{`
-                              .kagu-cta-card:hover .kagu-cta-arrow > span:first-child { width: 64px; }
+                              .kagu-cta-card:hover .kagu-cta-arrow > span:first-child { width: 56px; }
                             `}</style>
                           </Link>
                           {/* Dynamic-island pill */}
@@ -571,6 +595,8 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                               alignItems: "baseline",
                               position: "relative",
                               zIndex: 1,
+                              flexWrap: "wrap",
+                              gap: 8,
                             }}
                           >
                             <span
@@ -660,6 +686,8 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                               alignItems: "baseline",
                               position: "relative",
                               zIndex: 1,
+                              flexWrap: "wrap",
+                              gap: 8,
                             }}
                           >
                             <span
@@ -697,7 +725,7 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                               top: "50%",
                               left: "50%",
                               transform: "translate(-50%, -50%)",
-                              height: "calc(92% + 20px)",
+                              height: "94%",
                               aspectRatio: "9 / 19.5",
                               background: "var(--ink)",
                               borderRadius: "clamp(24px, 3vw, 38px)",
@@ -805,7 +833,11 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                 so the next image arrives just as the previous copy exits. */}
             <div
               className={`${tokens.copyCol} relative`}
-              style={{ minHeight: tokens.copyMinHeight, overflow: "hidden" }}
+              style={{
+                overflow: "hidden",
+                height: copyHeight,
+                transition: "height 600ms cubic-bezier(0.22, 1, 0.36, 1)",
+              }}
             >
               {frames.map((f, i) => {
                 const isActive = active === i;
@@ -815,6 +847,9 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                 return (
                 <div
                   key={i}
+                  ref={(el) => {
+                    copyFrameRefs.current[i] = el;
+                  }}
                   aria-hidden={!isActive}
                   style={{
                     position: i === 0 ? "relative" : "absolute",
