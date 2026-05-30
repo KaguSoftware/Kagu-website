@@ -34,11 +34,17 @@ export function ApproachSection() {
     // last step before releasing.
     const mm = gsap.matchMedia();
 
-    const buildTriggers = (pinEnd: string) => {
+    // The numeral pin line and the per-step active triggers must use the SAME
+    // vertical anchor so the numeral visually aligns with the active step's
+    // heading at all times.
+    //   - Desktop: anchor at 35% from viewport top (paragraph in the upper-
+    //     middle of the viewport feels more comfortable than top-pinned).
+    //   - Mobile:  anchor at 88px from viewport top (right under the nav).
+    const buildTriggers = (anchor: string) => {
       const pinTrigger = ScrollTrigger.create({
         trigger: stepsEl,
-        start: "top top+=88",
-        end: pinEnd,
+        start: `top ${anchor}`,
+        end: `bottom ${anchor}`,
         pin: pinEl,
         pinSpacing: false,
         invalidateOnRefresh: true,
@@ -48,8 +54,8 @@ export function ApproachSection() {
       const stepTriggers = stepEls.map((el, i) =>
         ScrollTrigger.create({
           trigger: el,
-          start: "top center",
-          end: "bottom center",
+          start: `top ${anchor}`,
+          end: `bottom ${anchor}`,
           invalidateOnRefresh: true,
           onEnter: () => setActiveIndex(i),
           onEnterBack: () => setActiveIndex(i),
@@ -62,8 +68,8 @@ export function ApproachSection() {
       };
     };
 
-    mm.add("(min-width: 768px)", () => buildTriggers("bottom+=200 bottom"));
-    mm.add("(max-width: 767px)", () => buildTriggers("bottom bottom"));
+    mm.add("(min-width: 768px)", () => buildTriggers("45%"));
+    mm.add("(max-width: 767px)", () => buildTriggers("top+=88"));
 
     return () => {
       mm.revert();
@@ -77,18 +83,18 @@ export function ApproachSection() {
       className="px-(--container-x) py-(--section-y)"
     >
       <div className="w-full max-w-(--container-max) mx-auto">
-        <SectionRise className="grid grid-cols-12 gap-4 md:gap-8 mb-(--space-32) items-end">
-          <div className="col-span-9 col-start-4 md:col-span-7 md:col-start-1">
+        <SectionRise className="grid grid-cols-12 gap-4 md:gap-8 mb-(--space-12) md:mb-(--space-32) items-end">
+          <div className="col-span-12 md:col-span-7 md:col-start-1">
             <Eyebrow number="04">Approach</Eyebrow>
             <h2
-              className="display"
+              className="display max-w-full md:max-w-[13ch]"
               style={{
                 fontSize: "var(--type-6xl)",
                 lineHeight: 0.95,
                 marginTop: "var(--space-6)",
-                maxWidth: "13ch",
                 overflowWrap: "break-word",
                 hyphens: "auto",
+                textAlign: "left",
               }}
             >
               Four steps. Same every time.
@@ -97,11 +103,12 @@ export function ApproachSection() {
         </SectionRise>
 
         <div ref={stepsRef} className="grid grid-cols-12 gap-4 md:gap-8 items-start">
-          {/* Pinned numeral column — visible on all sizes, pinned via gsap */}
+          {/* Pinned numeral column — visible on all sizes, pinned via gsap.
+              Anchored to the top of the column on all sizes so the first
+              numeral lines up with the first step ("Listen"). */}
           <div
             ref={pinRef}
-            className="col-span-3 md:col-span-4 flex"
-            style={{ minHeight: "60vh", alignItems: "center" }}
+            className="col-span-3 md:col-span-4 flex items-start md:min-h-[60vh]"
           >
             <div style={{ position: "relative", height: "1em", width: "100%" }}>
               {approach.map((step, i) => (
