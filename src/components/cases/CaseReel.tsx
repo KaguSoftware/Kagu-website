@@ -166,7 +166,10 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
     const trigger = preview
       ? ScrollTrigger.create({
           trigger: container,
-          start: "top 35%",
+          // Desktop fires earlier (top hits center) so the phone-frame cases
+          // swap before the user scrolls past most of the section. Mobile
+          // keeps the later trigger.
+          start: "top 25%",
           end: "bottom center",
           scrub: 0.4,
           onUpdate: (self) => {
@@ -200,7 +203,7 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
       cancelAnimationFrame(refreshId);
       trigger.kill();
     };
-  }, [reduced, total]);
+  }, [reduced, total, isMobile, preview]);
 
   if (total === 0) return null;
 
@@ -220,6 +223,10 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
       <div
         ref={stageRef}
         style={{
+          // Desktop locks to one viewport so all case sections are the same
+          // height and the preview scrub behaves identically across them.
+          // Mobile uses minHeight so cramped content can grow.
+          height: isMobile ? undefined : "100vh",
           minHeight: "100svh",
           display: "flex",
           flexDirection: "column",
@@ -227,8 +234,6 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
           position: "relative",
           zIndex: 1,
           isolation: "isolate",
-          // Top padding clears the sticky header (64px) plus breathing room.
-          // Clamp lets mobile reclaim a bit of vertical room.
           paddingTop: "clamp(76px, 9vh, 91px)",
         }}
         className="px-(--container-x) pb-(--space-12)"
@@ -354,7 +359,7 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                   width: "100%",
                   aspectRatio:
                     (frames[active] && frameDevice(frames[active]) === "mobile")
-                      ? 4 / 5
+                      ? (isMobile ? 4 / 5 : 16 / 10)
                       : ratios[active] ?? 16 / 10,
                   overflow: "hidden",
                   background: "transparent",
@@ -725,7 +730,7 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                               top: "50%",
                               left: "50%",
                               transform: "translate(-50%, -50%)",
-                              height: "94%",
+                              height: isMobile ? "94%" : "calc(92% + 20px)",
                               aspectRatio: "9 / 19.5",
                               background: "var(--ink)",
                               borderRadius: "clamp(24px, 3vw, 38px)",
