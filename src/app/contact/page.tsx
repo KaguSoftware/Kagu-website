@@ -17,6 +17,8 @@ export default function ContactPage() {
   const reduced = useReducedMotion();
   void reduced; // hook ensures we use the same provider context as the rest
 
+
+
   useEffect(() => {
     let active = true;
     (async () => {

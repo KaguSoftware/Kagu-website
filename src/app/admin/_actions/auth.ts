@@ -10,6 +10,7 @@ const LoginSchema = z.object({
   redirect: z.string().optional(),
 });
 
+
 export type AuthState = { error: string | null };
 
 export async function login(
