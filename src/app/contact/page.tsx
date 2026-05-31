@@ -1,18 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useReducedMotion } from "motion/react";
-import { studio } from "@/data/studio";
+import { createClient } from "@/lib/supabase/client";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { HoverMagnet } from "@/components/motion/HoverMagnet";
 import { HoverTextSwap } from "@/components/motion/HoverTextSwap";
 
 type Stage = "default" | "submitting" | "success" | "error";
 
+const FALLBACK_CONTACT = { email: "", location: "", timezone: "" };
+
 export default function ContactPage() {
   const [stage, setStage] = useState<Stage>("default");
+  const [studio, setStudio] = useState(FALLBACK_CONTACT);
   const reduced = useReducedMotion();
   void reduced; // hook ensures we use the same provider context as the rest
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("site_settings")
+        .select("email, location, timezone")
+        .eq("singleton", true)
+        .single();
+      if (active && data) {
+        setStudio({
+          email: data.email ?? "",
+          location: data.location ?? "",
+          timezone: data.timezone ?? "",
+        });
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();

@@ -18,7 +18,7 @@ import { HoverTextSwap } from "@/components/motion/HoverTextSwap";
 import { HoverMagnet } from "@/components/motion/HoverMagnet";
 import { AmbientDrift } from "@/components/motion/AmbientDrift";
 import { Eyebrow } from "@/components/layout/Eyebrow";
-import { studio } from "@/data/studio";
+import type { Studio } from "@/lib/content";
 
 function useLiveTime(tz: string) {
   const [t, setT] = useState("");
@@ -72,7 +72,7 @@ function Clock({ city, tz, utc }: { city: string; tz: string; utc: string }) {
   );
 }
 
-export function ContactFooterSection() {
+export function ContactFooterSection({ studio }: { studio: Studio }) {
   return (
     <section
       aria-label="Contact"

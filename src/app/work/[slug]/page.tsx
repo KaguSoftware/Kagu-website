@@ -1,14 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { cases, getCase } from "@/data/cases";
+import { getCases, getStudio } from "@/lib/content";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { ViewTransition } from "@/lib/view-transition";
 import { CaseCover } from "@/components/cases/CaseCover";
 import { CaseReel } from "@/components/cases/CaseReel";
-
-export function generateStaticParams() {
-  return cases.map((c) => ({ slug: c.slug }));
-}
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -16,7 +12,8 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params;
-  const c = getCase(slug);
+  const cases = await getCases();
+  const c = cases.find((x) => x.slug === slug);
   if (!c) return { title: "Case not found · Kagu" };
   return {
     title: `${c.client} · Kagu`,
@@ -26,7 +23,8 @@ export async function generateMetadata({ params }: PageProps) {
 
 export default async function CaseStudyPage({ params }: PageProps) {
   const { slug } = await params;
-  const caseData = getCase(slug);
+  const [cases, studio] = await Promise.all([getCases(), getStudio()]);
+  const caseData = cases.find((c) => c.slug === slug);
   if (!caseData) notFound();
 
   const idx = cases.findIndex((c) => c.slug === slug);
@@ -257,7 +255,7 @@ export default async function CaseStudyPage({ params }: PageProps) {
         </div>
       </section>
 
-      <SiteFooter />
+      <SiteFooter studio={studio} />
     </>
   );
 }

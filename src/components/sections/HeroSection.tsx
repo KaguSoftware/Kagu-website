@@ -19,21 +19,7 @@ import { HoverTextSwap } from "@/components/motion/HoverTextSwap";
 import { AmbientDrift } from "@/components/motion/AmbientDrift";
 import { ScrollSkew } from "@/components/motion/ScrollSkew";
 import { Marquee } from "@/components/motion/Marquee";
-
-// Capability tokens rotated through the bottom marquee. Repeated with
-// diamond separators in render so the row reads as a continuous ledger.
-const CAPABILITIES = [
-  "Next.js",
-  "Supabase",
-  "Stripe & Payments",
-  "Booking flows",
-  "Admin panels",
-  "PDF generation",
-  "i18n",
-  "Realtime",
-  "Auth",
-  "Edge functions",
-];
+import type { MarqueeItem } from "@/lib/marquees";
 
 // Tiny crosshair used as corner registration marks (editorial blueprint feel).
 function CornerMark({
@@ -83,7 +69,7 @@ function CornerMark({
   );
 }
 
-export function HeroSection() {
+export function HeroSection({ heroMarquee }: { heroMarquee: MarqueeItem[] }) {
   return (
     <section
       aria-label="Introduction"
@@ -327,9 +313,9 @@ export function HeroSection() {
         }}
       >
         <Marquee duration={48}>
-          {CAPABILITIES.map((cap) => (
+          {heroMarquee.map((cap) => (
             <span
-              key={cap}
+              key={cap.label}
               className="font-mono"
               style={{
                 fontSize: "var(--type-xs)",
@@ -342,7 +328,7 @@ export function HeroSection() {
                 paddingRight: 28,
               }}
             >
-              {cap}
+              {cap.label}
               <span
                 aria-hidden
                 style={{

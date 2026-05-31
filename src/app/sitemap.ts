@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
-import { cases } from "@/data/cases";
+import { getCases } from "@/lib/content";
 
 const SITE = "https://kagu.software";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const cases = await getCases();
   const lastModified = new Date();
   return [
     { url: `${SITE}/`, lastModified, changeFrequency: "monthly", priority: 1 },

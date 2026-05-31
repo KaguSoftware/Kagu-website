@@ -5,13 +5,11 @@
 */
 
 import Link from "next/link";
-import { cases } from "@/data/cases";
+import { getCases } from "@/lib/content";
 import { ViewTransition } from "@/lib/view-transition";
 import { MaskSweep, type SweepDirection } from "@/components/motion/MaskSweep";
 import { CursorTrailPreview } from "@/components/motion/CursorTrailPreview";
 import { CaseCover } from "@/components/cases/CaseCover";
-
-const previews = cases.map((c) => ({ slug: c.slug, bg: c.cover.bg, label: c.cover.label }));
 
 const COVER_BG: Record<string, string> = {
   "mint-pale": "var(--mint-pale)",
@@ -26,7 +24,10 @@ export const metadata = {
   description: "Selected work from Kagu Software.",
 };
 
-export default function WorkIndexPage() {
+export default async function WorkIndexPage() {
+  const cases = await getCases();
+  const previews = cases.map((c) => ({ slug: c.slug, bg: c.cover.bg, label: c.cover.label }));
+
   return (
     <div
       style={{ background: "var(--paper)" }}

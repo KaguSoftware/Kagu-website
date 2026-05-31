@@ -17,7 +17,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ScrollTrigger } from "@/lib/gsap";
 import { useReducedMotion } from "motion/react";
-import type { Case } from "@/data/cases";
+import type { Case } from "@/lib/content";
 
 interface CaseReelProps {
   caseData: Case;

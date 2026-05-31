@@ -9,7 +9,8 @@
   VARIANCE 7 / MOTION 5 / DENSITY 4. Asymmetric grid — NOT 3 equal cards.
 */
 
-import { capabilities } from "@/data/capabilities";
+import type { Capability } from "@/lib/content";
+import type { MarqueeItem } from "@/lib/marquees";
 import { SectionRise } from "@/components/motion/SectionRise";
 import { Marquee } from "@/components/motion/Marquee";
 import { Eyebrow } from "@/components/layout/Eyebrow";
@@ -26,21 +27,13 @@ const layout = [
   { colSpan: "md:col-span-8 md:col-start-3", offset: "md:mt-(--space-16)" },
 ];
 
-const stackTokens = [
-  "Next.js 16",
-  "Supabase",
-  "Vercel",
-  "TypeScript",
-  "Tailwind v4",
-  "PostgreSQL",
-  "WhatsApp API",
-  "Telegram Bots",
-  "Stripe",
-  "Resend",
-  "Cloudinary",
-];
-
-export function CapabilitiesSection() {
+export function CapabilitiesSection({
+  capabilities,
+  stackTokens,
+}: {
+  capabilities: Capability[];
+  stackTokens: MarqueeItem[];
+}) {
   return (
     <section
       aria-label="Capabilities"
@@ -165,7 +158,7 @@ export function CapabilitiesSection() {
           <Marquee duration={36}>
             {stackTokens.map((t) => (
               <span
-                key={t}
+                key={t.label}
                 style={{
                   fontFamily: "var(--font-display)",
                   fontSize: "var(--type-4xl)",
@@ -174,7 +167,7 @@ export function CapabilitiesSection() {
                   whiteSpace: "nowrap",
                 }}
               >
-                {t}
+                {t.label}
                 <span style={{ color: "var(--mint-deep)", marginLeft: "var(--space-8)" }} aria-hidden>
                   ·
                 </span>
