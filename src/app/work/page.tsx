@@ -5,6 +5,7 @@
 */
 
 import Link from "next/link";
+import Image from "next/image";
 import { cases } from "@/data/cases";
 import { ViewTransition } from "@/lib/view-transition";
 import { MaskSweep, type SweepDirection } from "@/components/motion/MaskSweep";
@@ -83,13 +84,107 @@ export default function WorkIndexPage() {
                   >
                     <MaskSweep direction={sweepDir} className="absolute inset-0">
                       <ViewTransition name={`work-${c.slug}-cover`}>
-                        <CaseCover
-                          url={c.url}
-                          label={c.cover.label}
-                          bg={c.cover.bg}
-                          labelSize={isWide ? "var(--type-5xl)" : "var(--type-3xl)"}
-                          noChrome={!isWide}
-                        />
+                        {c.thumbnail && c.device === "mobile" ? (
+                          // Phone frame for mobile-device cases — matches the
+                          // homepage / case-page CaseReel treatment.
+                          <div
+                            style={{
+                              position: "absolute",
+                              inset: 0,
+                              background: COVER_BG[c.cover.bg] ?? "var(--paper)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            <div
+                              style={{
+                                position: "relative",
+                                height: "70%",
+                                aspectRatio: "9 / 19.5",
+                                background: "var(--ink)",
+                                borderRadius: "clamp(24px, 3vw, 38px)",
+                                padding: "clamp(6px, 0.7vw, 10px)",
+                                boxShadow:
+                                  "0 30px 60px -20px color-mix(in oklab, var(--ink) 38%, transparent), 0 0 0 1px color-mix(in oklab, var(--ink) 18%, transparent)",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  position: "relative",
+                                  width: "100%",
+                                  height: "100%",
+                                  borderRadius: "clamp(18px, 2.4vw, 30px)",
+                                  overflow: "hidden",
+                                  background: "#6b6b6b",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    position: "absolute",
+                                    top: 31,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                  }}
+                                >
+                                  <Image
+                                    src={c.thumbnail}
+                                    alt={`${c.client} preview`}
+                                    fill
+                                    sizes="(max-width: 768px) 50vw, 200px"
+                                    style={{
+                                      objectFit: "cover",
+                                      objectPosition: "top center",
+                                    }}
+                                  />
+                                </div>
+                                {/* Dynamic-island pill */}
+                                <span
+                                  aria-hidden
+                                  style={{
+                                    position: "absolute",
+                                    top: 8,
+                                    left: "50%",
+                                    transform: "translateX(-50%)",
+                                    width: "32%",
+                                    height: 18,
+                                    borderRadius: 12,
+                                    background: "var(--ink)",
+                                    zIndex: 2,
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ) : c.thumbnail ? (
+                          <div
+                            style={{
+                              position: "absolute",
+                              inset: 0,
+                              background: COVER_BG[c.cover.bg] ?? "var(--paper)",
+                            }}
+                          >
+                            <Image
+                              src={c.thumbnail}
+                              alt={`${c.client} preview`}
+                              fill
+                              sizes="(max-width: 768px) 100vw, 50vw"
+                              style={{
+                                objectFit: "cover",
+                                objectPosition: "top center",
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          <CaseCover
+                            url={c.url}
+                            label={c.cover.label}
+                            bg={c.cover.bg}
+                            labelSize={isWide ? "var(--type-5xl)" : "var(--type-3xl)"}
+                            noChrome={!isWide}
+                          />
+                        )}
                       </ViewTransition>
                     </MaskSweep>
                     <div
