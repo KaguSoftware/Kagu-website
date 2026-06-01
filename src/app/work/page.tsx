@@ -6,7 +6,6 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { cases } from "@/data/cases";
 import { getCases } from "@/lib/content";
 import { ViewTransition } from "@/lib/view-transition";
 import { MaskSweep, type SweepDirection } from "@/components/motion/MaskSweep";
