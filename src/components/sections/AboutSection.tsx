@@ -13,12 +13,15 @@
   reconciliation in BUILD_LOG.md.
 */
 
-import { studio } from "@/data/studio";
 import { SectionRise } from "@/components/motion/SectionRise";
 import { WordMaskReveal } from "@/components/motion/WordMaskReveal";
 import { Eyebrow } from "@/components/layout/Eyebrow";
 
-export function AboutSection() {
+export function AboutSection({
+  principles,
+}: {
+  principles: { title: string; body: string }[];
+}) {
   return (
     <section
       aria-label="About"
@@ -56,7 +59,7 @@ export function AboutSection() {
 
         {/* Principles grid */}
         <SectionRise className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-(--space-16)">
-          {studio.principles.map((p, i) => (
+          {principles.map((p, i) => (
             <article
               key={p.title}
               style={{

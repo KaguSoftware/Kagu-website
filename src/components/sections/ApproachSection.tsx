@@ -13,11 +13,11 @@
 import { useEffect, useRef, useState } from "react";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { useReducedMotion } from "motion/react";
-import { approach } from "@/data/approach";
+import type { ApproachStep } from "@/lib/content";
 import { SectionRise } from "@/components/motion/SectionRise";
 import { Eyebrow } from "@/components/layout/Eyebrow";
 
-export function ApproachSection() {
+export function ApproachSection({ approach }: { approach: ApproachStep[] }) {
   const stepsRef = useRef<HTMLDivElement>(null);
   const pinRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);

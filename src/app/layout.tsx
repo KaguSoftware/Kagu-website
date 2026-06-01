@@ -5,7 +5,7 @@ import "./globals.css";
 
 import { SmoothScrollProvider } from "@/components/providers/SmoothScrollProvider";
 import { NavigationEvents } from "@/components/providers/NavigationEvents";
-import { SiteHeader } from "@/components/layout/SiteHeader";
+import { SiteHeaderGate } from "@/components/layout/SiteHeaderGate";
 import { PreloadCurtain } from "@/components/motion/PreloadCurtain";
 
 const spaceMono = Space_Mono({
@@ -41,7 +41,7 @@ export default function RootLayout({
         </a>
         <SmoothScrollProvider>
           <PreloadCurtain />
-          <SiteHeader />
+          <SiteHeaderGate />
           <main id="main">{children}</main>
         </SmoothScrollProvider>
         <Suspense fallback={null}>

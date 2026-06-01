@@ -12,13 +12,17 @@
   is a tabular dl of real numbers + a marquee of real client names.
 */
 
-import { cases } from "@/data/cases";
-import { studio } from "@/data/studio";
 import { Marquee } from "@/components/motion/Marquee";
 import { SectionRise } from "@/components/motion/SectionRise";
 import { Eyebrow } from "@/components/layout/Eyebrow";
 
-export function ClientsRecognitionSection() {
+export function ClientsRecognitionSection({
+  metrics,
+  clients,
+}: {
+  metrics: { label: string; value: string }[];
+  clients: { slug: string; client: string }[];
+}) {
   return (
     <section
       aria-label="Clients and recognition"
@@ -118,7 +122,7 @@ export function ClientsRecognitionSection() {
               marginBottom: "var(--space-24)",
             }}
           >
-            {studio.metrics.map((m) => (
+            {metrics.map((m) => (
               <div key={m.label} className="flex flex-col">
                 <dt
                   className="font-mono"
@@ -165,7 +169,7 @@ export function ClientsRecognitionSection() {
 
       {/* Marquee bleeds full-width */}
       <Marquee duration={28}>
-        {cases.map((c) => (
+        {clients.map((c) => (
           <span
             key={c.slug}
             style={{

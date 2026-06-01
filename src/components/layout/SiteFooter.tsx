@@ -10,7 +10,52 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Logo } from "@/components/Logo";
-import { studio } from "@/data/studio";
+import { createClient } from "@/lib/supabase/client";
+import type { Clock } from "@/lib/supabase/database.types";
+
+export type FooterStudio = {
+  mission: string;
+  location: string;
+  timezone: string;
+  email: string;
+  clocks: Clock[];
+};
+
+const EMPTY_FOOTER: FooterStudio = {
+  mission: "",
+  location: "",
+  timezone: "",
+  email: "",
+  clocks: [],
+};
+
+/** Client-side studio fetch for footers rendered inside client pages. */
+function useFooterStudio(initial?: FooterStudio): FooterStudio {
+  const [data, setData] = useState<FooterStudio>(initial ?? EMPTY_FOOTER);
+  useEffect(() => {
+    if (initial) return;
+    let active = true;
+    (async () => {
+      const supabase = createClient();
+      const [{ data: settings }, { data: blocks }] = await Promise.all([
+        supabase.from("site_settings").select("*").eq("singleton", true).single(),
+        supabase.from("about_blocks").select("body, kind").eq("kind", "mission"),
+      ]);
+      if (!active) return;
+      setData({
+        mission: blocks?.[0]?.body ?? "",
+        location: settings?.location ?? "",
+        timezone: settings?.timezone ?? "",
+        email: settings?.email ?? "",
+        clocks: settings?.clocks ?? [],
+      });
+    })();
+    return () => {
+      active = false;
+    };
+  }, [initial]);
+  return data;
+}
 
 function useClock(tz: string) {
   const [time, setTime] = useState<string>("");
@@ -64,7 +109,8 @@ function Clock({ city, tz, utc }: { city: string; tz: string; utc: string }) {
   );
 }
 
-export function SiteFooter() {
+export function SiteFooter({ studio: initial }: { studio?: FooterStudio }) {
+  const studio = useFooterStudio(initial);
   return (
     <footer
       style={{

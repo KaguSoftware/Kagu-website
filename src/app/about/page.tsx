@@ -1,14 +1,18 @@
 import Link from "next/link";
-import { studio } from "@/data/studio";
+import { getStudio } from "@/lib/content";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { WordMaskReveal } from "@/components/motion/WordMaskReveal";
 
-export const metadata = {
-  title: "About · Kagu",
-  description: studio.mission,
-};
+export async function generateMetadata() {
+  const studio = await getStudio();
+  return {
+    title: "About · Kagu",
+    description: studio.mission,
+  };
+}
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const studio = await getStudio();
   return (
     <>
       <section
@@ -263,7 +267,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <SiteFooter />
+      <SiteFooter studio={studio} />
     </>
   );
 }

@@ -14,7 +14,7 @@
 */
 
 import Link from "next/link";
-import { cases } from "@/data/cases";
+import type { Case } from "@/lib/content";
 import { SectionRise } from "@/components/motion/SectionRise";
 import { MaskSweep, type SweepDirection } from "@/components/motion/MaskSweep";
 import { Eyebrow } from "@/components/layout/Eyebrow";
@@ -30,7 +30,7 @@ const COVER_BG: Record<string, string> = {
   paper: "var(--paper)",
 };
 
-export function SelectedWorkSection() {
+export function SelectedWorkSection({ cases }: { cases: Case[] }) {
   return (
     <section
       aria-label="Selected work"
