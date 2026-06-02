@@ -67,14 +67,6 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
   // Alternate sides per index in the homepage strip (even = image left,
   // odd = image right). Case-page reel ignores this (single component).
   const reversed = !isLarge && index % 2 === 1;
-  const tokens = {
-    clientSize: isLarge ? "var(--type-6xl)" : "var(--type-4xl)",
-    titleSize: isLarge ? "var(--type-4xl)" : "var(--type-3xl)",
-    descSize: isLarge ? "var(--type-lg)" : "var(--type-md)",
-    counterSize: isLarge ? "var(--type-sm)" : "var(--type-xs)",
-    imageCol: `md:col-span-8 ${reversed ? "md:col-start-5 md:row-start-1" : ""}`,
-    copyCol: `md:col-span-4 ${reversed ? "md:col-start-1 md:row-start-1" : ""}`,
-  };
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const copyFrameRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -83,6 +75,19 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
   const [copyHeight, setCopyHeight] = useState<number | undefined>(undefined);
   const [isMobile, setIsMobile] = useState(false);
   const reduced = useReducedMotion();
+
+  // The case-page reel pins (locks scroll) while the stage stacks into a
+  // single column on mobile: image on top, copy below. At desktop type sizes
+  // the copy falls below the fold while pinned, so dial the large-reel type
+  // down on phones so title + description stay on screen.
+  const tokens = {
+    clientSize: isLarge ? (isMobile ? "var(--type-3xl)" : "var(--type-6xl)") : "var(--type-4xl)",
+    titleSize: isLarge ? (isMobile ? "var(--type-2xl)" : "var(--type-4xl)") : "var(--type-3xl)",
+    descSize: isLarge ? (isMobile ? "var(--type-base)" : "var(--type-lg)") : "var(--type-md)",
+    counterSize: isLarge ? "var(--type-sm)" : "var(--type-xs)",
+    imageCol: `md:col-span-8 ${reversed ? "md:col-start-5 md:row-start-1" : ""}`,
+    copyCol: `md:col-span-4 ${reversed ? "md:col-start-1 md:row-start-1" : ""}`,
+  };
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 768px)");
@@ -225,8 +230,10 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
         style={{
           // Desktop locks to one viewport so all case sections are the same
           // height and the preview scrub behaves identically across them.
-          // Mobile uses minHeight so cramped content can grow.
-          height: isMobile ? undefined : "100vh",
+          // Mobile pins to the small viewport (svh) and lets the stage's inner
+          // rows shrink to fit, so the copy never lands below the fold while
+          // scroll is locked.
+          height: isMobile ? "100svh" : "100vh",
           minHeight: "100svh",
           display: "flex",
           flexDirection: "column",
@@ -235,8 +242,9 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
           zIndex: 1,
           isolation: "isolate",
           paddingTop: "clamp(76px, 9vh, 91px)",
+          paddingBottom: isMobile ? "var(--space-6)" : "var(--space-12)",
         }}
-        className="px-(--container-x) pb-(--space-12)"
+        className="px-(--container-x)"
       >
         <div className="w-full max-w-(--container-max) mx-auto h-full flex flex-col">
           {/* Top meta row */}
@@ -284,11 +292,32 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
 
           {/* Stage: screenshot + copy */}
           <div
-            className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 items-center flex-1"
-            style={{ marginTop: "var(--space-8)", minHeight: 0 }}
+            className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8 items-center flex-1"
+            style={{
+              marginTop: isMobile ? "var(--space-4)" : "var(--space-8)",
+              minHeight: 0,
+              // Mobile: image row flexes/shrinks, copy row keeps its natural
+              // height so it always stays on screen while the stage is pinned.
+              ...(isMobile ? { gridTemplateRows: "minmax(0, 1fr) auto" } : {}),
+            }}
           >
             {/* Screenshot stack */}
-            <div className={tokens.imageCol} style={{ width: "100%" }}>
+            <div
+              className={tokens.imageCol}
+              style={{
+                width: "100%",
+                ...(isMobile
+                  ? {
+                      height: "100%",
+                      minHeight: 0,
+                      alignSelf: "stretch",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "center",
+                    }
+                  : {}),
+              }}
+            >
               {/* Shared browser chrome — sits ABOVE the stage so the stage's
                   aspect-ratio = image's natural ratio with no extra height
                   budget eaten by the chrome. Collapses when the active frame
@@ -361,6 +390,10 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                     (frames[active] && frameDevice(frames[active]) === "mobile")
                       ? (isMobile ? 4 / 5 : 16 / 10)
                       : ratios[active] ?? 16 / 10,
+                  // On mobile the row is the height authority: flex-shrink the
+                  // frame to fit so the phone mockup scales down (the inner
+                  // shell is height-driven) rather than overflowing the stage.
+                  ...(isMobile ? { flex: "1 1 0", minHeight: 0, maxHeight: "100%" } : {}),
                   overflow: "hidden",
                   background: "transparent",
                   transition: "aspect-ratio 700ms cubic-bezier(0.22, 1, 0.36, 1)",
@@ -908,7 +941,7 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
               and we only render the View details link, right-aligned. */}
           <div
             className="flex items-center justify-between"
-            style={{ marginTop: "var(--space-8)" }}
+            style={{ marginTop: isMobile ? "var(--space-4)" : "var(--space-8)" }}
           >
             {!preview ? (
               <div className="flex gap-2" aria-hidden>
