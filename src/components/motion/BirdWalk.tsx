@@ -8,7 +8,7 @@
 */
 
 import { useEffect, useRef } from "react";
-import Image from "next/image";
+import { KaguMark } from "@/components/KaguMark";
 
 interface BirdWalkProps {
   count?: number;
@@ -80,12 +80,16 @@ export function BirdWalk({
               animationDelay: `${(i % count) * 0.16}s`,
             }}
           >
-            <Image
-              src="/kagulogoNoBg.png"
-              alt=""
-              fill
-              sizes={`${size}px`}
-              style={{ objectFit: "contain", opacity: 0.75 }}
+            <KaguMark
+              preserveAspectRatio="xMidYMax meet"
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                color: "var(--slate-ink)",
+                opacity: 0.95,
+              }}
             />
           </div>
         ))}

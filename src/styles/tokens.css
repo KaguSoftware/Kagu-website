@@ -6,12 +6,14 @@
 
 :root {
   /* ---------- Color ---------- */
-  --mint-deep:  #95DDCB;   /* primary interactive accent */
-  --mint-soft:  #BFEDDF;
-  --mint-pale:  #D2EFDF;
+  /* Brand accent: ice-blue (was mint). Token names kept for compatibility —
+     every consumer reads these vars, so the whole site recolors from here. */
+  --mint-deep:  #74C4EC;   /* primary interactive accent */
+  --mint-soft:  #B4DFF6;
+  --mint-pale:  #D6EEFB;
   --neutral:    #C4C4C5;   /* hairlines */
   --slate-ink:  #7B7689;   /* display type */
-  --paper:      #F4FBF7;   /* page base — lightened from #ECFAF4 for less mint cast */
+  --paper:      #F4FAFF;   /* page base — blue-tinted near-white */
   --ink:        #1A1820;   /* body text */
 
   /* Semantic aliases */

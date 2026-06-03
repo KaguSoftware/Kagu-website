@@ -1,4 +1,4 @@
-import { type ReactNode, type ElementType } from "react";
+import { createElement, type ReactNode, type ElementType } from "react";
 
 interface ContainerProps {
   as?: ElementType;
@@ -13,15 +13,16 @@ export function Container({
   className = "",
   bleed = false,
 }: ContainerProps) {
-  return (
-    <Tag
-      className={
-        bleed
-          ? `w-full px-(--container-x) ${className}`
-          : `w-full max-w-(--container-max) mx-auto px-(--container-x) ${className}`
-      }
-    >
-      {children}
-    </Tag>
+  // `createElement` (vs `<Tag>`) sidesteps a JSX quirk: @react-three/fiber adds
+  // ~200 entries to JSX.IntrinsicElements, so a polymorphic `ElementType` tag
+  // resolves `children` to `never`. Same runtime, clean types.
+  return createElement(
+    Tag,
+    {
+      className: bleed
+        ? `w-full px-(--container-x) ${className}`
+        : `w-full max-w-(--container-max) mx-auto px-(--container-x) ${className}`,
+    },
+    children,
   );
 }

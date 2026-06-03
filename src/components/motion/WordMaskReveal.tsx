@@ -7,7 +7,7 @@
 */
 
 import { motion, useReducedMotion } from "motion/react";
-import { useMemo } from "react";
+import { createElement, useMemo } from "react";
 
 interface WordMaskRevealProps {
   text: string;
@@ -40,35 +40,38 @@ export function WordMaskReveal({
     );
   }
 
+  // `createElement` (vs `<Component>`) sidesteps a JSX quirk: @react-three/fiber
+  // adds ~200 entries to JSX.IntrinsicElements, so a polymorphic `ElementType`
+  // tag resolves `children` to `never`. Same runtime, clean types.
   const Component = Tag as React.ElementType;
-  return (
-    <Component className={className} aria-label={text}>
-      {words.map((word, i) => (
-        <span
-          key={`${word}-${i}`}
-          aria-hidden
-          style={{
-            display: "inline-block",
-            overflow: "hidden",
-            verticalAlign: "top",
-            paddingBottom: "0.12em",
-            marginRight: i === words.length - 1 ? 0 : "0.28em",
+  return createElement(
+    Component,
+    { className, "aria-label": text },
+    words.map((word, i) => (
+      <span
+        key={`${word}-${i}`}
+        aria-hidden
+        style={{
+          display: "inline-block",
+          overflow: "hidden",
+          verticalAlign: "top",
+          paddingBottom: "0.12em",
+          marginRight: i === words.length - 1 ? 0 : "0.28em",
+        }}
+      >
+        <motion.span
+          style={{ display: "inline-block" }}
+          initial={{ y: "110%" }}
+          animate={{ y: "0%" }}
+          transition={{
+            duration: 1,
+            delay: delay + i * 0.06,
+            ease: [0.16, 1, 0.3, 1],
           }}
         >
-          <motion.span
-            style={{ display: "inline-block" }}
-            initial={{ y: "110%" }}
-            animate={{ y: "0%" }}
-            transition={{
-              duration: 1,
-              delay: delay + i * 0.06,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-          >
-            {word}
-          </motion.span>
-        </span>
-      ))}
-    </Component>
+          {word}
+        </motion.span>
+      </span>
+    )),
   );
 }

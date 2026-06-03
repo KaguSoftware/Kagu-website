@@ -12,6 +12,8 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 const GREETINGS = [
   "Hello",
   "Merhaba",
+  "مرحبا",
+  "سلام",
   "Selam",
   "Bonjour",
   "Hola",

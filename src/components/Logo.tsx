@@ -4,13 +4,11 @@
   are sized together via the `size` prop, which scales the mark; the
   wordmark inherits font-size from the calling context.
 
-  Image asset: public/kagulogoNoBg.png. PNG is fine here — the bird is
-  illustrative and renders at 24–96px on shipped surfaces. If we later want
-  to tint the bird to slate-ink for harmony with the palette, swap in an
-  SVG version and set fill="currentColor".
+  Mark: the geometric SVG (KaguMark), inline + tinted to slate-ink via
+  currentColor so it sits in harmony with the wordmark.
 */
 
-import Image from "next/image";
+import { KaguMark } from "@/components/KaguMark";
 
 interface LogoProps {
   /** Pixel size of the bird mark. Wordmark inherits parent font-size. */
@@ -39,13 +37,12 @@ export function Logo({
       }}
     >
       {!markOnly && (
-        <Image
-          src="/kagulogoNoBg.png"
-          alt="Kagu"
-          width={size}
-          height={size}
-          priority
-          style={{ width: size, height: size, objectFit: "contain" }}
+        <KaguMark
+          height={size * 0.7}
+          title={wordmarkOnly ? "Kagu" : undefined}
+          wingOpacity={0.55}
+          bodyOpacity={1}
+          style={{ color: "var(--slate-ink)", display: "block", flexShrink: 0 }}
         />
       )}
       {!wordmarkOnly && (
