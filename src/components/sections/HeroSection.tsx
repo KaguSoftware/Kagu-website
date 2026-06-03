@@ -10,8 +10,8 @@
 */
 
 import Link from "next/link";
-import Image from "next/image";
 import { motion } from "motion/react";
+import { KaguMark } from "@/components/KaguMark";
 import { WordMaskReveal } from "@/components/motion/WordMaskReveal";
 import { GreetingCycle } from "@/components/motion/GreetingCycle";
 import { HoverMagnet } from "@/components/motion/HoverMagnet";
@@ -143,16 +143,15 @@ export function HeroSection({ heroMarquee }: { heroMarquee: MarqueeItem[] }) {
             repeatType: "loop",
           }}
         >
-          <Image
-            src="/kagulogoNoBg.png"
-            alt=""
-            fill
-            priority
-            sizes="(max-width: 640px) 0px, 560px"
+          <KaguMark
+            preserveAspectRatio="xMaxYMax meet"
             style={{
-              objectFit: "contain",
-              objectPosition: "right bottom",
-              opacity: 0.92,
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              color: "var(--slate-ink)",
+              opacity: 1,
             }}
           />
         </motion.div>

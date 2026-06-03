@@ -3,13 +3,14 @@
   Single source of truth: keep in sync with src/styles/tokens.css.
 */
 
+// Brand accent migrated mint → ice-blue. Keys kept; values mirror tokens.css.
 export const palette = {
-  mintDeep: "#95DDCB",
-  mintSoft: "#BFEDDF",
-  mintPale: "#D2EFDF",
+  mintDeep: "#74C4EC",
+  mintSoft: "#B4DFF6",
+  mintPale: "#D6EEFB",
   neutral: "#C4C4C5",
   slateInk: "#7B7689",
-  paper: "#F4FBF7",
+  paper: "#F4FAFF",
   ink: "#1A1820",
 } as const;
 

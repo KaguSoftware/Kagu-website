@@ -63,14 +63,38 @@ export default async function WorkIndexPage() {
                 <CursorTrailPreview previews={previews}>
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-x-8 gap-y-(--space-32)">
                         {cases.map((c, i) => {
-                            const isWide = i % 3 === 0;
-                            const colClass = isWide
-                                ? "md:col-span-8"
-                                : i % 3 === 1
-                                ? "md:col-span-5 md:col-start-1"
-                                : "md:col-span-6 md:col-start-7";
+                            const slot = i % 3;
+                            // Phone-frame cases hug the device, so they get a
+                            // slim portrait card instead of a fat 4/5 block.
+                            const isMobileCard = c.device === "mobile";
+                            // When the left card of a pair is a phone, hand the
+                            // freed columns to its row partner so it runs wide.
+                            const prevMobile =
+                                slot === 2 &&
+                                cases[i - 1]?.device === "mobile";
+                            // Landscape "wide" treatment (chrome, big label): the
+                            // lead card of each trio, or a partner promoted to
+                            // fill the space a phone card gave up.
+                            const isWide = slot === 0 || prevMobile;
+                            const colClass =
+                                slot === 0
+                                    ? isMobileCard
+                                        ? "md:col-span-4"
+                                        : "md:col-span-8"
+                                    : slot === 1
+                                    ? isMobileCard
+                                        ? "md:col-span-3 md:col-start-1"
+                                        : "md:col-span-5 md:col-start-1"
+                                    : prevMobile
+                                    ? "md:col-span-8 md:col-start-5"
+                                    : "md:col-span-6 md:col-start-7";
                             const offset =
-                                i % 3 === 1 ? "md:mt-(--space-16)" : "";
+                                slot === 1 ? "md:mt-(--space-16)" : "";
+                            const aspect = isMobileCard
+                                ? "1 / 1.9"
+                                : isWide
+                                ? "16 / 10"
+                                : "4 / 5";
                             // Wide cards: top sweep (arrival). Others alternate L/R.
                             const sweepDir: SweepDirection = isWide
                                 ? "top"
@@ -91,9 +115,7 @@ export default async function WorkIndexPage() {
                                         <div
                                             className="relative"
                                             style={{
-                                                aspectRatio: isWide
-                                                    ? "16 / 10"
-                                                    : "4 / 5",
+                                                aspectRatio: aspect,
                                                 background:
                                                     COVER_BG[c.cover.bg] ??
                                                     "var(--paper)",
@@ -134,7 +156,7 @@ export default async function WorkIndexPage() {
                                                                 style={{
                                                                     position:
                                                                         "relative",
-                                                                    height: "70%",
+                                                                    height: "94%",
                                                                     aspectRatio:
                                                                         "9 / 19.5",
                                                                     background:

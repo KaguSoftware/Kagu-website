@@ -7,7 +7,7 @@
   No two adjacent sections share background.
 */
 
-import { HeroSection } from "@/components/sections/HeroSection";
+import { Hero3D } from "@/components/hero3d/Hero3D";
 import { CapabilitiesSection } from "@/components/sections/CapabilitiesSection";
 import { SelectedWorkSection } from "@/components/sections/SelectedWorkSection";
 import { ApproachSection } from "@/components/sections/ApproachSection";
@@ -39,7 +39,14 @@ export default async function Home() {
 
   return (
     <>
-      <HeroSection heroMarquee={marquees.hero} />
+      <Hero3D
+        title="Kagu"
+        subtitle="Custom websites and digital tools, built to fit your business."
+        ctaLabel="Start a project"
+        ctaHref="/contact"
+        location="Est. 2025 · Istanbul"
+        availability="Accepting projects · 2026 Q3"
+      />
       <CapabilitiesSection capabilities={capabilities} stackTokens={marquees.lineage} />
       {/* Decorative section break: a strip of walking kagu birds. */}
       <div style={{ background: "var(--paper)", padding: "var(--space-12) 0" }}>
