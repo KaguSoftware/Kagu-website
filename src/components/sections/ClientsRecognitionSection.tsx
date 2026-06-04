@@ -2,7 +2,7 @@
 
 /*
   Section 6 — Clients & Recognition.
-  Background: --mint-deep (only fully-saturated section).
+  Background: --color-surface-2 (elevated dark band); accent used for highlights.
   Type-dominance: 8xl on the honest number (use #2 of ≤2).
   Primary motion: M06 marquee (clients strip, use #2 of 2).
   Supporting: M12 number-count on the metric.
@@ -26,7 +26,7 @@ export function ClientsRecognitionSection({
   return (
     <section
       aria-label="Clients and recognition"
-      style={{ background: "var(--mint-deep)", position: "relative", overflow: "hidden" }}
+      style={{ background: "var(--color-surface-2)", position: "relative", overflow: "hidden" }}
       className="py-(--section-y)"
     >
       {/* Decorative geometry — large quiet shapes layered behind the content. */}
@@ -182,7 +182,7 @@ export function ClientsRecognitionSection({
             }}
           >
             {c.client}
-            <span style={{ color: "var(--paper)", marginLeft: "var(--space-12)" }} aria-hidden>
+            <span style={{ color: "var(--mint-deep)", marginLeft: "var(--space-12)" }} aria-hidden>
               ·
             </span>
           </span>

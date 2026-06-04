@@ -35,7 +35,7 @@ function StudioLights({ reducedMotion }: { reducedMotion: boolean }) {
 
   return (
     <>
-      <ambientLight intensity={0.45} color="#eaf5ff" />
+      <ambientLight intensity={0.18} color="#9fb6d8" />
 
       {/* large soft studio key — the obsidian sheen reads off this */}
       <rectAreaLight
@@ -106,48 +106,49 @@ function Scene({
   reducedMotion,
   offsetX,
   count,
+  flockScale,
 }: {
   reducedMotion: boolean;
   offsetX: number;
   count: number;
+  flockScale: number;
 }) {
   return (
     <>
-      {/* bright icy haze — distant birds dissolve into the ice-blue air */}
-      <fogExp2 attach="fog" args={["#bfe3fb", 0.07]} />
+      {/* near-black haze — distant birds dissolve into the black air */}
+      <fogExp2 attach="fog" args={["#04050a", 0.07]} />
 
       <StudioLights reducedMotion={reducedMotion} />
       <CameraRig reducedMotion={reducedMotion} targetX={offsetX} />
 
       <Suspense fallback={null}>
-        <Flock reducedMotion={reducedMotion} offsetX={offsetX} count={count} />
+        <Flock reducedMotion={reducedMotion} offsetX={offsetX} count={count} scale={flockScale} />
       </Suspense>
 
-      {/* self-contained icy studio environment for reflections — no external HDR */}
-      <Environment resolution={256} frames={1}>
-        <color attach="background" args={["#e6f4ff"]} />
+      {/* Dark studio for the black glass: a near-black surround so the glass
+          stays black, with a few bright strips that reflect as the highlight
+          streaks revealing the form (à la the reference). No external HDR. */}
+      <Environment resolution={512} frames={1}>
+        <color attach="background" args={["#05060a"]} />
+        {/* broad soft key — wide sheen down one side */}
         <Lightformer
-          intensity={2.4}
-          position={[-3, 3, 4]}
-          scale={[7, 7, 1]}
+          intensity={3.0}
+          position={[-4, 3, 4]}
+          scale={[8, 8, 1]}
           color="#ffffff"
         />
+        {/* thin bright pillar — crisp streak riding the rounded edges */}
         <Lightformer
-          intensity={1.0}
-          position={[4, 2, 3]}
-          scale={[4, 4, 1]}
-          color="#cfe6ff"
+          intensity={5}
+          position={[3.5, 1, 3]}
+          scale={[0.6, 10, 1]}
+          color="#ffffff"
         />
+        {/* low cool fill — a faint blue rim from beneath */}
         <Lightformer
-          intensity={1.3}
-          position={[0, -3, -5]}
-          scale={[9, 3, 1]}
-          color="#eaf5ff"
-        />
-        <Lightformer
-          intensity={0.8}
-          position={[-5, 0, -6]}
-          scale={[3, 6, 1]}
+          intensity={1.1}
+          position={[0, -4, -4]}
+          scale={[10, 3, 1]}
           color="#9fc4ff"
         />
       </Environment>
@@ -173,8 +174,6 @@ export interface Hero3DProps {
 export function Hero3D({
   title = "Kagu",
   subtitle = "AI systems for ambitious teams.",
-  ctaLabel = "Start building",
-  ctaHref = "#start",
   greeting = true,
   location = "Est. 2025 · Istanbul",
   availability = "Accepting projects · 2026 Q3",
@@ -184,10 +183,12 @@ export function Hero3D({
   const isClient = useIsClient();
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
-  // Push the flock to the right so the headline owns the left; thin it out on
-  // phones for performance.
-  const offsetX = isDesktop ? 1.4 : 0.5;
+  // Push the flock to the right so the headline owns the left on desktop; on
+  // phones center it (the headline sits below it) and thin it out for perf.
+  const offsetX = isDesktop ? 1.4 : 0;
   const count = isDesktop ? 6 : 4;
+  // Shrink the whole flock on phones so the sculptures fit the narrow viewport.
+  const flockScale = isDesktop ? 1 : 0.62;
 
   return (
     <section aria-label="Kagu" className="kagu-hero">
@@ -204,7 +205,7 @@ export function Hero3D({
               gl.toneMappingExposure = 1.05;
             }}
           >
-            <Scene reducedMotion={reducedMotion} offsetX={offsetX} count={count} />
+            <Scene reducedMotion={reducedMotion} offsetX={offsetX} count={count} flockScale={flockScale} />
           </Canvas>
         )}
       </div>
@@ -236,10 +237,6 @@ export function Hero3D({
         <div className="kagu-hero__main">
           <h1 className="kagu-hero__title">{title}</h1>
           <p className="kagu-hero__subtitle">{subtitle}</p>
-          <a className="kagu-hero__cta" href={ctaHref}>
-            <span>{ctaLabel}</span>
-            <span className="kagu-hero__cta-arrow" aria-hidden />
-          </a>
         </div>
       </div>
 
@@ -253,11 +250,12 @@ export function Hero3D({
           min-height: 100dvh;
           overflow: hidden;
           isolation: isolate;
-          /* ice-bright blue */
+          /* brighter blue field: a lifted blue glow at the top focal point
+             easing into a deep blue, so the glossy black glass reads against it */
           background:
-            radial-gradient(120% 100% at 60% 8%, #f4fcff 0%, #d2f0fe 38%, #a9defb 70%, #8fd0f7 100%),
-            #a9defb;
-          color: #0a1622;
+            radial-gradient(120% 100% at 60% 8%, #1b4173 0%, #102a51 45%, #081729 100%),
+            #081729;
+          color: #eaf4ff;
         }
         .kagu-hero__canvas {
           position: absolute;
@@ -267,16 +265,16 @@ export function Hero3D({
         .kagu-hero__canvas canvas {
           display: block;
         }
-        /* light left-weighted scrim: keeps the bright backdrop behind the dark
-           copy so a passing obsidian bird never drops the contrast */
+        /* dark left-weighted scrim: deepens the backdrop behind the light
+           copy so a passing glass bird never drops the contrast */
         .kagu-hero__scrim {
           position: absolute;
           inset: 0;
           z-index: 1;
           pointer-events: none;
           background:
-            linear-gradient(90deg, rgba(244,251,255,0.88) 0%, rgba(244,251,255,0.45) 40%, rgba(244,251,255,0) 72%),
-            linear-gradient(0deg, rgba(143,208,247,0.35) 0%, rgba(143,208,247,0) 32%);
+            linear-gradient(90deg, rgba(4,8,18,0.82) 0%, rgba(4,8,18,0.4) 40%, rgba(4,8,18,0) 72%),
+            linear-gradient(0deg, rgba(4,8,18,0.55) 0%, rgba(4,8,18,0) 32%);
         }
         .kagu-hero__content {
           position: relative;
@@ -297,15 +295,17 @@ export function Hero3D({
           width: 100%;
           padding-top: clamp(1rem, 3vh, 2rem);
         }
-        /* headline block, centered in the remaining height, left-aligned */
+        /* headline block, pushed toward the bottom of the remaining height,
+           left-aligned */
         .kagu-hero__main {
           flex: 1;
           display: flex;
           flex-direction: column;
           align-items: flex-start;
-          justify-content: center;
+          justify-content: flex-end;
           gap: 1.1rem;
           max-width: 46rem;
+          padding-bottom: clamp(2rem, 8vh, 6rem);
         }
         .kagu-hero__greeting {
           display: inline-flex;
@@ -316,7 +316,7 @@ export function Hero3D({
           font-size: var(--type-3xl, 2.5rem);
           letter-spacing: var(--tracking-tight, -0.012em);
           line-height: 1;
-          color: var(--ink, #081320);
+          color: #eaf4ff;
         }
         .kagu-hero__greeting-word {
           font-weight: 500;
@@ -325,7 +325,7 @@ export function Hero3D({
           font-size: 0.72rem;
           letter-spacing: 0.18em;
           text-transform: uppercase;
-          color: rgba(8, 19, 32, 0.58);
+          color: rgba(234, 244, 255, 0.6);
         }
         .kagu-hero__status {
           display: inline-flex;
@@ -335,7 +335,7 @@ export function Hero3D({
           font-size: 0.72rem;
           letter-spacing: 0.18em;
           text-transform: uppercase;
-          color: rgba(8, 19, 32, 0.62);
+          color: rgba(234, 244, 255, 0.64);
         }
         .kagu-hero__pulse {
           position: relative;
@@ -371,57 +371,14 @@ export function Hero3D({
           line-height: 0.92;
           letter-spacing: -0.03em;
           font-size: clamp(4.5rem, 16vw, 12rem);
-          color: #081320;
+          color: #eaf4ff;
         }
         .kagu-hero__subtitle {
           margin: 0;
           max-width: 30ch;
           font-size: clamp(1.05rem, 1.4vw, 1.4rem);
           line-height: 1.5;
-          color: rgba(8,19,32,0.74);
-        }
-        .kagu-hero__cta {
-          --edge: rgba(8,19,32,0.28);
-          margin-top: 0.8rem;
-          display: inline-flex;
-          align-items: center;
-          gap: 0.85rem;
-          padding: 1.05rem 1.6rem;
-          font-family: var(--font-mono, ui-monospace, monospace);
-          font-size: 0.8rem;
-          letter-spacing: 0.18em;
-          text-transform: uppercase;
-          color: #081320;
-          text-decoration: none;
-          border: 1px solid var(--edge);
-          border-radius: 2px;
-          background: rgba(255,255,255,0.25);
-          backdrop-filter: blur(2px);
-          transition: border-color 320ms cubic-bezier(0.16,1,0.3,1),
-            background-color 320ms cubic-bezier(0.16,1,0.3,1),
-            transform 320ms cubic-bezier(0.16,1,0.3,1);
-        }
-        .kagu-hero__cta-arrow {
-          width: 26px;
-          height: 1px;
-          background: #0e8fe0;
-          transition: width 320ms cubic-bezier(0.16,1,0.3,1);
-        }
-        .kagu-hero__cta:hover {
-          border-color: rgba(14,143,224,0.7);
-          background: rgba(14,143,224,0.1);
-          transform: translateY(-1px);
-        }
-        .kagu-hero__cta:hover .kagu-hero__cta-arrow {
-          width: 40px;
-        }
-        .kagu-hero__cta:focus-visible {
-          outline: 2px solid #0e8fe0;
-          outline-offset: 3px;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .kagu-hero__cta,
-          .kagu-hero__cta-arrow { transition: none; }
+          color: rgba(234,244,255,0.76);
         }
       `}</style>
     </section>

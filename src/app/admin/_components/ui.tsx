@@ -171,7 +171,7 @@ export function ButtonLink({
     "inline-flex items-center gap-2 px-4 py-2 text-xs font-mono uppercase tracking-[0.18em] transition-colors";
   const styles =
     variant === "solid"
-      ? "bg-ink text-paper hover:bg-mint-deep hover:text-ink"
+      ? "bg-ink text-paper hover:bg-mint-deep hover:text-paper"
       : "border border-neutral text-ink hover:border-mint-deep";
   return (
     <Link href={href} className={`${base} ${styles}`}>

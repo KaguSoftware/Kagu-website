@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { Public_Sans, Space_Mono } from "next/font/google";
 import "./globals.css";
@@ -26,6 +26,10 @@ export const metadata: Metadata = {
   description:
     "Kagu builds Next.js + Supabase platforms for hospitality, tourism, and service businesses. Founded 2025, Istanbul.",
   metadataBase: new URL("https://kagu.software"),
+};
+
+export const viewport: Viewport = {
+  themeColor: "#14161d",
 };
 
 export default function RootLayout({

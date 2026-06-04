@@ -5,16 +5,21 @@
 */
 
 :root {
-  /* ---------- Color ---------- */
-  /* Brand accent: ice-blue (was mint). Token names kept for compatibility —
-     every consumer reads these vars, so the whole site recolors from here. */
-  --mint-deep:  #74C4EC;   /* primary interactive accent */
-  --mint-soft:  #B4DFF6;
-  --mint-pale:  #D6EEFB;
-  --neutral:    #C4C4C5;   /* hairlines */
-  --slate-ink:  #7B7689;   /* display type */
-  --paper:      #F4FAFF;   /* page base — blue-tinted near-white */
-  --ink:        #1A1820;   /* body text */
+  /* ---------- Color (dark theme) ---------- */
+  /* Dark NEUTRAL-GREY palette with a single deep-sky accent for pop. Token
+     names kept for compatibility — every consumer reads these vars, so the
+     whole site recolors from here. Surfaces are graded greys (base →
+     surface-1 → surface-2) so the section "background rhythm" reads as subtle
+     elevation. NOTE: --paper is now the DARK page base and --ink the LIGHT
+     text — the two intentionally-inverted bands (Recognition, Contact) are
+     hand-adjusted in their components since they used the light tokens as text. */
+  --mint-deep:  #1f8fe0;   /* primary interactive accent (deep sky — the one pop of color) */
+  --mint-soft:  #232734;   /* surface-2 — elevated grey-navy band */
+  --mint-pale:  #1a1d26;   /* surface-1 — subtle grey-navy band above base */
+  --neutral:    #363b48;   /* hairlines — subtle on dark */
+  --slate-ink:  #a8adb8;   /* display type + muted/secondary text (cool light grey) */
+  --paper:      #14161d;   /* page base — very dark grey with a navy undertone */
+  --ink:        #eef1f5;   /* body text — near-white */
 
   /* Semantic aliases */
   --color-bg:           var(--paper);

@@ -3,7 +3,7 @@
 /*
   SiteFooter — used on routes that DON'T have the ContactFooterSection at the
   bottom (homepage has its own contact close). For internal routes, this acts
-  as the inverted closing surface: slate-ink background, mono meta, multi-city
+  as the inverted closing surface: deep grey-navy background, mono meta, multi-city
   clocks. M11 live clocks update every second via useEffect.
 */
 
@@ -97,7 +97,7 @@ function Clock({ city, tz, utc }: { city: string; tz: string; utc: string }) {
         style={{
           fontFamily: "var(--font-mono)",
           fontSize: "var(--type-2xl)",
-          color: "var(--paper)",
+          color: "var(--ink)",
           fontVariantNumeric: "tabular-nums",
           marginTop: 4,
         }}
@@ -114,8 +114,8 @@ export function SiteFooter({ studio: initial }: { studio?: FooterStudio }) {
   return (
     <footer
       style={{
-        background: "var(--slate-ink)",
-        color: "var(--paper)",
+        background: "#0e1016",
+        color: "var(--ink)",
         paddingTop: "var(--section-y)",
         paddingBottom: "var(--space-12)",
         marginTop: "var(--space-32)",
@@ -125,13 +125,13 @@ export function SiteFooter({ studio: initial }: { studio?: FooterStudio }) {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12 mb-(--space-32)">
           {/* Lockup + email */}
           <div className="md:col-span-7">
-            <div style={{ fontSize: "var(--type-4xl)", color: "var(--paper)" }}>
+            <div style={{ fontSize: "var(--type-4xl)", color: "var(--ink)" }}>
               <Logo size={64} />
             </div>
             <p
               style={{
                 fontSize: "var(--type-md)",
-                color: "var(--mint-pale)",
+                color: "var(--slate-ink)",
                 marginTop: "var(--space-6)",
                 maxWidth: "44ch",
                 lineHeight: 1.55,
@@ -151,21 +151,21 @@ export function SiteFooter({ studio: initial }: { studio?: FooterStudio }) {
             <Link
               href="/work"
               data-cursor="nav-link"
-              style={{ fontFamily: "var(--font-display)", fontSize: "var(--type-lg)", color: "var(--paper)" }}
+              style={{ fontFamily: "var(--font-display)", fontSize: "var(--type-lg)", color: "var(--ink)" }}
             >
               Work
             </Link>
             <Link
               href="/about"
               data-cursor="nav-link"
-              style={{ fontFamily: "var(--font-display)", fontSize: "var(--type-lg)", color: "var(--paper)" }}
+              style={{ fontFamily: "var(--font-display)", fontSize: "var(--type-lg)", color: "var(--ink)" }}
             >
               About
             </Link>
             <Link
               href="/contact"
               data-cursor="nav-link"
-              style={{ fontFamily: "var(--font-display)", fontSize: "var(--type-lg)", color: "var(--paper)" }}
+              style={{ fontFamily: "var(--font-display)", fontSize: "var(--type-lg)", color: "var(--ink)" }}
             >
               Contact
             </Link>
@@ -176,7 +176,7 @@ export function SiteFooter({ studio: initial }: { studio?: FooterStudio }) {
         <div
           className="grid grid-cols-3 gap-6"
           style={{
-            borderTop: "1px solid color-mix(in oklab, var(--mint-pale) 18%, transparent)",
+            borderTop: "1px solid color-mix(in oklab, var(--ink) 14%, transparent)",
             paddingTop: "var(--space-12)",
             marginBottom: "var(--space-16)",
           }}
@@ -194,7 +194,7 @@ export function SiteFooter({ studio: initial }: { studio?: FooterStudio }) {
             fontSize: "var(--type-xs)",
             letterSpacing: "var(--tracking-eyebrow)",
             textTransform: "uppercase",
-            color: "var(--mint-pale)",
+            color: "var(--slate-ink)",
           }}
         >
           <span>© {new Date().getFullYear()} Kagu Software</span>

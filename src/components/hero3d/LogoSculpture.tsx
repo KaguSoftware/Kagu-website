@@ -11,9 +11,18 @@ const TARGET_SIZE = 1.7;
 // Extrude depth in raw SVG units — normalized away, so it just sets how "thick"
 // the folded slab reads relative to its silhouette.
 const DEPTH = 130;
+// Rounded-edge bevel (raw SVG units): generous + smooth so a bright reflection
+// streak rides along every edge — that highlight is what reveals the form of
+// the black glass against the black backdrop.
+const BEVEL_THICKNESS = 12;
+const BEVEL_SIZE = 10;
+const BEVEL_SEGMENTS = 6;
 
-type Part = { geometry: THREE.ExtrudeGeometry; ghost: boolean };
-type Materials = { main: THREE.MeshPhysicalMaterial; ghost: THREE.MeshPhysicalMaterial };
+type Part = { geometry: THREE.BufferGeometry; ghost: boolean };
+type Materials = {
+  main: THREE.MeshPhysicalMaterial;
+  ghost: THREE.MeshPhysicalMaterial;
+};
 
 export type BirdConfig = {
   position: [number, number, number];
@@ -48,22 +57,37 @@ function useLogoParts(url: string): { parts: Part[]; scale: number; materials: M
   const data = useLoader(SVGLoader, url);
 
   const materials = useMemo<Materials>(() => {
+    // Glossy black glass, like the reference: opaque, near-mirror surface with a
+    // clearcoat. The form isn't drawn — it's revealed by bright reflections
+    // streaking along the rounded edges. This needs a DARK environment with
+    // bright light strips to reflect (set in Hero3D); against a bright env, black
+    // glass just washes out to flat grey.
     const main = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color("#0b0c12"),
-      metalness: 0.6,
-      roughness: 0.3,
-      clearcoat: 0.85,
-      clearcoatRoughness: 0.2,
-      reflectivity: 0.6,
-      envMapIntensity: 1.3,
+      color: new THREE.Color("#000000"),
+      metalness: 0,
+      roughness: 0.05,
+      clearcoat: 1,
+      clearcoatRoughness: 0.03,
+      reflectivity: 0.7,
+      envMapIntensity: 2.0,
+      transparent: true,
+      opacity: 0.45,
+      depthWrite: false,
+      side: THREE.DoubleSide,
     });
+    // The echoed wing — softer reflections so it recedes into the black.
     const ghost = new THREE.MeshPhysicalMaterial({
-      color: new THREE.Color("#1a1d28"),
-      metalness: 0.4,
-      roughness: 0.5,
-      clearcoat: 0.4,
-      clearcoatRoughness: 0.35,
-      envMapIntensity: 0.9,
+      color: new THREE.Color("#000000"),
+      metalness: 0,
+      roughness: 0.13,
+      clearcoat: 0.8,
+      clearcoatRoughness: 0.08,
+      reflectivity: 0.5,
+      envMapIntensity: 1.4,
+      transparent: true,
+      opacity: 0.28,
+      depthWrite: false,
+      side: THREE.DoubleSide,
     });
     return { main, ghost };
   }, []);
@@ -79,15 +103,17 @@ function useLogoParts(url: string): { parts: Part[]; scale: number; materials: M
         | undefined;
       const declared = Number(style?.fillOpacity ?? style?.opacity);
       const ghost = Number.isFinite(declared) ? declared < 0.5 : index === 0;
+      const slabDepth = ghost ? DEPTH * 0.45 : DEPTH;
 
       SVGLoader.createShapes(path).forEach((shape) => {
+        // Rounded bevel so every edge catches a smooth highlight streak.
         const geometry = new THREE.ExtrudeGeometry(shape, {
-          depth: ghost ? DEPTH * 0.45 : DEPTH,
+          depth: slabDepth,
           bevelEnabled: true,
-          bevelThickness: 7,
-          bevelSize: 6,
-          bevelSegments: 4,
-          curveSegments: 6,
+          bevelThickness: BEVEL_THICKNESS,
+          bevelSize: BEVEL_SIZE,
+          bevelSegments: BEVEL_SEGMENTS,
+          curveSegments: 12,
         });
         built.push({ geometry, ghost });
       });
@@ -189,17 +215,20 @@ export function Flock({
   reducedMotion = false,
   offsetX = 0,
   count = FLOCK.length,
+  scale: groupScale = 1,
 }: {
   url?: string;
   reducedMotion?: boolean;
   offsetX?: number;
   count?: number;
+  /** Uniform shrink for the whole flock — used to fit smaller viewports. */
+  scale?: number;
 }) {
   const { parts, scale, materials } = useLogoParts(url);
   const birds = FLOCK.slice(0, count);
 
   return (
-    <group position={[offsetX, 0, 0]}>
+    <group position={[offsetX, 0, 0]} scale={groupScale}>
       {birds.map((config, i) => (
         <Bird
           key={i}

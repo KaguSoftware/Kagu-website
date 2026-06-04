@@ -2,7 +2,7 @@
 
 /*
   Section 7 — Contact / Footer.
-  Background: --slate-ink (inversion — paper-on-dark for the close).
+  Background: deep grey-navy close (#0e1016) — the darkest band, light text on top.
   Type-dominance: 8xl "Let's talk." statement — wait, already used 2x (Hero+Recognition).
   We'll use 7xl/6xl for the close to respect the ≤2 rule on 8xl.
   Primary motion: M08 hover-text-swap on email + Let's talk.
@@ -60,7 +60,7 @@ function Clock({ city, tz, utc }: { city: string; tz: string; utc: string }) {
         className="font-mono"
         style={{
           fontSize: "var(--type-2xl)",
-          color: "var(--paper)",
+          color: "var(--ink)",
           fontVariantNumeric: "tabular-nums",
           marginTop: 4,
         }}
@@ -77,8 +77,8 @@ export function ContactFooterSection({ studio }: { studio: Studio }) {
     <section
       aria-label="Contact"
       style={{
-        background: "var(--slate-ink)",
-        color: "var(--paper)",
+        background: "#0e1016",
+        color: "var(--ink)",
         position: "relative",
         overflow: "hidden",
       }}
@@ -105,7 +105,7 @@ export function ContactFooterSection({ studio }: { studio: Studio }) {
               style={{
                 fontSize: "var(--type-8xl)",
                 lineHeight: 0.88,
-                color: "var(--paper)",
+                color: "var(--ink)",
                 marginTop: "var(--space-6)",
                 maxWidth: "10ch",
                 letterSpacing: "var(--tracking-tight)",
@@ -132,7 +132,7 @@ export function ContactFooterSection({ studio }: { studio: Studio }) {
               style={{
                 fontFamily: "var(--font-display)",
                 fontSize: "var(--type-5xl)",
-                color: "var(--paper)",
+                color: "var(--ink)",
                 display: "inline-block",
                 lineHeight: 1,
                 letterSpacing: "var(--tracking-tight)",
@@ -144,7 +144,7 @@ export function ContactFooterSection({ studio }: { studio: Studio }) {
               style={{
                 fontSize: "var(--type-md)",
                 lineHeight: 1.6,
-                color: "var(--mint-pale)",
+                color: "var(--slate-ink)",
                 marginTop: "var(--space-6)",
                 maxWidth: "52ch",
               }}
@@ -165,15 +165,15 @@ export function ContactFooterSection({ studio }: { studio: Studio }) {
                   fontSize: "var(--type-md)",
                   letterSpacing: "var(--tracking-eyebrow)",
                   textTransform: "uppercase",
-                  color: "var(--ink)",
+                  color: "var(--paper)",
                   background: "var(--mint-deep)",
                   padding: "20px 28px",
                   minHeight: 56,
-                  border: "1px solid var(--ink)",
+                  border: "1px solid var(--mint-deep)",
                 }}
               >
                 <HoverTextSwap>Start a project</HoverTextSwap>
-                <span aria-hidden style={{ width: 24, height: 1, background: "var(--ink)" }} />
+                <span aria-hidden style={{ width: 24, height: 1, background: "var(--paper)" }} />
               </Link>
             </HoverMagnet>
           </div>
@@ -183,7 +183,7 @@ export function ContactFooterSection({ studio }: { studio: Studio }) {
         <div
           className="grid grid-cols-3 gap-6 mb-(--space-24)"
           style={{
-            borderTop: "1px solid color-mix(in oklab, var(--mint-pale) 18%, transparent)",
+            borderTop: "1px solid color-mix(in oklab, var(--ink) 14%, transparent)",
             paddingTop: "var(--space-12)",
           }}
         >
@@ -200,14 +200,14 @@ export function ContactFooterSection({ studio }: { studio: Studio }) {
             fontSize: "var(--type-xs)",
             letterSpacing: "var(--tracking-eyebrow)",
             textTransform: "uppercase",
-            color: "var(--mint-pale)",
+            color: "var(--slate-ink)",
           }}
         >
           <div className="flex items-center gap-4">
             <span style={{ fontSize: "var(--type-lg)" }}>
               <Logo size={24} />
             </span>
-            <span style={{ color: "color-mix(in oklab, var(--mint-pale) 65%, transparent)" }}>
+            <span style={{ color: "color-mix(in oklab, var(--ink) 55%, transparent)" }}>
               © {new Date().getFullYear()} Kagu Software
             </span>
           </div>

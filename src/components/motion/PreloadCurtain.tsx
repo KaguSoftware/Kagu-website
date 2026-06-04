@@ -86,7 +86,7 @@ export function PreloadCurtain() {
         ref={wordmarkRef}
         style={{
           fontSize: "var(--type-5xl)",
-          color: "var(--ink)",
+          color: "var(--paper)",
           fontFamily: "var(--font-display)",
           letterSpacing: "var(--tracking-tight)",
           lineHeight: 1,

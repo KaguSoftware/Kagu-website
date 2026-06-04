@@ -180,7 +180,7 @@ export default async function WorkIndexPage() {
                                                                         overflow:
                                                                             "hidden",
                                                                         background:
-                                                                            "#6b6b6b",
+                                                                            "var(--mint-pale)",
                                                                     }}
                                                                 >
                                                                     <div

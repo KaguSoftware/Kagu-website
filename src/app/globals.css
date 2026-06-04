@@ -57,7 +57,7 @@ body {
 
 ::selection {
   background: var(--mint-deep);
-  color: var(--ink);
+  color: var(--paper);
 }
 
 /* Display type defaults — mono-led, tighter tracking + no negative letter-spacing */

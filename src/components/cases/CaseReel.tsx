@@ -780,7 +780,7 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                                 height: "100%",
                                 borderRadius: "clamp(18px, 2.4vw, 30px)",
                                 overflow: "hidden",
-                                background: "#6b6b6b",
+                                background: "var(--mint-pale)",
                               }}
                             >
                               {/* Image is inset from the top so the screenshot's
