@@ -397,10 +397,16 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                     (frames[active] && frameDevice(frames[active]) === "mobile")
                       ? (isMobile ? 4 / 5 : 16 / 10)
                       : ratios[active] ?? 16 / 10,
-                  // On mobile the row is the height authority: flex-shrink the
-                  // frame to fit so the phone mockup scales down (the inner
-                  // shell is height-driven) rather than overflowing the stage.
-                  ...(isMobile ? { flex: "1 1 0", minHeight: 0, maxHeight: "100%" } : {}),
+                  // On mobile, ONLY phone frames flex-shrink the row (the tall
+                  // mockup is height-driven and must scale down to fit). Desktop
+                  // frames keep their aspect-ratio height so the landscape
+                  // screenshot fills the frame instead of letterboxing into a
+                  // too-tall, flex-stretched box.
+                  ...(isMobile &&
+                  frames[active] &&
+                  frameDevice(frames[active]) === "mobile"
+                    ? { flex: "1 1 0", minHeight: 0, maxHeight: "100%" }
+                    : {}),
                   overflow: "hidden",
                   background: "transparent",
                   transition: "aspect-ratio 700ms cubic-bezier(0.22, 1, 0.36, 1)",

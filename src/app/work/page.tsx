@@ -64,10 +64,12 @@ export default async function WorkIndexPage() {
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-x-8 gap-y-(--space-32)">
                         {cases.map((c, i) => {
                             const slot = i % 3;
-                            // Every case uses the same slot-based landscape frame
-                            // — phone-device cases get the phone mockup centered
-                            // inside it (matching the homepage), instead of a slim
-                            // portrait card. Keeps row heights even across devices.
+                            // Phone-device cases float the phone mockup (no
+                            // bordered card box) like the homepage; desktop cases
+                            // keep the framed cover. Every case still uses the same
+                            // slot-based landscape footprint so rows stay even.
+                            const isPhoneCard =
+                                c.device === "mobile" && !!c.thumbnail;
                             const isWide = slot === 0;
                             const colClass =
                                 slot === 0
@@ -99,11 +101,19 @@ export default async function WorkIndexPage() {
                                             className="relative"
                                             style={{
                                                 aspectRatio: aspect,
-                                                background:
-                                                    COVER_BG[c.cover.bg] ??
-                                                    "var(--paper)",
-                                                overflow: "hidden",
-                                                border: "1px solid var(--neutral)",
+                                                // Phone cards float (no box/border)
+                                                // so the bezel shadow shows; desktop
+                                                // cards keep the framed cover.
+                                                background: isPhoneCard
+                                                    ? "transparent"
+                                                    : COVER_BG[c.cover.bg] ??
+                                                      "var(--paper)",
+                                                overflow: isPhoneCard
+                                                    ? "visible"
+                                                    : "hidden",
+                                                border: isPhoneCard
+                                                    ? "none"
+                                                    : "1px solid var(--neutral)",
                                             }}
                                         >
                                             <MaskSweep
@@ -123,11 +133,7 @@ export default async function WorkIndexPage() {
                                                                     "absolute",
                                                                 inset: 0,
                                                                 background:
-                                                                    COVER_BG[
-                                                                        c.cover
-                                                                            .bg
-                                                                    ] ??
-                                                                    "var(--paper)",
+                                                                    "transparent",
                                                                 display: "flex",
                                                                 alignItems:
                                                                     "center",
@@ -139,10 +145,10 @@ export default async function WorkIndexPage() {
                                                                 style={{
                                                                     position:
                                                                         "relative",
-                                                                    // Fill the card height (like the desktop frame)
-                                                                    // so a phone card lines up with a desktop card on
-                                                                    // the same row instead of sitting ~20px lower.
-                                                                    height: "100%",
+                                                                    // Smaller than the card so it reads like the
+                                                                    // homepage phone and the bezel shadow has room
+                                                                    // to show (the card no longer clips it).
+                                                                    height: "84%",
                                                                     aspectRatio:
                                                                         "9 / 19.5",
                                                                     // Fixed near-black phone bezel — not a theme
