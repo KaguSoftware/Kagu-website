@@ -66,20 +66,66 @@ export default async function WorkIndexPage() {
                             const slot = i % 3;
                             // Phone-device cases float the phone mockup (no
                             // bordered card box) like the homepage; desktop cases
-                            // keep the framed cover. Every case still uses the same
-                            // slot-based landscape footprint so rows stay even.
+                            // keep the framed cover.
                             const isPhoneCard =
                                 c.device === "mobile" && !!c.thumbnail;
-                            const isWide = slot === 0;
-                            const colClass =
-                                slot === 0
-                                    ? "md:col-span-8"
-                                    : slot === 1
+                            const nextIsPhone =
+                                cases[i + 1]?.device === "mobile" &&
+                                !!cases[i + 1]?.thumbnail;
+                            const prevIsPhone =
+                                cases[i - 1]?.device === "mobile" &&
+                                !!cases[i - 1]?.thumbnail;
+                            // Slots 1 & 2 are row partners. A phone runs narrow
+                            // ("w-fit") and hands the freed columns to its desktop
+                            // neighbour so the desktop frame gets more room. Spans
+                            // are picked so the narrow phone (4/5) and the wide
+                            // desktop (16/10) come out the same height.
+                            let colClass: string;
+                            let aspect: string;
+                            let isWide: boolean;
+                            if (slot === 0) {
+                                colClass = isPhoneCard
                                     ? "md:col-span-5 md:col-start-1"
-                                    : "md:col-span-6 md:col-start-7";
+                                    : "md:col-span-8";
+                                isWide = !isPhoneCard;
+                                aspect = isPhoneCard ? "4 / 5" : "16 / 10";
+                            } else if (slot === 1) {
+                                if (isPhoneCard) {
+                                    colClass = "md:col-span-4 md:col-start-1";
+                                    aspect = "4 / 5";
+                                    isWide = false;
+                                } else if (nextIsPhone) {
+                                    colClass = "md:col-span-8 md:col-start-1";
+                                    aspect = "16 / 10";
+                                    isWide = true;
+                                } else {
+                                    colClass = "md:col-span-5 md:col-start-1";
+                                    aspect = "4 / 5";
+                                    isWide = false;
+                                }
+                            } else {
+                                if (isPhoneCard) {
+                                    colClass = "md:col-span-4 md:col-start-9";
+                                    aspect = "4 / 5";
+                                    isWide = false;
+                                } else if (prevIsPhone) {
+                                    colClass = "md:col-span-8 md:col-start-5";
+                                    aspect = "16 / 10";
+                                    isWide = true;
+                                } else {
+                                    colClass = "md:col-span-6 md:col-start-7";
+                                    aspect = "4 / 5";
+                                    isWide = false;
+                                }
+                            }
+                            // Drop the slot-1 vertical stagger when the row pairs a
+                            // phone with a desktop, so the two line up.
+                            const rowHasPhone =
+                                isPhoneCard || nextIsPhone || prevIsPhone;
                             const offset =
-                                slot === 1 ? "md:mt-(--space-16)" : "";
-                            const aspect = isWide ? "16 / 10" : "4 / 5";
+                                slot === 1 && !rowHasPhone
+                                    ? "md:mt-(--space-16)"
+                                    : "";
                             // Wide cards: top sweep (arrival). Others alternate L/R.
                             const sweepDir: SweepDirection = isWide
                                 ? "top"
