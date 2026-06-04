@@ -139,7 +139,10 @@ export default async function WorkIndexPage() {
                                                                 style={{
                                                                     position:
                                                                         "relative",
-                                                                    height: "94%",
+                                                                    // Fill the card height (like the desktop frame)
+                                                                    // so a phone card lines up with a desktop card on
+                                                                    // the same row instead of sitting ~20px lower.
+                                                                    height: "100%",
                                                                     aspectRatio:
                                                                         "9 / 19.5",
                                                                     // Fixed near-black phone bezel — not a theme
@@ -412,41 +415,10 @@ export default async function WorkIndexPage() {
                                         >
                                             {c.project} · {c.sector}
                                         </p>
-                                        {/* View details affordance — a span (the
-                                            whole card is the link) with a hover
-                                            arrow, matching the homepage CTA. */}
-                                        <span
-                                            className="kagu-view-details font-mono inline-flex items-center"
-                                            style={{
-                                                marginTop: "var(--space-4)",
-                                                fontSize: "var(--type-xs)",
-                                                letterSpacing:
-                                                    "var(--tracking-eyebrow)",
-                                                textTransform: "uppercase",
-                                                color: "var(--ink)",
-                                                gap: "var(--space-3)",
-                                            }}
-                                        >
-                                            View details
-                                            <span
-                                                aria-hidden
-                                                className="kagu-view-arrow"
-                                                style={{
-                                                    width: 22,
-                                                    height: 1,
-                                                    background:
-                                                        "var(--mint-deep)",
-                                                    transition:
-                                                        "width 320ms cubic-bezier(0.6,0.01,0.05,0.95)",
-                                                }}
-                                            />
-                                        </span>
                                     </Link>
                                     <style>{`
                   a:hover .kagu-work-wash,
                   a:focus-visible .kagu-work-wash { opacity: 0.2; }
-                  a:hover .kagu-view-arrow,
-                  a:focus-visible .kagu-view-arrow { width: 40px; }
                 `}</style>
                                 </article>
                             );
