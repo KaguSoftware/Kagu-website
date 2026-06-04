@@ -64,37 +64,20 @@ export default async function WorkIndexPage() {
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-x-8 gap-y-(--space-32)">
                         {cases.map((c, i) => {
                             const slot = i % 3;
-                            // Phone-frame cases hug the device, so they get a
-                            // slim portrait card instead of a fat 4/5 block.
-                            const isMobileCard = c.device === "mobile";
-                            // When the left card of a pair is a phone, hand the
-                            // freed columns to its row partner so it runs wide.
-                            const prevMobile =
-                                slot === 2 &&
-                                cases[i - 1]?.device === "mobile";
-                            // Landscape "wide" treatment (chrome, big label): the
-                            // lead card of each trio, or a partner promoted to
-                            // fill the space a phone card gave up.
-                            const isWide = slot === 0 || prevMobile;
+                            // Every case uses the same slot-based landscape frame
+                            // — phone-device cases get the phone mockup centered
+                            // inside it (matching the homepage), instead of a slim
+                            // portrait card. Keeps row heights even across devices.
+                            const isWide = slot === 0;
                             const colClass =
                                 slot === 0
-                                    ? isMobileCard
-                                        ? "md:col-span-4"
-                                        : "md:col-span-8"
+                                    ? "md:col-span-8"
                                     : slot === 1
-                                    ? isMobileCard
-                                        ? "md:col-span-3 md:col-start-1"
-                                        : "md:col-span-5 md:col-start-1"
-                                    : prevMobile
-                                    ? "md:col-span-8 md:col-start-5"
+                                    ? "md:col-span-5 md:col-start-1"
                                     : "md:col-span-6 md:col-start-7";
                             const offset =
                                 slot === 1 ? "md:mt-(--space-16)" : "";
-                            const aspect = isMobileCard
-                                ? "1 / 1.9"
-                                : isWide
-                                ? "16 / 10"
-                                : "4 / 5";
+                            const aspect = isWide ? "16 / 10" : "4 / 5";
                             // Wide cards: top sweep (arrival). Others alternate L/R.
                             const sweepDir: SweepDirection = isWide
                                 ? "top"
@@ -159,14 +142,16 @@ export default async function WorkIndexPage() {
                                                                     height: "94%",
                                                                     aspectRatio:
                                                                         "9 / 19.5",
+                                                                    // Fixed near-black phone bezel — not a theme
+                                                                    // token, so it never inverts with the palette.
                                                                     background:
-                                                                        "var(--ink)",
+                                                                        "#0e0f13",
                                                                     borderRadius:
                                                                         "clamp(24px, 3vw, 38px)",
                                                                     padding:
                                                                         "clamp(6px, 0.7vw, 10px)",
                                                                     boxShadow:
-                                                                        "0 30px 60px -20px color-mix(in oklab, var(--ink) 38%, transparent), 0 0 0 1px color-mix(in oklab, var(--ink) 18%, transparent)",
+                                                                        "0 30px 60px -20px rgba(0,0,0,0.55), 0 0 0 1px color-mix(in oklab, var(--ink) 14%, transparent)",
                                                                 }}
                                                             >
                                                                 <div
@@ -222,7 +207,7 @@ export default async function WorkIndexPage() {
                                                                             height: 18,
                                                                             borderRadius: 12,
                                                                             background:
-                                                                                "var(--ink)",
+                                                                                "#0e0f13",
                                                                             zIndex: 2,
                                                                         }}
                                                                     />
@@ -230,6 +215,9 @@ export default async function WorkIndexPage() {
                                                             </div>
                                                         </div>
                                                     ) : c.thumbnail ? (
+                                                        // Desktop thumbnail in a browser-chrome frame so the
+                                                        // screenshot reads as a website, matching the homepage /
+                                                        // case-page reel treatment.
                                                         <div
                                                             style={{
                                                                 position:
@@ -241,22 +229,115 @@ export default async function WorkIndexPage() {
                                                                             .bg
                                                                     ] ??
                                                                     "var(--paper)",
+                                                                display: "flex",
+                                                                flexDirection:
+                                                                    "column",
                                                             }}
                                                         >
-                                                            <Image
-                                                                src={
-                                                                    c.thumbnail
-                                                                }
-                                                                alt={`${c.client} preview`}
-                                                                fill
-                                                                sizes="(max-width: 768px) 100vw, 50vw"
+                                                            {/* Browser chrome row */}
+                                                            <div
+                                                                aria-hidden
                                                                 style={{
-                                                                    objectFit:
-                                                                        "cover",
-                                                                    objectPosition:
-                                                                        "top center",
+                                                                    display:
+                                                                        "flex",
+                                                                    alignItems:
+                                                                        "center",
+                                                                    gap: 10,
+                                                                    padding:
+                                                                        "9px 12px",
+                                                                    flex: "0 0 auto",
                                                                 }}
-                                                            />
+                                                            >
+                                                                <div
+                                                                    style={{
+                                                                        display:
+                                                                            "flex",
+                                                                        gap: 5,
+                                                                    }}
+                                                                >
+                                                                    {[0, 1, 2].map(
+                                                                        (d) => (
+                                                                            <span
+                                                                                key={
+                                                                                    d
+                                                                                }
+                                                                                style={{
+                                                                                    width: 7,
+                                                                                    height: 7,
+                                                                                    borderRadius: 4,
+                                                                                    background:
+                                                                                        "color-mix(in oklab, var(--slate-ink) 32%, transparent)",
+                                                                                }}
+                                                                            />
+                                                                        ),
+                                                                    )}
+                                                                </div>
+                                                                <div
+                                                                    style={{
+                                                                        flex: 1,
+                                                                        padding:
+                                                                            "3px 8px",
+                                                                        borderRadius: 4,
+                                                                        background:
+                                                                            "color-mix(in oklab, var(--slate-ink) 10%, transparent)",
+                                                                        fontFamily:
+                                                                            "var(--font-mono)",
+                                                                        fontSize: 10,
+                                                                        letterSpacing:
+                                                                            "0.04em",
+                                                                        color: "var(--slate-ink)",
+                                                                        textAlign:
+                                                                            "center",
+                                                                        whiteSpace:
+                                                                            "nowrap",
+                                                                        overflow:
+                                                                            "hidden",
+                                                                        textOverflow:
+                                                                            "ellipsis",
+                                                                        maxWidth:
+                                                                            "min(70%, 260px)",
+                                                                        margin: "0 auto",
+                                                                    }}
+                                                                >
+                                                                    {c.url
+                                                                        ? c.url
+                                                                              .replace(
+                                                                                  /^https?:\/\//,
+                                                                                  "",
+                                                                              )
+                                                                              .replace(
+                                                                                  /\/$/,
+                                                                                  "",
+                                                                              )
+                                                                        : c.client}
+                                                                </div>
+                                                            </div>
+                                                            {/* Screenshot */}
+                                                            <div
+                                                                style={{
+                                                                    position:
+                                                                        "relative",
+                                                                    flex: 1,
+                                                                    minHeight: 0,
+                                                                    overflow:
+                                                                        "hidden",
+                                                                }}
+                                                            >
+                                                                <Image
+                                                                    src={
+                                                                        c.thumbnail
+                                                                    }
+                                                                    alt={`${c.client} preview`}
+                                                                    fill
+                                                                    sizes="(max-width: 768px) 100vw, 50vw"
+                                                                    style={{
+                                                                        objectFit:
+                                                                            "cover",
+                                                                        objectPosition:
+                                                                            "top center",
+                                                                    }}
+                                                                />
+                                                            </div>
                                                         </div>
                                                     ) : (
                                                         <CaseCover
@@ -331,10 +412,41 @@ export default async function WorkIndexPage() {
                                         >
                                             {c.project} · {c.sector}
                                         </p>
+                                        {/* View details affordance — a span (the
+                                            whole card is the link) with a hover
+                                            arrow, matching the homepage CTA. */}
+                                        <span
+                                            className="kagu-view-details font-mono inline-flex items-center"
+                                            style={{
+                                                marginTop: "var(--space-4)",
+                                                fontSize: "var(--type-xs)",
+                                                letterSpacing:
+                                                    "var(--tracking-eyebrow)",
+                                                textTransform: "uppercase",
+                                                color: "var(--ink)",
+                                                gap: "var(--space-3)",
+                                            }}
+                                        >
+                                            View details
+                                            <span
+                                                aria-hidden
+                                                className="kagu-view-arrow"
+                                                style={{
+                                                    width: 22,
+                                                    height: 1,
+                                                    background:
+                                                        "var(--mint-deep)",
+                                                    transition:
+                                                        "width 320ms cubic-bezier(0.6,0.01,0.05,0.95)",
+                                                }}
+                                            />
+                                        </span>
                                     </Link>
                                     <style>{`
                   a:hover .kagu-work-wash,
                   a:focus-visible .kagu-work-wash { opacity: 0.2; }
+                  a:hover .kagu-view-arrow,
+                  a:focus-visible .kagu-view-arrow { width: 40px; }
                 `}</style>
                                 </article>
                             );

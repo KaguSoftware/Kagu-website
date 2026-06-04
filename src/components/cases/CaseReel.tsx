@@ -228,13 +228,14 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
       <div
         ref={stageRef}
         style={{
-          // Desktop locks to one viewport so all case sections are the same
-          // height and the preview scrub behaves identically across them.
-          // Mobile pins to the small viewport (svh) and lets the stage's inner
-          // rows shrink to fit, so the copy never lands below the fold while
-          // scroll is locked.
-          height: isMobile ? "100svh" : "100vh",
-          minHeight: "100svh",
+          // Full reels pin to one viewport (the scroll-lock), so they lock to
+          // 100vh. Preview (homepage) does NOT pin — on desktop it fits its
+          // content instead of stretching to 100vh, so the aspect-ratio'd frame
+          // (which animates its own size smoothly) drives the height and the
+          // desktop frame isn't left floating in empty space. Mobile keeps a
+          // viewport height so its flex rows have a height authority to fill.
+          height: isMobile ? "100svh" : preview ? "auto" : "100vh",
+          minHeight: preview && !isMobile ? 0 : "100svh",
           display: "flex",
           flexDirection: "column",
           background: "var(--paper)",
@@ -250,23 +251,29 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
           {/* Top meta row */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-baseline">
             <div className="md:col-span-6">
-              <span
-                className="font-mono block"
-                style={{
-                  fontSize: tokens.counterSize,
-                  letterSpacing: "var(--tracking-eyebrow)",
-                  textTransform: "uppercase",
-                  color: "var(--slate-ink)",
-                }}
-              >
-                {String(index + 1).padStart(2, "0")} · {caseData.sector} · {caseData.year}
-              </span>
+              {/* Eyebrow (index · sector · year) shows on the homepage strip
+                  only; the details-page scroll-lock locks the title alone. */}
+              {!isLarge && (
+                <span
+                  className="font-mono block"
+                  style={{
+                    fontSize: tokens.counterSize,
+                    letterSpacing: "var(--tracking-eyebrow)",
+                    textTransform: "uppercase",
+                    color: "var(--slate-ink)",
+                  }}
+                >
+                  {String(index + 1).padStart(2, "0")} · {caseData.sector} · {caseData.year}
+                </span>
+              )}
               <h3
                 className="display"
                 style={{
                   fontSize: tokens.clientSize,
                   lineHeight: 1,
-                  marginTop: "var(--space-2)",
+                  marginTop: isLarge ? 0 : "var(--space-2)",
+                  // Lock the title to a single line on the desktop details reel.
+                  whiteSpace: isLarge && !isMobile ? "nowrap" : undefined,
                 }}
               >
                 {caseData.client}
@@ -467,11 +474,12 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                             transform: "translate(-50%, -50%)",
                             height: "92%",
                             aspectRatio: "9 / 19.5",
-                            background: "var(--ink)",
+                            // Fixed near-black phone bezel — not theme-tokened.
+                            background: "#0e0f13",
                             borderRadius: "clamp(24px, 3vw, 38px)",
                             padding: "clamp(6px, 0.7vw, 10px)",
                             boxShadow:
-                              "0 30px 60px -20px color-mix(in oklab, var(--ink) 38%, transparent), 0 0 0 1px color-mix(in oklab, var(--ink) 18%, transparent)",
+                              "0 30px 60px -20px rgba(0,0,0,0.55), 0 0 0 1px color-mix(in oklab, var(--ink) 14%, transparent)",
                           }}
                         >
                           <Link
@@ -590,7 +598,7 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                               width: "32%",
                               height: 18,
                               borderRadius: 12,
-                              background: "var(--ink)",
+                              background: "#0e0f13",
                               zIndex: 3,
                             }}
                           />
@@ -765,11 +773,13 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                               transform: "translate(-50%, -50%)",
                               height: isMobile ? "94%" : "calc(92% + 20px)",
                               aspectRatio: "9 / 19.5",
-                              background: "var(--ink)",
+                              // Phone body stays a fixed near-black bezel — not a
+                              // theme token, so it never inverts with the palette.
+                              background: "#0e0f13",
                               borderRadius: "clamp(24px, 3vw, 38px)",
                               padding: "clamp(6px, 0.7vw, 10px)",
                               boxShadow:
-                                "0 30px 60px -20px color-mix(in oklab, var(--ink) 38%, transparent), 0 0 0 1px color-mix(in oklab, var(--ink) 18%, transparent)",
+                                "0 30px 60px -20px rgba(0,0,0,0.55), 0 0 0 1px color-mix(in oklab, var(--ink) 14%, transparent)",
                             }}
                           >
                             {/* Phone screen */}
@@ -817,7 +827,7 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                                   width: "32%",
                                   height: 18,
                                   borderRadius: 12,
-                                  background: "var(--ink)",
+                                  background: "#0e0f13",
                                   zIndex: 2,
                                 }}
                               />

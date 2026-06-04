@@ -101,25 +101,52 @@ export function CursorTrailPreview({ previews, children }: CursorTrailPreviewPro
                 translateY: 24,
                 pointerEvents: "none",
                 zIndex: 80,
-                width: 180,
-                height: 120,
+                // Responsive: the box hugs the label (plus padding) instead of a
+                // fixed width, so long project names don't overflow. Caps the
+                // width and lets very long labels wrap.
+                minWidth: 132,
+                maxWidth: "min(56vw, 420px)",
+                minHeight: 92,
+                padding: "var(--space-5) var(--space-8)",
                 background: COVER_BG[active.bg] ?? "var(--paper)",
                 border: "1px solid var(--neutral)",
                 display: "flex",
+                flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
+                gap: "var(--space-4)",
               }}
             >
               <span
                 className="display"
                 style={{
-                  fontSize: "var(--type-4xl)",
+                  fontSize: "var(--type-3xl)",
                   color: LABEL_FG[active.bg] ?? "var(--slate-ink)",
                   letterSpacing: "var(--tracking-tight)",
-                  lineHeight: 1,
+                  lineHeight: 1.02,
+                  textAlign: "center",
+                  overflowWrap: "break-word",
                 }}
               >
                 {active.label}
+              </span>
+              <span
+                className="font-mono"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  fontSize: "var(--type-xs)",
+                  letterSpacing: "var(--tracking-eyebrow)",
+                  textTransform: "uppercase",
+                  color: LABEL_FG[active.bg] ?? "var(--slate-ink)",
+                }}
+              >
+                View details
+                <span
+                  aria-hidden
+                  style={{ width: 20, height: 1, background: "currentColor", opacity: 0.7 }}
+                />
               </span>
             </motion.div>
           )}
