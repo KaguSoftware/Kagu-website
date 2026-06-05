@@ -69,6 +69,11 @@ export default async function WorkIndexPage() {
                             // keep the framed cover.
                             const isPhoneCard =
                                 c.device === "mobile" && !!c.thumbnail;
+                            // Desktop screenshot cards share one backdrop (paper)
+                            // like the homepage reel, instead of each case's cover
+                            // colour — only the no-thumbnail color-blocks stay tinted.
+                            const isDesktopThumb =
+                                !!c.thumbnail && c.device !== "mobile";
                             const nextIsPhone =
                                 cases[i + 1]?.device === "mobile" &&
                                 !!cases[i + 1]?.thumbnail;
@@ -152,6 +157,8 @@ export default async function WorkIndexPage() {
                                                 // cards keep the framed cover.
                                                 background: isPhoneCard
                                                     ? "transparent"
+                                                    : isDesktopThumb
+                                                    ? "var(--paper)"
                                                     : COVER_BG[c.cover.bg] ??
                                                       "var(--paper)",
                                                 overflow: isPhoneCard
@@ -279,10 +286,6 @@ export default async function WorkIndexPage() {
                                                                     "absolute",
                                                                 inset: 0,
                                                                 background:
-                                                                    COVER_BG[
-                                                                        c.cover
-                                                                            .bg
-                                                                    ] ??
                                                                     "var(--paper)",
                                                                 display: "flex",
                                                                 flexDirection:
