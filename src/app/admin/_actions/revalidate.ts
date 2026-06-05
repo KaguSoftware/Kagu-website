@@ -6,4 +6,5 @@ export function revalidatePublic() {
   revalidatePath("/", "layout");
   revalidatePath("/work");
   revalidatePath("/about");
+  revalidatePath("/team");
 }

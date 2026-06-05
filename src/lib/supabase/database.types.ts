@@ -25,6 +25,8 @@ export type StackPlacement = "hero_marquee" | "stack_lineage";
 
 export type AboutKind = "mission" | "paragraph" | "principle" | "metric";
 
+export type TeamSegment = "cofounder" | "associate";
+
 export type Clock = { city: string; tz: string; utc: string };
 
 export interface Database {
@@ -336,6 +338,42 @@ export interface Database {
           domain?: string | null;
           timezone?: string | null;
           clocks?: Clock[];
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      team_members: {
+        Row: {
+          id: string;
+          name: string;
+          role: string;
+          bio: string | null;
+          image_url: string | null;
+          segment: TeamSegment;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          role: string;
+          bio?: string | null;
+          image_url?: string | null;
+          segment?: TeamSegment;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          role?: string;
+          bio?: string | null;
+          image_url?: string | null;
+          segment?: TeamSegment;
+          sort_order?: number;
+          created_at?: string;
           updated_at?: string;
         };
         Relationships: [];

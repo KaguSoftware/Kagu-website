@@ -16,6 +16,7 @@ import { Logo } from "@/components/Logo";
 const navItems = [
   { href: "/work", label: "Work" },
   { href: "/about", label: "About" },
+  { href: "/team", label: "Team" },
   { href: "/contact", label: "Contact" },
 ];
 

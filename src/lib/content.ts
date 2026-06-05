@@ -1,6 +1,11 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import type { CoverBg, DeviceKind, Clock } from "@/lib/supabase/database.types";
+import type {
+  CoverBg,
+  DeviceKind,
+  Clock,
+  TeamSegment,
+} from "@/lib/supabase/database.types";
 
 /* Public content layer. Reads from Supabase and maps rows back into the shapes
    the existing public components expect (Case, Capability, studio, approach).
@@ -61,6 +66,15 @@ export type Studio = {
   principles: { title: string; body: string }[];
   metrics: { label: string; value: string }[];
   clocks: Clock[];
+};
+
+export type TeamMember = {
+  id: string;
+  name: string;
+  role: string;
+  bio: string;
+  image: string | null;
+  segment: TeamSegment;
 };
 
 const PROJECT_SELECT =
@@ -217,4 +231,20 @@ export async function getStudio(): Promise<Studio> {
     metrics,
     clocks: settings?.clocks ?? [],
   };
+}
+
+export async function getTeam(): Promise<TeamMember[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("team_members")
+    .select("*")
+    .order("sort_order");
+  return (data ?? []).map((m) => ({
+    id: m.id,
+    name: m.name,
+    role: m.role,
+    bio: m.bio ?? "",
+    image: m.image_url ?? null,
+    segment: m.segment,
+  }));
 }
