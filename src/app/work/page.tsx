@@ -13,7 +13,7 @@ import { CursorTrailPreview } from "@/components/motion/CursorTrailPreview";
 import { CaseCover } from "@/components/cases/CaseCover";
 
 const COVER_BG: Record<string, string> = {
-    "mint-pae": "var(--mint-pale)",
+    "mint-pale": "var(--mint-pale)",
     "mint-soft": "var(--mint-soft)",
     "mint-deep": "var(--mint-deep)",
     "slate-ink": "var(--slate-ink)",

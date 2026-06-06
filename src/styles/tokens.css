@@ -34,7 +34,7 @@
   /* ---------- Type scale (1.333 — perfect fourth, fluid) ---------- */
   --type-xs:    clamp(0.6875rem, 0.66rem + 0.13vw, 0.75rem);
   --type-sm:    clamp(0.8125rem, 0.78rem + 0.16vw, 0.875rem);
-  --type-base:  clamp(0.9375rem, 0.91rem + 0.12vw, 1rem);
+  --type-base:  clamp(1rem, 0.95rem + 0.2vw, 1.125rem);
   --type-md:    clamp(1.0625rem, 1.02rem + 0.21vw, 1.125rem);
   --type-lg:    clamp(1.25rem, 1.18rem + 0.32vw, 1.375rem);
   --type-xl:    clamp(1.5rem, 1.39rem + 0.55vw, 1.75rem);
