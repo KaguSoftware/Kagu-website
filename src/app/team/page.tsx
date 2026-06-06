@@ -1,168 +1,75 @@
-import Image from "next/image";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { getStudio, getTeam, type TeamMember } from "@/lib/content";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { WordMaskReveal } from "@/components/motion/WordMaskReveal";
-import { SectionRise } from "@/components/motion/SectionRise";
 import { Eyebrow } from "@/components/layout/Eyebrow";
+import { TeamRoster, type RosterMember } from "./TeamRoster";
 
-export const metadata = {
+const BASE_META = {
   title: "Team · Kagu",
   description:
     "The people behind Kagu — cofounders and associates building software for boutique operators.",
 };
 
-const SEGMENT_LABEL: Record<TeamMember["segment"], string> = {
-  cofounder: "Cofounder",
-  associate: "Associate",
-};
-
-function initials(name: string) {
+/** Readable, URL-safe slug from a name (e.g. "Majed Ahdab" → "majed-ahdab"). */
+function slugify(name: string) {
   return name
-    .split(/\s+/)
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[̀-ͯ]/g, "") // strip combining accents
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
 }
 
-/** Round headshot — image when provided, an elegant initials disc otherwise. */
-function Avatar({ member, size }: { member: TeamMember; size: string }) {
-  return (
-    <div
-      style={{
-        width: size,
-        height: size,
-        // em-based initials scale with the disc size
-        fontSize: size,
-        flex: "0 0 auto",
-        position: "relative",
-        borderRadius: "9999px",
-        overflow: "hidden",
-        background: "var(--mint-pale)",
-        border: "1px solid var(--neutral)",
-      }}
-    >
-      {member.image ? (
-        <Image
-          src={member.image}
-          alt={member.name}
-          fill
-          sizes="(max-width: 768px) 120px, 160px"
-          style={{ objectFit: "cover" }}
-        />
-      ) : (
-        <span
-          aria-hidden
-          className="display"
-          style={{
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "0.36em",
-            color: "var(--slate-ink)",
-            letterSpacing: "var(--tracking-tight)",
-          }}
-        >
-          {initials(member.name)}
-        </span>
-      )}
-    </div>
-  );
-}
-
-/*
-  Profile column. The avatar + meta stack is always shown; the bio lives in a
-  zero-width panel to its right that expands on hover/focus. Because the panel
-  is in normal flex flow, growing its width reflows the roster — pushing the
-  sibling profiles aside instead of overlapping them. Pure CSS so it stays cheap
-  (see the <style> block in TeamPage for the .kagu-profile rules).
-*/
-function MemberCard({ member }: { member: TeamMember }) {
-  return (
-    <SectionRise as="article" amount={0.3} className="kagu-profile">
-      <div className="kagu-profile-row" tabIndex={member.bio ? 0 : undefined}>
-        <div className="kagu-profile-card flex flex-col items-center text-center">
-          <Avatar member={member} size="var(--kagu-card-w)" />
-          <div
-            className="flex flex-col items-center"
-            style={{
-              gap: "var(--space-3)",
-              marginTop: "var(--space-6)",
-              marginBottom: "var(--space-3)",
-            }}
-          >
-            <span
-              className="font-mono"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                fontSize: "var(--type-xs)",
-                letterSpacing: "var(--tracking-eyebrow)",
-                textTransform: "uppercase",
-                color: "var(--mint-deep)",
-                border: "1px solid var(--mint-deep)",
-                borderRadius: "9999px",
-                padding: "3px 10px",
-                lineHeight: 1,
-              }}
-            >
-              {SEGMENT_LABEL[member.segment]}
-            </span>
-            <span
-              className="font-mono"
-              style={{
-                fontSize: "var(--type-xs)",
-                letterSpacing: "var(--tracking-eyebrow)",
-                textTransform: "uppercase",
-                color: "var(--mint-deep)",
-              }}
-            >
-              {member.role}
-            </span>
-          </div>
-          <h3
-            className="display"
-            style={{
-              fontSize: "var(--type-2xl)",
-              lineHeight: 1.05,
-              letterSpacing: "var(--tracking-tight)",
-            }}
-          >
-            {member.name}
-          </h3>
-        </div>
-        {member.bio ? (
-          <div className="kagu-profile-bio">
-            <div className="kagu-profile-bio-inner">
-              <p
-                style={{
-                  fontSize: "var(--type-md)",
-                  lineHeight: 1.7,
-                  color: "var(--ink)",
-                  textAlign: "left",
-                }}
-              >
-                {member.bio}
-              </p>
-            </div>
-          </div>
-        ) : null}
-      </div>
-    </SectionRise>
-  );
-}
-
-export default async function TeamPage() {
-  const [studio, team] = await Promise.all([getStudio(), getTeam()]);
-  // Cofounders lead, associates follow — segment now reads from each member's
-  // pill rather than a section split.
-  const members = [
+/**
+ * Cofounders lead, associates follow (segment now reads from each member's
+ * pill, not a section split). Each gets a stable, de-duplicated slug so it has
+ * a shareable `?member=` deep link.
+ */
+function withSlugs(team: TeamMember[]): RosterMember[] {
+  const ordered = [
     ...team.filter((m) => m.segment === "cofounder"),
     ...team.filter((m) => m.segment === "associate"),
   ];
+  const seen = new Map<string, number>();
+  return ordered.map((m) => {
+    const base = slugify(m.name) || m.id.slice(0, 8);
+    const n = seen.get(base) ?? 0;
+    seen.set(base, n + 1);
+    return { ...m, slug: n === 0 ? base : `${base}-${n + 1}` };
+  });
+}
+
+type TeamPageProps = {
+  searchParams: Promise<{ member?: string }>;
+};
+
+// Per-person metadata so a shared/QR deep link previews that member by name.
+export async function generateMetadata({
+  searchParams,
+}: TeamPageProps): Promise<Metadata> {
+  const { member } = await searchParams;
+  if (!member) return BASE_META;
+  const found = withSlugs(await getTeam()).find((m) => m.slug === member);
+  if (!found) return BASE_META;
+  return {
+    title: `${found.name} · Kagu`,
+    description: found.bio || BASE_META.description,
+  };
+}
+
+export default async function TeamPage({ searchParams }: TeamPageProps) {
+  const [{ member }, studio, team] = await Promise.all([
+    searchParams,
+    getStudio(),
+    getTeam(),
+  ]);
+  const members = withSlugs(team);
+  const initialOpen =
+    member && members.some((m) => m.slug === member) ? member : null;
 
   return (
     <>
@@ -196,7 +103,7 @@ export default async function TeamPage() {
         </div>
       </section>
 
-      {/* Team — cofounders and associates in one list, segment shown as a pill */}
+      {/* Team — one roster; click a card to pin its bio open (and deep-link it). */}
       {members.length > 0 ? (
         <section
           style={{ background: "var(--paper)" }}
@@ -204,81 +111,8 @@ export default async function TeamPage() {
         >
           <div className="w-full max-w-(--container-max) mx-auto">
             <Eyebrow number="01">The team</Eyebrow>
-            <div className="kagu-roster" style={{ marginTop: "var(--space-12)" }}>
-              {members.map((member) => (
-                <MemberCard key={member.id} member={member} />
-              ))}
-            </div>
+            <TeamRoster members={members} initialOpen={initialOpen} />
           </div>
-          <style>{`
-            .kagu-roster {
-              /* widths the cards and their hover-bio share */
-              --kagu-card-w: clamp(150px, 17vw, 200px);
-              --kagu-bio-w: clamp(240px, 26vw, 360px);
-              display: flex;
-              flex-wrap: nowrap;
-              justify-content: center;
-              align-items: flex-start;
-              gap: var(--space-10);
-            }
-            .kagu-profile { flex: 0 0 auto; }
-            .kagu-profile-row {
-              display: flex;
-              align-items: flex-start;
-              outline: none;
-            }
-            .kagu-profile-card {
-              flex: 0 0 auto;
-              width: var(--kagu-card-w);
-            }
-            /* Bio panel: collapsed to zero width, expands rightward on hover and
-               pushes the rest of the roster along with it. */
-            .kagu-profile-bio {
-              flex: 0 0 auto;
-              width: 0;
-              overflow: hidden;
-              transition: width 560ms cubic-bezier(0.6, 0.01, 0.05, 0.95);
-            }
-            .kagu-profile:hover .kagu-profile-bio,
-            .kagu-profile:focus-within .kagu-profile-bio {
-              width: var(--kagu-bio-w);
-            }
-            .kagu-profile-bio-inner {
-              width: var(--kagu-bio-w);
-              padding-left: var(--space-8);
-              opacity: 0;
-              transform: translateX(-12px);
-              transition: opacity 360ms ease,
-                transform 560ms cubic-bezier(0.6, 0.01, 0.05, 0.95);
-            }
-            .kagu-profile:hover .kagu-profile-bio-inner,
-            .kagu-profile:focus-within .kagu-profile-bio-inner {
-              opacity: 1;
-              transform: none;
-            }
-            /* Phone: no hover — stack each card over its bio, bio always shown. */
-            @media (max-width: 767px) {
-              .kagu-roster {
-                flex-direction: column;
-                align-items: stretch;
-                gap: var(--space-12);
-              }
-              .kagu-profile-row { flex-direction: column; align-items: flex-start; }
-              .kagu-profile-card { width: 100%; }
-              .kagu-profile-bio { width: auto; overflow: visible; }
-              .kagu-profile-bio-inner {
-                width: auto;
-                padding-left: 0;
-                padding-top: var(--space-5);
-                opacity: 1;
-                transform: none;
-              }
-            }
-            @media (prefers-reduced-motion: reduce) {
-              .kagu-profile-bio,
-              .kagu-profile-bio-inner { transition: none; }
-            }
-          `}</style>
         </section>
       ) : null}
 

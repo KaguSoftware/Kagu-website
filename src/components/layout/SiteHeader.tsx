@@ -39,7 +39,7 @@ export function SiteHeader() {
           data-cursor="nav-link"
           style={{ fontSize: "var(--type-lg)" }}
         >
-          <Logo size={28} />
+          <Logo wordmarkOnly size={28} />
         </Link>
         <nav>
           <ul className="flex items-center gap-8 list-none m-0 p-0">
