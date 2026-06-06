@@ -12,6 +12,11 @@ export const metadata = {
     "The people behind Kagu — cofounders and associates building software for boutique operators.",
 };
 
+const SEGMENT_LABEL: Record<TeamMember["segment"], string> = {
+  cofounder: "Cofounder",
+  associate: "Associate",
+};
+
 function initials(name: string) {
   return name
     .split(/\s+/)
@@ -88,18 +93,39 @@ function MemberRow({
       >
         <Avatar member={member} size={avatarSize} />
         <div className="flex-1" style={{ minWidth: 0 }}>
-          <span
-            className="font-mono block"
-            style={{
-              fontSize: "var(--type-xs)",
-              letterSpacing: "var(--tracking-eyebrow)",
-              textTransform: "uppercase",
-              color: "var(--mint-deep)",
-              marginBottom: "var(--space-3)",
-            }}
+          <div
+            className="flex items-center flex-wrap"
+            style={{ gap: "var(--space-3)", marginBottom: "var(--space-3)" }}
           >
-            {member.role}
-          </span>
+            <span
+              className="font-mono"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                fontSize: "var(--type-xs)",
+                letterSpacing: "var(--tracking-eyebrow)",
+                textTransform: "uppercase",
+                color: "var(--mint-deep)",
+                border: "1px solid var(--mint-deep)",
+                borderRadius: "9999px",
+                padding: "3px 10px",
+                lineHeight: 1,
+              }}
+            >
+              {SEGMENT_LABEL[member.segment]}
+            </span>
+            <span
+              className="font-mono"
+              style={{
+                fontSize: "var(--type-xs)",
+                letterSpacing: "var(--tracking-eyebrow)",
+                textTransform: "uppercase",
+                color: "var(--mint-deep)",
+              }}
+            >
+              {member.role}
+            </span>
+          </div>
           <h3
             className="display"
             style={{
@@ -131,8 +157,12 @@ function MemberRow({
 
 export default async function TeamPage() {
   const [studio, team] = await Promise.all([getStudio(), getTeam()]);
-  const cofounders = team.filter((m) => m.segment === "cofounder");
-  const associates = team.filter((m) => m.segment === "associate");
+  // Cofounders lead, associates follow — segment now reads from each member's
+  // pill rather than a section split.
+  const members = [
+    ...team.filter((m) => m.segment === "cofounder"),
+    ...team.filter((m) => m.segment === "associate"),
+  ];
 
   return (
     <>
@@ -166,49 +196,24 @@ export default async function TeamPage() {
         </div>
       </section>
 
-      {/* Cofounders */}
-      {cofounders.length > 0 ? (
+      {/* Team — cofounders and associates in one list, segment shown as a pill */}
+      {members.length > 0 ? (
         <section
           style={{ background: "var(--paper)" }}
           className="px-(--container-x) py-(--section-y)"
         >
           <div className="w-full max-w-(--container-max) mx-auto">
-            <Eyebrow number="01">Cofounders</Eyebrow>
+            <Eyebrow number="01">The team</Eyebrow>
             <div
               className="flex flex-col"
               style={{ marginTop: "var(--space-12)", gap: "var(--space-16)" }}
             >
-              {cofounders.map((member) => (
+              {members.map((member) => (
                 <MemberRow
                   key={member.id}
                   member={member}
                   avatarSize="clamp(104px, 15vw, 150px)"
                   nameSize="var(--type-3xl)"
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      ) : null}
-
-      {/* Associates */}
-      {associates.length > 0 ? (
-        <section
-          style={{ background: "var(--mint-pale)" }}
-          className="px-(--container-x) py-(--section-y)"
-        >
-          <div className="w-full max-w-(--container-max) mx-auto">
-            <Eyebrow number="02">Associates</Eyebrow>
-            <div
-              className="flex flex-col"
-              style={{ marginTop: "var(--space-12)", gap: "var(--space-12)" }}
-            >
-              {associates.map((member) => (
-                <MemberRow
-                  key={member.id}
-                  member={member}
-                  avatarSize="clamp(84px, 11vw, 116px)"
-                  nameSize="var(--type-2xl)"
                 />
               ))}
             </div>
