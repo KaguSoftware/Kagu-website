@@ -198,11 +198,25 @@ function MemberCard({
   );
 }
 
-/* Scroll a selected card so its photo sits at the top of the viewport (cleared
-   of the sticky header via scroll-margin-top on the row). */
+/* Scroll the selected card so its whole avatar clears the sticky header and
+   sits just beneath it. Targets the card's *layout* offset (summing offsetTop,
+   which ignores CSS transforms — so the entrance animation can't throw it off)
+   minus the live header height. */
 function scrollMemberToTop(slug: string) {
   const el = document.getElementById(`member-${slug}`);
-  el?.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (!el) return;
+  const header = document.querySelector("header.sticky");
+  const navH = header ? header.getBoundingClientRect().height : 64;
+  let top = 0;
+  for (
+    let node: HTMLElement | null = el;
+    node;
+    node = node.offsetParent as HTMLElement | null
+  ) {
+    top += node.offsetTop;
+  }
+  // 16px of breathing room below the nav so the full circle is visible.
+  window.scrollTo({ top: Math.max(0, top - navH - 16), behavior: "smooth" });
 }
 
 export function TeamRoster({
@@ -273,8 +287,6 @@ export function TeamRoster({
           display: flex;
           align-items: flex-start;
           outline: none;
-          /* clears the 64px sticky header when scrolled to the top */
-          scroll-margin-top: 88px;
           transition: opacity var(--kagu-bio-ease),
             filter var(--kagu-bio-ease);
         }
