@@ -15,7 +15,7 @@
 */
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SectionRise } from "@/components/motion/SectionRise";
 import type { TeamMember } from "@/lib/content";
 
@@ -200,12 +200,9 @@ function MemberCard({
 
 /* Scroll a selected card so its photo sits at the top of the viewport (cleared
    of the sticky header via scroll-margin-top on the row). */
-function scrollToMember(slug: string) {
+function scrollMemberToTop(slug: string) {
   const el = document.getElementById(`member-${slug}`);
-  if (!el) return;
-  requestAnimationFrame(() =>
-    el.scrollIntoView({ behavior: "smooth", block: "start" })
-  );
+  el?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 export function TeamRoster({
@@ -216,10 +213,20 @@ export function TeamRoster({
   initialOpen: string | null;
 }) {
   const [open, setOpen] = useState<string | null>(initialOpen);
+  const scrollTimer = useRef<number | null>(null);
+
+  // Bring the selected card's photo to the top of the viewport. Deferred one
+  // tick so React commits first — the outgoing card closes instantly (see the
+  // mobile CSS), so by the time we measure there's no pending shift to chase.
+  const selectAndScroll = (slug: string) => {
+    if (scrollTimer.current) window.clearTimeout(scrollTimer.current);
+    scrollTimer.current = window.setTimeout(() => scrollMemberToTop(slug), 0);
+  };
 
   // Deep link (?member=slug): scroll to the opened card on first paint.
   useEffect(() => {
-    if (initialOpen) scrollToMember(initialOpen);
+    if (initialOpen) selectAndScroll(initialOpen);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialOpen]);
 
   const toggle = (slug: string) => {
@@ -230,7 +237,7 @@ export function TeamRoster({
     else url.searchParams.delete("member");
     // Shallow URL update — shareable link without a reload/refetch.
     window.history.replaceState(null, "", url);
-    if (next) scrollToMember(next);
+    if (next) selectAndScroll(next);
   };
 
   return (
@@ -333,16 +340,19 @@ export function TeamRoster({
             align-items: flex-start;
           }
           .kagu-profile-card { width: 100%; }
-          /* Collapse vertically (grid-rows 0fr→1fr) instead of horizontally. */
+          /* Collapse vertically (grid-rows 0fr→1fr) instead of horizontally.
+             The transition lives only on the open state, so OPENING animates
+             while the outgoing card closes instantly — no over-time vertical
+             shift, so scroll-to-top lands on the photo right away. */
           .kagu-profile-bio {
             width: auto !important;
             display: grid;
             grid-template-rows: 0fr;
             overflow: hidden;
-            transition: grid-template-rows var(--kagu-bio-ease);
           }
           .kagu-profile.is-open .kagu-profile-bio {
             grid-template-rows: 1fr;
+            transition: grid-template-rows var(--kagu-bio-ease);
           }
           .kagu-profile-bio-inner {
             width: auto;
@@ -351,10 +361,10 @@ export function TeamRoster({
             padding-top: var(--space-5);
             transform: none !important;
             opacity: 0;
-            transition: opacity var(--kagu-bio-ease);
           }
           .kagu-profile.is-open .kagu-profile-bio-inner {
             opacity: 1 !important;
+            transition: opacity var(--kagu-bio-ease);
           }
         }
         @media (prefers-reduced-motion: reduce) {
