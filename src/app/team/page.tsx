@@ -73,29 +73,26 @@ function Avatar({ member, size }: { member: TeamMember; size: string }) {
   );
 }
 
-function MemberRow({
-  member,
-  avatarSize,
-  nameSize,
-}: {
-  member: TeamMember;
-  avatarSize: string;
-  nameSize: string;
-}) {
+/*
+  Profile column. The avatar + meta stack is always shown; the bio lives in a
+  zero-width panel to its right that expands on hover/focus. Because the panel
+  is in normal flex flow, growing its width reflows the roster — pushing the
+  sibling profiles aside instead of overlapping them. Pure CSS so it stays cheap
+  (see the <style> block in TeamPage for the .kagu-profile rules).
+*/
+function MemberCard({ member }: { member: TeamMember }) {
   return (
-    <SectionRise as="article" amount={0.4}>
-      <div
-        className="flex flex-col md:flex-row gap-6 md:gap-10 items-start"
-        style={{
-          borderTop: "1px solid var(--neutral)",
-          paddingTop: "var(--space-8)",
-        }}
-      >
-        <Avatar member={member} size={avatarSize} />
-        <div className="flex-1" style={{ minWidth: 0 }}>
+    <SectionRise as="article" amount={0.3} className="kagu-profile">
+      <div className="kagu-profile-row" tabIndex={member.bio ? 0 : undefined}>
+        <div className="kagu-profile-card">
+          <Avatar member={member} size="var(--kagu-card-w)" />
           <div
             className="flex flex-col items-start"
-            style={{ gap: "var(--space-3)", marginBottom: "var(--space-3)" }}
+            style={{
+              gap: "var(--space-3)",
+              marginTop: "var(--space-6)",
+              marginBottom: "var(--space-3)",
+            }}
           >
             <span
               className="font-mono"
@@ -129,27 +126,29 @@ function MemberRow({
           <h3
             className="display"
             style={{
-              fontSize: nameSize,
+              fontSize: "var(--type-2xl)",
               lineHeight: 1.05,
               letterSpacing: "var(--tracking-tight)",
-              marginBottom: "var(--space-4)",
             }}
           >
             {member.name}
           </h3>
-          {member.bio ? (
-            <p
-              style={{
-                fontSize: "var(--type-md)",
-                lineHeight: 1.7,
-                color: "var(--ink)",
-                maxWidth: "56ch",
-              }}
-            >
-              {member.bio}
-            </p>
-          ) : null}
         </div>
+        {member.bio ? (
+          <div className="kagu-profile-bio">
+            <div className="kagu-profile-bio-inner">
+              <p
+                style={{
+                  fontSize: "var(--type-md)",
+                  lineHeight: 1.7,
+                  color: "var(--ink)",
+                }}
+              >
+                {member.bio}
+              </p>
+            </div>
+          </div>
+        ) : null}
       </div>
     </SectionRise>
   );
@@ -204,20 +203,81 @@ export default async function TeamPage() {
         >
           <div className="w-full max-w-(--container-max) mx-auto">
             <Eyebrow number="01">The team</Eyebrow>
-            <div
-              className="flex flex-col"
-              style={{ marginTop: "var(--space-12)", gap: "var(--space-16)" }}
-            >
+            <div className="kagu-roster" style={{ marginTop: "var(--space-12)" }}>
               {members.map((member) => (
-                <MemberRow
-                  key={member.id}
-                  member={member}
-                  avatarSize="clamp(156px, 22.5vw, 225px)"
-                  nameSize="var(--type-3xl)"
-                />
+                <MemberCard key={member.id} member={member} />
               ))}
             </div>
           </div>
+          <style>{`
+            .kagu-roster {
+              /* widths the cards and their hover-bio share */
+              --kagu-card-w: clamp(150px, 17vw, 200px);
+              --kagu-bio-w: clamp(240px, 26vw, 360px);
+              display: flex;
+              flex-wrap: nowrap;
+              justify-content: center;
+              align-items: flex-start;
+              gap: var(--space-10);
+            }
+            .kagu-profile { flex: 0 0 auto; }
+            .kagu-profile-row {
+              display: flex;
+              align-items: flex-start;
+              outline: none;
+            }
+            .kagu-profile-card {
+              flex: 0 0 auto;
+              width: var(--kagu-card-w);
+            }
+            /* Bio panel: collapsed to zero width, expands rightward on hover and
+               pushes the rest of the roster along with it. */
+            .kagu-profile-bio {
+              flex: 0 0 auto;
+              width: 0;
+              overflow: hidden;
+              transition: width 560ms cubic-bezier(0.6, 0.01, 0.05, 0.95);
+            }
+            .kagu-profile:hover .kagu-profile-bio,
+            .kagu-profile:focus-within .kagu-profile-bio {
+              width: var(--kagu-bio-w);
+            }
+            .kagu-profile-bio-inner {
+              width: var(--kagu-bio-w);
+              padding-left: var(--space-8);
+              opacity: 0;
+              transform: translateX(-12px);
+              transition: opacity 360ms ease,
+                transform 560ms cubic-bezier(0.6, 0.01, 0.05, 0.95);
+            }
+            .kagu-profile:hover .kagu-profile-bio-inner,
+            .kagu-profile:focus-within .kagu-profile-bio-inner {
+              opacity: 1;
+              transform: none;
+            }
+            /* Phone: no hover — stack each card over its bio, bio always shown. */
+            @media (max-width: 767px) {
+              .kagu-roster {
+                flex-direction: column;
+                align-items: stretch;
+                gap: var(--space-12);
+              }
+              .kagu-profile-row { flex-direction: column; align-items: flex-start; }
+              .kagu-profile-card { width: 100%; }
+              .kagu-profile-bio { width: auto; overflow: visible; }
+              .kagu-profile-bio-inner {
+                width: auto;
+                padding-left: 0;
+                padding-top: var(--space-5);
+                opacity: 1;
+                transform: none;
+              }
+            }
+            @media (prefers-reduced-motion: reduce) {
+              .kagu-profile-bio,
+              .kagu-profile-bio-inner { transition: none; }
+            }
+          `}</style>
         </section>
       ) : null}
 
