@@ -94,7 +94,7 @@ function MemberRow({
         <Avatar member={member} size={avatarSize} />
         <div className="flex-1" style={{ minWidth: 0 }}>
           <div
-            className="flex items-center flex-wrap"
+            className="flex flex-col items-start"
             style={{ gap: "var(--space-3)", marginBottom: "var(--space-3)" }}
           >
             <span
@@ -212,7 +212,7 @@ export default async function TeamPage() {
                 <MemberRow
                   key={member.id}
                   member={member}
-                  avatarSize="clamp(104px, 15vw, 150px)"
+                  avatarSize="clamp(156px, 22.5vw, 225px)"
                   nameSize="var(--type-3xl)"
                 />
               ))}

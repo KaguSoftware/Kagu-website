@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Kagu">
+  <!-- Brand tile: dark paper base so the mark reads on any browser-tab theme -->
+  <rect width="100" height="100" rx="20" fill="#14161d"/>
+  <!-- Kagu bird mark, centered. Two-tone (ghosted wing + solid body) like the header logo. -->
+  <g transform="translate(15 34.33) scale(0.064875)" fill="#a8adb8">
+    <path d="M 1078 5 L 776 0 L 733 9 L 669 47 L 418 267 L 300 169 L 62 167 L 0 231 L 146 236 L 300 374 L 550 374 L 638 457 L 684 481 L 895 482 L 722 325 Z" opacity="0.55"/>
+    <path d="M 1078 6 L 770 1 L 724 13 L 666 50 L 300 373 L 666 372 Z" opacity="1"/>
+  </g>
+</svg>
