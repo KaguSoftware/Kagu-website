@@ -198,15 +198,9 @@ function MemberCard({
   );
 }
 
-/* Scroll the selected card so its whole avatar clears the sticky header and
-   sits just beneath it. Targets the card's *layout* offset (summing offsetTop,
-   which ignores CSS transforms — so the entrance animation can't throw it off)
-   minus the live header height. */
-function scrollMemberToTop(slug: string) {
-  const el = document.getElementById(`member-${slug}`);
-  if (!el) return;
-  const header = document.querySelector("header.sticky");
-  const navH = header ? header.getBoundingClientRect().height : 64;
+/* Absolute layout top of an element (sum of offsetTop up the chain). Ignores
+   CSS transforms, so the entrance animation can't skew the measurement. */
+function layoutTop(el: HTMLElement) {
   let top = 0;
   for (
     let node: HTMLElement | null = el;
@@ -215,8 +209,24 @@ function scrollMemberToTop(slug: string) {
   ) {
     top += node.offsetTop;
   }
-  // 16px of breathing room below the nav so the full circle is visible.
-  window.scrollTo({ top: Math.max(0, top - navH - 16), behavior: "smooth" });
+  return top;
+}
+
+/* Scroll the selected card so its whole avatar clears the sticky header and
+   sits just beneath it — but never so far that the footer takes over the view.
+   (Forcing a low member to the very top exceeds the page's max scroll, so the
+   browser would otherwise clamp to the bottom: the "refresh jumps to footer".) */
+function scrollMemberToTop(slug: string) {
+  const el = document.getElementById(`member-${slug}`);
+  if (!el) return;
+  const header = document.querySelector("header.sticky");
+  const navH = header ? header.getBoundingClientRect().height : 64;
+  // 16px breathing room below the nav so the full circle shows.
+  let target = layoutTop(el) - navH - 16;
+  // Cap so the viewport bottom never passes the footer's top.
+  const footer = document.querySelector<HTMLElement>("footer");
+  if (footer) target = Math.min(target, layoutTop(footer) - window.innerHeight);
+  window.scrollTo({ top: Math.max(0, target), behavior: "smooth" });
 }
 
 export function TeamRoster({
