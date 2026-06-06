@@ -84,10 +84,10 @@ function MemberCard({ member }: { member: TeamMember }) {
   return (
     <SectionRise as="article" amount={0.3} className="kagu-profile">
       <div className="kagu-profile-row" tabIndex={member.bio ? 0 : undefined}>
-        <div className="kagu-profile-card">
+        <div className="kagu-profile-card flex flex-col items-center text-center">
           <Avatar member={member} size="var(--kagu-card-w)" />
           <div
-            className="flex flex-col items-start"
+            className="flex flex-col items-center"
             style={{
               gap: "var(--space-3)",
               marginTop: "var(--space-6)",
@@ -142,6 +142,7 @@ function MemberCard({ member }: { member: TeamMember }) {
                   fontSize: "var(--type-md)",
                   lineHeight: 1.7,
                   color: "var(--ink)",
+                  textAlign: "left",
                 }}
               >
                 {member.bio}
