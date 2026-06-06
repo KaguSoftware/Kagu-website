@@ -13,7 +13,7 @@ import { CursorTrailPreview } from "@/components/motion/CursorTrailPreview";
 import { CaseCover } from "@/components/cases/CaseCover";
 
 const COVER_BG: Record<string, string> = {
-    "mint-pale": "var(--mint-pale)",
+    "mint-pae": "var(--mint-pale)",
     "mint-soft": "var(--mint-soft)",
     "mint-deep": "var(--mint-deep)",
     "slate-ink": "var(--slate-ink)",
@@ -313,7 +313,9 @@ export default async function WorkIndexPage() {
                                                                         gap: 5,
                                                                     }}
                                                                 >
-                                                                    {[0, 1, 2].map(
+                                                                    {[
+                                                                        0, 1, 2,
+                                                                    ].map(
                                                                         (d) => (
                                                                             <span
                                                                                 key={
@@ -327,7 +329,7 @@ export default async function WorkIndexPage() {
                                                                                         "color-mix(in oklab, var(--slate-ink) 32%, transparent)",
                                                                                 }}
                                                                             />
-                                                                        ),
+                                                                        )
                                                                     )}
                                                                 </div>
                                                                 <div
@@ -361,11 +363,11 @@ export default async function WorkIndexPage() {
                                                                         ? c.url
                                                                               .replace(
                                                                                   /^https?:\/\//,
-                                                                                  "",
+                                                                                  ""
                                                                               )
                                                                               .replace(
                                                                                   /\/$/,
-                                                                                  "",
+                                                                                  ""
                                                                               )
                                                                         : c.client}
                                                                 </div>
