@@ -32,6 +32,7 @@ function slugify(name: string) {
 function withSlugs(team: TeamMember[]): RosterMember[] {
   const ordered = [
     ...team.filter((m) => m.segment === "cofounder"),
+    ...team.filter((m) => m.segment === "senior_associate"),
     ...team.filter((m) => m.segment === "associate"),
   ];
   const seen = new Map<string, number>();

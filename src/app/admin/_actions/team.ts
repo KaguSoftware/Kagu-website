@@ -12,7 +12,9 @@ const Schema = z.object({
   role: z.string().min(1, { error: "Role is required." }).trim(),
   bio: z.string().trim().optional(),
   image_url: z.string().trim().optional(),
-  segment: z.enum(["cofounder", "associate"]).default("associate"),
+  segment: z
+    .enum(["cofounder", "senior_associate", "associate"])
+    .default("associate"),
   sort_order: z.coerce.number().int().default(0),
 });
 

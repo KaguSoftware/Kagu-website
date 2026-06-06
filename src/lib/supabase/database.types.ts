@@ -25,7 +25,7 @@ export type StackPlacement = "hero_marquee" | "stack_lineage";
 
 export type AboutKind = "mission" | "paragraph" | "principle" | "metric";
 
-export type TeamSegment = "cofounder" | "associate";
+export type TeamSegment = "cofounder" | "senior_associate" | "associate";
 
 export type Clock = { city: string; tz: string; utc: string };
 

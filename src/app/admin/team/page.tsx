@@ -6,6 +6,7 @@ import { deleteTeamMember } from "../_actions/team";
 
 const SEGMENT_LABEL: Record<string, string> = {
   cofounder: "Cofounder",
+  senior_associate: "Senior Associate",
   associate: "Associate",
 };
 
@@ -21,7 +22,7 @@ export default async function TeamPage() {
     <div className="space-y-8">
       <PageHeader
         title="Team"
-        description="People shown on the public /team page, split into Cofounders and Associates. Drag order is set by 'Sort order'."
+        description="People shown on the public /team page — Cofounders, Senior Associates and Associates. Order within a segment is set by 'Sort order'."
         action={
           <ButtonLink href="/admin/team/new" variant="solid">
             + New member

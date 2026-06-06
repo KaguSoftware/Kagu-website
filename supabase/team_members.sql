@@ -9,11 +9,19 @@ create table if not exists public.team_members (
   bio         text,
   image_url   text,
   segment     text not null default 'associate'
-                check (segment in ('cofounder', 'associate')),
+                check (segment in ('cofounder', 'senior_associate', 'associate')),
   sort_order  integer not null default 0,
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
+
+-- Migration for existing tables: widen the segment check to add
+-- 'senior_associate'. Safe to re-run (drops the old constraint first).
+alter table public.team_members
+  drop constraint if exists team_members_segment_check;
+alter table public.team_members
+  add constraint team_members_segment_check
+    check (segment in ('cofounder', 'senior_associate', 'associate'));
 
 create index if not exists team_members_segment_sort_idx
   on public.team_members (segment, sort_order);

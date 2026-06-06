@@ -23,6 +23,7 @@ export type RosterMember = TeamMember & { slug: string };
 
 const SEGMENT_LABEL: Record<TeamMember["segment"], string> = {
   cofounder: "Cofounder",
+  senior_associate: "Senior Associate",
   associate: "Associate",
 };
 
@@ -315,7 +316,8 @@ export function TeamRoster({
           opacity: 1;
           transform: none;
         }
-        /* Phone: no hover — stack each card over its bio, bio always shown. */
+        /* Phone: no hover — stack each card over its bio. The bio reveals
+           vertically and only for the selected (tapped) card. */
         @media (max-width: 767px) {
           .kagu-roster {
             flex-direction: column;
@@ -329,13 +331,28 @@ export function TeamRoster({
             filter: none !important;
           }
           .kagu-profile-card { width: 100%; }
-          .kagu-profile-bio { width: auto !important; overflow: visible; }
+          /* Collapse vertically (grid-rows 0fr→1fr) instead of horizontally. */
+          .kagu-profile-bio {
+            width: auto !important;
+            display: grid;
+            grid-template-rows: 0fr;
+            overflow: hidden;
+            transition: grid-template-rows var(--kagu-bio-ease);
+          }
+          .kagu-profile.is-open .kagu-profile-bio {
+            grid-template-rows: 1fr;
+          }
           .kagu-profile-bio-inner {
             width: auto;
+            min-height: 0;
             padding-left: 0;
             padding-top: var(--space-5);
-            opacity: 1 !important;
             transform: none !important;
+            opacity: 0;
+            transition: opacity var(--kagu-bio-ease);
+          }
+          .kagu-profile.is-open .kagu-profile-bio-inner {
+            opacity: 1 !important;
           }
         }
         @media (prefers-reduced-motion: reduce) {

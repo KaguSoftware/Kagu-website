@@ -33,6 +33,7 @@ export function TeamMemberForm({
         defaultValue={member?.segment ?? "associate"}
         options={[
           { value: "cofounder", label: "Cofounder" },
+          { value: "senior_associate", label: "Senior Associate" },
           { value: "associate", label: "Associate" },
         ]}
       />
