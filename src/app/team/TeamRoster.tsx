@@ -15,7 +15,7 @@
 */
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { SectionRise } from "@/components/motion/SectionRise";
 import type { TeamMember } from "@/lib/content";
 
@@ -198,6 +198,16 @@ function MemberCard({
   );
 }
 
+/* Scroll a selected card so its photo sits at the top of the viewport (cleared
+   of the sticky header via scroll-margin-top on the row). */
+function scrollToMember(slug: string) {
+  const el = document.getElementById(`member-${slug}`);
+  if (!el) return;
+  requestAnimationFrame(() =>
+    el.scrollIntoView({ behavior: "smooth", block: "start" })
+  );
+}
+
 export function TeamRoster({
   members,
   initialOpen,
@@ -206,29 +216,21 @@ export function TeamRoster({
   initialOpen: string | null;
 }) {
   const [open, setOpen] = useState<string | null>(initialOpen);
-  const scrolledTo = useRef<string | null>(null);
 
-  // Deep link (?member=slug): bring the opened card into view on first paint.
+  // Deep link (?member=slug): scroll to the opened card on first paint.
   useEffect(() => {
-    if (!open || scrolledTo.current === open) return;
-    scrolledTo.current = open;
-    const el = document.getElementById(`member-${open}`);
-    if (!el) return;
-    requestAnimationFrame(() =>
-      el.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" })
-    );
-  }, [open]);
+    if (initialOpen) scrollToMember(initialOpen);
+  }, [initialOpen]);
 
   const toggle = (slug: string) => {
-    setOpen((cur) => {
-      const next = cur === slug ? null : slug;
-      const url = new URL(window.location.href);
-      if (next) url.searchParams.set("member", next);
-      else url.searchParams.delete("member");
-      // Shallow URL update — shareable link without a reload/refetch.
-      window.history.replaceState(null, "", url);
-      return next;
-    });
+    const next = open === slug ? null : slug;
+    setOpen(next);
+    const url = new URL(window.location.href);
+    if (next) url.searchParams.set("member", next);
+    else url.searchParams.delete("member");
+    // Shallow URL update — shareable link without a reload/refetch.
+    window.history.replaceState(null, "", url);
+    if (next) scrollToMember(next);
   };
 
   return (
@@ -264,6 +266,8 @@ export function TeamRoster({
           display: flex;
           align-items: flex-start;
           outline: none;
+          /* clears the 64px sticky header when scrolled to the top */
+          scroll-margin-top: 88px;
           transition: opacity var(--kagu-bio-ease),
             filter var(--kagu-bio-ease);
         }
@@ -327,8 +331,6 @@ export function TeamRoster({
           .kagu-profile-row {
             flex-direction: column;
             align-items: flex-start;
-            opacity: 1 !important;
-            filter: none !important;
           }
           .kagu-profile-card { width: 100%; }
           /* Collapse vertically (grid-rows 0fr→1fr) instead of horizontally. */
