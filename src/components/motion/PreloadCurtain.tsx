@@ -2,98 +2,74 @@
 
 /*
   M01 — PreloadCurtain.
-  Branded loader, exits via vertical curtain wipe in --mint-deep.
+  First screen: the same spinning-sculpture loading screen, with a fake progress
+  bar that fills over ~1s, then the whole thing fades away.
   First visit per session only (sessionStorage guard).
-  Total: 2200ms (1200ms wordmark hold + 1000ms wipe).
-  Reduced-motion: skipped entirely.
 */
 
-import { useEffect, useRef, useState } from "react";
-import { gsap } from "@/lib/gsap";
-import { useReducedMotion } from "motion/react";
-import { Logo } from "@/components/Logo";
+import { useEffect, useState } from "react";
+import { LoadingScreen } from "@/components/hero3d/LoadingScreen";
 
 const SESSION_KEY = "kagu_visited";
+const FILL_MS = 1000; // fake progress duration
+const FADE_MS = 360; // exit fade
 
 export function PreloadCurtain() {
-  const reduced = useReducedMotion();
   // Start inactive on every render — server and client agree. Decide AFTER mount.
   const [active, setActive] = useState(false);
-  const panelRef = useRef<HTMLDivElement>(null);
-  const wordmarkRef = useRef<HTMLDivElement>(null);
+  const [progress, setProgress] = useState(0);
+  const [leaving, setLeaving] = useState(false);
 
   // Decide whether to show the curtain on mount (avoids hydration mismatch).
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (window.sessionStorage.getItem(SESSION_KEY)) return;
+    // Activate only after mount — server renders nothing, so this client-only
+    // first-visit decision can't cause a hydration mismatch.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setActive(true);
   }, []);
 
+  // Run the fake progress, then start the exit fade.
   useEffect(() => {
     if (!active) return;
-    if (reduced) {
-      window.sessionStorage.setItem(SESSION_KEY, "1");
-      setActive(false);
-      return;
-    }
-
     document.documentElement.style.overflow = "hidden";
-
-    const tl = gsap.timeline({
-      onComplete() {
-        document.documentElement.style.overflow = "";
-        window.sessionStorage.setItem(SESSION_KEY, "1");
-        setActive(false);
-      },
-    });
-    tl.fromTo(
-      wordmarkRef.current,
-      { opacity: 0, y: 12 },
-      { opacity: 1, y: 0, duration: 0.6, ease: "expo.out" },
-    )
-      .to({}, { duration: 0.8 }) // hold
-      .to(wordmarkRef.current, { opacity: 0, duration: 0.32, ease: "power2.in" }, "+=0.05")
-      .to(
-        panelRef.current,
-        { yPercent: -100, duration: 0.85, ease: "expo.inOut" },
-        "-=0.1",
-      );
-
+    // Next frame so the 0% bar paints before it transitions to 100%.
+    const raf = requestAnimationFrame(() => setProgress(100));
+    const done = window.setTimeout(() => setLeaving(true), FILL_MS);
     return () => {
-      tl.kill();
+      cancelAnimationFrame(raf);
+      window.clearTimeout(done);
       document.documentElement.style.overflow = "";
     };
-  }, [active, reduced]);
+  }, [active]);
+
+  // After the fade completes, unmount and remember the visit.
+  useEffect(() => {
+    if (!leaving) return;
+    const t = window.setTimeout(() => {
+      window.sessionStorage.setItem(SESSION_KEY, "1");
+      document.documentElement.style.overflow = "";
+      setActive(false);
+    }, FADE_MS);
+    return () => window.clearTimeout(t);
+  }, [leaving]);
 
   if (!active) return null;
 
   return (
     <div
-      ref={panelRef}
-      aria-hidden
+      aria-hidden={leaving}
       style={{
         position: "fixed",
         inset: 0,
-        background: "var(--mint-deep)",
         zIndex: "var(--z-curtain)" as unknown as number,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        willChange: "transform",
+        opacity: leaving ? 0 : 1,
+        transition: `opacity ${FADE_MS}ms ease`,
+        pointerEvents: leaving ? "none" : "auto",
       }}
     >
-      <div
-        ref={wordmarkRef}
-        style={{
-          fontSize: "var(--type-5xl)",
-          color: "var(--paper)",
-          fontFamily: "var(--font-display)",
-          letterSpacing: "var(--tracking-tight)",
-          lineHeight: 1,
-        }}
-      >
-        <Logo size={96} />
-      </div>
+      <LoadingScreen progress={progress} />
     </div>
   );
 }

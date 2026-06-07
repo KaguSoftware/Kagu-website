@@ -48,7 +48,7 @@ function SpinSculpture({ reducedMotion }: { reducedMotion: boolean }) {
   );
 }
 
-export function LoadingScreen() {
+export function LoadingScreen({ progress }: { progress?: number } = {}) {
   // WebGL only mounts on the client; until then the dark backdrop stands in.
   const isClient = useIsClient();
   const reducedMotion = useReducedMotion();
@@ -80,7 +80,16 @@ export function LoadingScreen() {
         </Canvas>
       )}
 
-      <span className="kagu-loading__label">Loading</span>
+      {progress == null ? (
+        <span className="kagu-loading__label">Loading</span>
+      ) : (
+        <div className="kagu-loading__progress" aria-hidden>
+          <div
+            className="kagu-loading__progress-fill"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      )}
 
       <style>{`
         .kagu-loading {
@@ -107,6 +116,22 @@ export function LoadingScreen() {
         @keyframes kagu-loading-pulse {
           0%, 100% { opacity: 0.35; }
           50% { opacity: 0.8; }
+        }
+        .kagu-loading__progress {
+          position: absolute;
+          bottom: clamp(2.5rem, 10vh, 5rem);
+          width: clamp(160px, 30vw, 240px);
+          height: 2px;
+          border-radius: 2px;
+          background: rgba(234, 244, 255, 0.16);
+          overflow: hidden;
+        }
+        .kagu-loading__progress-fill {
+          height: 100%;
+          width: 0;
+          border-radius: 2px;
+          background: #0e8fe0;
+          transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
         }
         @media (prefers-reduced-motion: reduce) {
           .kagu-loading__label { animation: none; }
