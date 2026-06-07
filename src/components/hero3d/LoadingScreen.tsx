@@ -7,7 +7,7 @@
   loading state (src/app/loading.tsx) so it shows on every navigation.
 */
 
-import { Suspense, useRef } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import { Environment, Lightformer } from "@react-three/drei";
 import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader.js";
@@ -15,6 +15,34 @@ import * as THREE from "three";
 
 import { useLogoParts, DEPTH } from "./LogoSculpture";
 import { useIsClient, useReducedMotion } from "./useReducedMotion";
+import { GREETINGS } from "@/components/motion/GreetingCycle";
+
+// Rapid flip through the multilingual greetings — fast enough to read as a blur
+// of languages while the init screen is up.
+const GREETING_MS = 110;
+
+function FastGreeting() {
+  const reduced = useReducedMotion();
+  const [i, setI] = useState(0);
+
+  useEffect(() => {
+    if (reduced) return;
+    const id = window.setInterval(
+      () => setI((p) => (p + 1) % GREETINGS.length),
+      GREETING_MS,
+    );
+    return () => window.clearInterval(id);
+  }, [reduced]);
+
+  return (
+    <span className="kagu-loading__greeting" aria-hidden>
+      {/* keyed so each word re-triggers the quick fade-in */}
+      <span key={i} className="kagu-loading__greeting-word">
+        {GREETINGS[i]}
+      </span>
+    </span>
+  );
+}
 
 const SCULPTURE_URL = "/kagu-logo.svg";
 
@@ -58,13 +86,43 @@ function SpinSculpture({ reducedMotion }: { reducedMotion: boolean }) {
   );
 }
 
-export function LoadingScreen({ progress }: { progress?: number } = {}) {
+export function LoadingScreen({
+  progress,
+  greeting = false,
+}: { progress?: number; greeting?: boolean } = {}) {
   // WebGL only mounts on the client; until then the dark backdrop stands in.
   const isClient = useIsClient();
   const reducedMotion = useReducedMotion();
 
   return (
     <div className="kagu-loading" role="status" aria-label="Loading">
+      {/* Layout skeleton behind the (transparent) canvas — a header bar, a big
+          headline, and a content row, all shimmering, so the screen reads as
+          "the page is arriving". */}
+      <div className="kagu-skeleton" aria-hidden>
+        <div className="kagu-skeleton__header">
+          <div className="kagu-skeleton__row">
+            <div className="kg-sk kagu-skeleton__logo" />
+            <div className="kagu-skeleton__nav">
+              <div className="kg-sk kagu-skeleton__navitem" />
+              <div className="kg-sk kagu-skeleton__navitem" />
+              <div className="kg-sk kagu-skeleton__navitem" />
+              <div className="kg-sk kagu-skeleton__navitem" />
+            </div>
+          </div>
+        </div>
+        <div className="kagu-skeleton__main">
+          <div className="kg-sk kagu-skeleton__title" />
+          <div className="kg-sk kagu-skeleton__title kagu-skeleton__title--short" />
+          <div className="kg-sk kagu-skeleton__sub" />
+          <div className="kagu-skeleton__cards">
+            <div className="kg-sk kagu-skeleton__card" />
+            <div className="kg-sk kagu-skeleton__card" />
+            <div className="kg-sk kagu-skeleton__card" />
+          </div>
+        </div>
+      </div>
+
       {isClient && (
         <Canvas
           dpr={[1, 1.5]}
@@ -90,6 +148,8 @@ export function LoadingScreen({ progress }: { progress?: number } = {}) {
         </Canvas>
       )}
 
+      {greeting && <FastGreeting />}
+
       {progress == null ? (
         <span className="kagu-loading__label">Loading</span>
       ) : (
@@ -108,13 +168,108 @@ export function LoadingScreen({ progress }: { progress?: number } = {}) {
           z-index: var(--z-curtain);
           display: grid;
           place-items: center;
-          background:
-            radial-gradient(120% 100% at 50% 38%, #1b4173 0%, #102a51 45%, #081729 100%),
-            #081729;
+          background: var(--paper, #14161d);
         }
-        .kagu-loading canvas { position: absolute; inset: 0; }
+        .kagu-loading canvas { position: absolute; inset: 0; z-index: 1; }
+
+        /* --- layout skeleton --- */
+        .kagu-skeleton {
+          position: absolute;
+          inset: 0;
+          z-index: 0;
+          display: flex;
+          flex-direction: column;
+          padding: 0 var(--container-x, clamp(1.25rem, 5vw, 5rem));
+        }
+        .kagu-skeleton__row,
+        .kagu-skeleton__main {
+          width: 100%;
+          max-width: var(--container-max, 96rem);
+          margin: 0 auto;
+        }
+        .kagu-skeleton__header {
+          border-bottom: 1px solid color-mix(in oklab, var(--ink, #eef1f5) 8%, transparent);
+        }
+        .kagu-skeleton__row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          min-height: 64px;
+        }
+        .kagu-skeleton__logo { width: 42px; height: 20px; border-radius: 5px; }
+        .kagu-skeleton__nav { display: flex; gap: clamp(1.25rem, 3vw, 2.5rem); }
+        .kagu-skeleton__navitem { width: 54px; height: 11px; border-radius: 4px; }
+        .kagu-skeleton__main {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          gap: 1.25rem;
+          padding-block: clamp(2rem, 8vh, 6rem);
+        }
+        .kagu-skeleton__title { width: 80%; height: clamp(40px, 7vw, 78px); border-radius: 10px; }
+        .kagu-skeleton__title--short { width: 52%; }
+        .kagu-skeleton__sub { width: 36%; height: 16px; border-radius: 6px; margin-top: 0.5rem; }
+        .kagu-skeleton__cards {
+          margin-top: clamp(1.5rem, 4vh, 3rem);
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: clamp(1rem, 2vw, 1.75rem);
+        }
+        .kagu-skeleton__card { height: clamp(120px, 18vh, 220px); border-radius: 12px; }
+        @media (max-width: 767px) {
+          .kagu-skeleton__nav { display: none; }
+          .kagu-skeleton__cards { grid-template-columns: 1fr; }
+          .kagu-skeleton__title { width: 92%; }
+        }
+        /* shimmering placeholder fill */
+        .kg-sk {
+          background:
+            linear-gradient(
+              100deg,
+              color-mix(in oklab, var(--ink, #eef1f5) 5%, transparent) 30%,
+              color-mix(in oklab, var(--ink, #eef1f5) 11%, transparent) 50%,
+              color-mix(in oklab, var(--ink, #eef1f5) 5%, transparent) 70%
+            );
+          background-size: 200% 100%;
+          animation: kagu-skeleton-shimmer 1.5s ease-in-out infinite;
+        }
+        @keyframes kagu-skeleton-shimmer {
+          0% { background-position: 180% 0; }
+          100% { background-position: -180% 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .kg-sk { animation: none; }
+        }
+
+        .kagu-loading__greeting {
+          position: absolute;
+          z-index: 2;
+          top: 36%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          font-family: var(--font-display, ui-monospace, monospace);
+          font-weight: 500;
+          font-size: clamp(2rem, 7vw, 4.25rem);
+          letter-spacing: -0.02em;
+          line-height: 1;
+          color: var(--ink, #eef1f5);
+          white-space: nowrap;
+        }
+        .kagu-loading__greeting-word {
+          display: inline-block;
+          animation: kagu-greet-in 130ms ease-out;
+        }
+        @keyframes kagu-greet-in {
+          from { opacity: 0; filter: blur(3px); transform: translateY(4px); }
+          to { opacity: 1; filter: blur(0); transform: none; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .kagu-loading__greeting-word { animation: none; }
+        }
         .kagu-loading__label {
           position: absolute;
+          z-index: 2;
           bottom: clamp(2rem, 8vh, 4rem);
           font-family: var(--font-mono, ui-monospace, monospace);
           font-size: 0.7rem;
@@ -129,6 +284,7 @@ export function LoadingScreen({ progress }: { progress?: number } = {}) {
         }
         .kagu-loading__progress {
           position: absolute;
+          z-index: 2;
           bottom: clamp(2.5rem, 10vh, 5rem);
           width: clamp(160px, 30vw, 240px);
           height: 2px;

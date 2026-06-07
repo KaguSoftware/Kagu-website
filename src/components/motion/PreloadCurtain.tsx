@@ -69,7 +69,7 @@ export function PreloadCurtain() {
         pointerEvents: leaving ? "none" : "auto",
       }}
     >
-      <LoadingScreen progress={progress} />
+      <LoadingScreen progress={progress} greeting />
     </div>
   );
 }

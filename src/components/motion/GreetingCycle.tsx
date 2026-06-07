@@ -9,7 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
-const GREETINGS = [
+export const GREETINGS = [
   "Hello",
   "Merhaba",
   "مرحبا",
