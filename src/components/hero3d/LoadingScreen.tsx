@@ -17,6 +17,7 @@ import * as THREE from "three";
 
 import { useLogoParts, DEPTH } from "./LogoSculpture";
 import { useIsClient, useReducedMotion } from "./useReducedMotion";
+import { AmbientDrift } from "@/components/motion/AmbientDrift";
 
 // A short, readable cycle of greetings — Arabic, English, Turkish, Persian —
 // rather than a blur of every language.
@@ -111,6 +112,11 @@ export function LoadingScreen({
 
   return (
     <div className="kagu-loading" role="status" aria-label="Loading">
+      {/* Same ambient treatment as the hero (mint washes + plus-pattern +
+          grain), sitting behind the transparent canvas so the two screens
+          share one backdrop. */}
+      <AmbientDrift variant="light" className="kagu-loading__drift" />
+
       {/* Layout skeleton behind the (transparent) canvas — a header bar, a big
           headline, and a content row, all shimmering, so the screen reads as
           "the page is arriving". Suppressed on the initial curtain, which is
@@ -147,7 +153,7 @@ export function LoadingScreen({
           gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
           camera={{ position: [0, 0, 4.6], fov: 32, near: 0.1, far: 50 }}
         >
-          <fogExp2 attach="fog" args={["#2a2f3b", 0.07]} />
+          <fogExp2 attach="fog" args={["#14161d", 0.07]} />
           <ambientLight intensity={0.18} color="#9fb6d8" />
           <directionalLight position={[5, 8, 6]} intensity={1.7} color="#ffffff" />
           <directionalLight position={[-4, 2, -6]} intensity={1.35} color="#bfe0ff" />
@@ -165,6 +171,10 @@ export function LoadingScreen({
           </Environment>
         </Canvas>
       )}
+
+      {/* Light spilling in from the top-right — `screen` blend so it brightens
+          the bird and the backdrop together, not just tints the corner. */}
+      <div className="kagu-loading__glow" aria-hidden />
 
       {greeting && <FastGreeting />}
 
@@ -186,21 +196,25 @@ export function LoadingScreen({
           z-index: var(--z-curtain);
           display: grid;
           place-items: center;
-          /* graded studio backdrop — a touch brighter near the mark up top,
-             settling to a deeper slate at the edges for depth */
-          background:
-            radial-gradient(125% 115% at 50% 32%, #333a48 0%, #262b36 52%, #1d212a 100%);
+          /* match the hero: flat paper base with the ambient drift on top */
+          background: var(--paper);
         }
-        /* soft ambient halo behind the turning mark */
-        .kagu-loading::before {
-          content: "";
+        .kagu-loading__drift { z-index: 0; }
+        .kagu-loading canvas { position: absolute; inset: 0; z-index: 1; }
+        /* top-right light bloom — wide and strong, brightening a large
+           swathe of the upper-right before falling off */
+        .kagu-loading__glow {
           position: absolute;
           inset: 0;
-          z-index: 0;
-          background: radial-gradient(48% 42% at 50% 38%, rgba(120, 156, 214, 0.22), transparent 72%);
+          z-index: 1;
           pointer-events: none;
+          mix-blend-mode: screen;
+          background:
+            radial-gradient(95% 90% at 100% 0%,
+              rgba(168, 200, 255, 0.5) 0%,
+              rgba(130, 168, 235, 0.26) 38%,
+              transparent 72%);
         }
-        .kagu-loading canvas { position: absolute; inset: 0; z-index: 1; }
 
         /* --- layout skeleton --- */
         .kagu-skeleton {
