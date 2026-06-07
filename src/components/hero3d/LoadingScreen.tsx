@@ -30,7 +30,7 @@ function SpinSculpture({ reducedMotion }: { reducedMotion: boolean }) {
 
   return (
     // static tilt so the fast Y spin reads as a 3D slab flipping, not a flat wipe
-    <group rotation={[0.18, 0, 0]} scale={1.5}>
+    <group rotation={[0.18, 0, 0]} scale={0.5}>
       <group ref={spin}>
         {/* rotation.x = PI flips the SVG's y-down axis upright without mirroring */}
         <group rotation={[Math.PI, 0, 0]} scale={scale}>
