@@ -1,16 +1,18 @@
 "use client";
 
 /*
-  Brand loading screen — a single kagu sculpture spinning fast against the dark
-  studio backdrop. Reuses the hero's extruded glass geometry/materials so the
-  loader and the hero are the same object. Mounted as the app's route-level
-  loading state (src/app/loading.tsx) so it shows on every navigation.
+  Brand intro — a single kagu sculpture slowly turning above a large
+  multilingual greeting, against a graded studio backdrop. Reuses the hero's
+  extruded glass geometry/materials so the intro and the hero are the same
+  object. Mounted as the app's route-level loading state (src/app/loading.tsx)
+  and as the first-visit curtain (PreloadCurtain).
 */
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import { Environment, Lightformer } from "@react-three/drei";
 import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader.js";
+import { AnimatePresence, motion } from "motion/react";
 import * as THREE from "three";
 
 import { useLogoParts, DEPTH } from "./LogoSculpture";
@@ -19,8 +21,8 @@ import { useIsClient, useReducedMotion } from "./useReducedMotion";
 // A short, readable cycle of greetings — Arabic, English, Turkish, Persian —
 // rather than a blur of every language.
 const GREETINGS = ["مرحبا", "Hello", "Merhaba", "سلام"];
-// Each word holds long enough to read, then swaps to the next language.
-const GREETING_MS = 520;
+// Each word holds long enough to read, then flows into the next language.
+const GREETING_MS = 650;
 
 function FastGreeting() {
   const reduced = useReducedMotion();
@@ -36,12 +38,22 @@ function FastGreeting() {
   }, [reduced]);
 
   return (
-    <span className="kagu-loading__greeting" aria-hidden>
-      {/* keyed so each word re-triggers the quick fade-in */}
-      <span key={i} className="kagu-loading__greeting-word">
-        {GREETINGS[i]}
-      </span>
-    </span>
+    <div className="kagu-loading__greeting" aria-hidden>
+      {/* Words stack in a single grid cell so the outgoing and incoming
+          languages cross-fade over each other instead of jumping. */}
+      <AnimatePresence>
+        <motion.span
+          key={GREETINGS[i]}
+          className="kagu-loading__greeting-word"
+          initial={reduced ? false : { opacity: 0, y: "0.32em", filter: "blur(12px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          exit={reduced ? { opacity: 0 } : { opacity: 0, y: "-0.32em", filter: "blur(12px)" }}
+          transition={{ duration: reduced ? 0.2 : 0.6, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {GREETINGS[i]}
+        </motion.span>
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -68,8 +80,9 @@ function SpinSculpture({ reducedMotion }: { reducedMotion: boolean }) {
   });
 
   return (
-    // static tilt so the fast Y spin reads as a 3D slab flipping, not a flat wipe
-    <group rotation={[0.18, 0, 0]} scale={0.5}>
+    // static tilt so the slow Y turn reads as a 3D slab rotating, not a flat
+    // wipe — and lifted above center so the greeting sits cleanly beneath it
+    <group rotation={[0.18, 0, 0]} scale={0.5} position={[0, 0.62, 0]}>
       <group ref={spin}>
         {/* rotation.x = PI flips the SVG's y-down axis upright without mirroring */}
         <group rotation={[Math.PI, 0, 0]} scale={scale}>
@@ -173,7 +186,19 @@ export function LoadingScreen({
           z-index: var(--z-curtain);
           display: grid;
           place-items: center;
-          background: #2a2f3b;
+          /* graded studio backdrop — a touch brighter near the mark up top,
+             settling to a deeper slate at the edges for depth */
+          background:
+            radial-gradient(125% 115% at 50% 32%, #333a48 0%, #262b36 52%, #1d212a 100%);
+        }
+        /* soft ambient halo behind the turning mark */
+        .kagu-loading::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          z-index: 0;
+          background: radial-gradient(48% 42% at 50% 38%, rgba(120, 156, 214, 0.22), transparent 72%);
+          pointer-events: none;
         }
         .kagu-loading canvas { position: absolute; inset: 0; z-index: 1; }
 
@@ -250,27 +275,30 @@ export function LoadingScreen({
         .kagu-loading__greeting {
           position: absolute;
           z-index: 2;
-          top: 36%;
-          left: 50%;
-          transform: translate(-50%, -50%);
+          top: 64%;
+          left: 0;
+          right: 0;
+          transform: translateY(-50%);
+          display: grid;
+          place-items: center;
           font-family: var(--font-display, ui-monospace, monospace);
           font-weight: 500;
-          font-size: clamp(2rem, 7vw, 4.25rem);
-          letter-spacing: -0.02em;
-          line-height: 1;
-          color: var(--ink, #eef1f5);
+          font-size: clamp(3.25rem, 11vw, 8rem);
+          letter-spacing: -0.035em;
+          line-height: 0.95;
           white-space: nowrap;
+          /* soft luminous lift on the rendered (clipped) glyphs */
+          filter: drop-shadow(0 6px 44px rgba(150, 188, 255, 0.22));
         }
         .kagu-loading__greeting-word {
+          /* every word shares the same grid cell so they overlap while
+             cross-fading rather than reflowing the line */
+          grid-area: 1 / 1;
           display: inline-block;
-          animation: kagu-greet-in 130ms ease-out;
-        }
-        @keyframes kagu-greet-in {
-          from { opacity: 0; filter: blur(3px); transform: translateY(4px); }
-          to { opacity: 1; filter: blur(0); transform: none; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .kagu-loading__greeting-word { animation: none; }
+          background: linear-gradient(180deg, #ffffff 0%, #b6c3d6 100%);
+          -webkit-background-clip: text;
+          background-clip: text;
+          color: transparent;
         }
         .kagu-loading__label {
           position: absolute;
@@ -290,19 +318,20 @@ export function LoadingScreen({
         .kagu-loading__progress {
           position: absolute;
           z-index: 2;
-          bottom: clamp(2.5rem, 10vh, 5rem);
-          width: clamp(160px, 30vw, 240px);
-          height: 2px;
-          border-radius: 2px;
-          background: rgba(234, 244, 255, 0.16);
+          bottom: clamp(2.25rem, 8vh, 4rem);
+          width: clamp(132px, 22vw, 190px);
+          height: 1px;
+          border-radius: 1px;
+          background: rgba(234, 244, 255, 0.12);
           overflow: hidden;
         }
         .kagu-loading__progress-fill {
           height: 100%;
           width: 0;
-          border-radius: 2px;
-          background: #0e8fe0;
-          transition: width 2s cubic-bezier(0.4, 0, 0.2, 1);
+          border-radius: 1px;
+          background: linear-gradient(90deg, rgba(234, 244, 255, 0.2), #eaf4ff);
+          box-shadow: 0 0 12px rgba(190, 220, 255, 0.55);
+          transition: width 2.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
         @media (prefers-reduced-motion: reduce) {
           .kagu-loading__label { animation: none; }
