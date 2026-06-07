@@ -15,11 +15,12 @@ import * as THREE from "three";
 
 import { useLogoParts, DEPTH } from "./LogoSculpture";
 import { useIsClient, useReducedMotion } from "./useReducedMotion";
-import { GREETINGS } from "@/components/motion/GreetingCycle";
 
-// Rapid flip through the multilingual greetings — fast enough to read as a blur
-// of languages while the init screen is up.
-const GREETING_MS = 110;
+// A short, readable cycle of greetings — Arabic, English, Turkish, Persian —
+// rather than a blur of every language.
+const GREETINGS = ["مرحبا", "Hello", "Merhaba", "سلام"];
+// Each word holds long enough to read, then swaps to the next language.
+const GREETING_MS = 520;
 
 function FastGreeting() {
   const reduced = useReducedMotion();
@@ -61,8 +62,8 @@ function SpinSculpture({ reducedMotion }: { reducedMotion: boolean }) {
   useFrame((_, delta) => {
     const g = spin.current;
     if (!g) return;
-    // radians/sec — a quick, confident spin (gentler if reduced-motion).
-    const speed = reducedMotion ? 0.8 : 5.4;
+    // radians/sec — a slow, steady spin (gentler still if reduced-motion).
+    const speed = reducedMotion ? 0.6 : 2.2;
     g.rotation.y += delta * speed;
   });
 
@@ -89,7 +90,8 @@ function SpinSculpture({ reducedMotion }: { reducedMotion: boolean }) {
 export function LoadingScreen({
   progress,
   greeting = false,
-}: { progress?: number; greeting?: boolean } = {}) {
+  skeleton = true,
+}: { progress?: number; greeting?: boolean; skeleton?: boolean } = {}) {
   // WebGL only mounts on the client; until then the dark backdrop stands in.
   const isClient = useIsClient();
   const reducedMotion = useReducedMotion();
@@ -98,7 +100,9 @@ export function LoadingScreen({
     <div className="kagu-loading" role="status" aria-label="Loading">
       {/* Layout skeleton behind the (transparent) canvas — a header bar, a big
           headline, and a content row, all shimmering, so the screen reads as
-          "the page is arriving". */}
+          "the page is arriving". Suppressed on the initial curtain, which is
+          just the bird on the dark backdrop. */}
+      {skeleton && (
       <div className="kagu-skeleton" aria-hidden>
         <div className="kagu-skeleton__header">
           <div className="kagu-skeleton__row">
@@ -122,6 +126,7 @@ export function LoadingScreen({
           </div>
         </div>
       </div>
+      )}
 
       {isClient && (
         <Canvas
