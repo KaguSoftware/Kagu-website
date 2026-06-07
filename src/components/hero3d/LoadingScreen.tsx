@@ -8,16 +8,26 @@
 */
 
 import { Suspense, useRef } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useLoader } from "@react-three/fiber";
 import { Environment, Lightformer } from "@react-three/drei";
+import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader.js";
 import * as THREE from "three";
 
 import { useLogoParts, DEPTH } from "./LogoSculpture";
 import { useIsClient, useReducedMotion } from "./useReducedMotion";
 
+const SCULPTURE_URL = "/kagu-logo.svg";
+
+// Warm the SVG fetch the moment this client module is evaluated (during page
+// hydration) so the geometry can build instantly when the canvas mounts —
+// otherwise the sculpture only appears after a post-mount round trip.
+if (typeof window !== "undefined") {
+  useLoader.preload(SVGLoader, SCULPTURE_URL);
+}
+
 /** One sculpture, centered, spinning fast about Y. */
 function SpinSculpture({ reducedMotion }: { reducedMotion: boolean }) {
-  const { parts, scale, materials } = useLogoParts("/kagu-logo.svg");
+  const { parts, scale, materials } = useLogoParts(SCULPTURE_URL);
   const spin = useRef<THREE.Group>(null);
 
   useFrame((_, delta) => {
@@ -71,7 +81,7 @@ export function LoadingScreen({ progress }: { progress?: number } = {}) {
           </Suspense>
 
           {/* Dark studio so the black glass reads off bright reflection strips. */}
-          <Environment resolution={256} frames={1}>
+          <Environment resolution={128} frames={1}>
             <color attach="background" args={["#05060a"]} />
             <Lightformer intensity={3.0} position={[-4, 3, 4]} scale={[8, 8, 1]} color="#ffffff" />
             <Lightformer intensity={5} position={[3.5, 1, 3]} scale={[0.6, 10, 1]} color="#ffffff" />
@@ -131,7 +141,7 @@ export function LoadingScreen({ progress }: { progress?: number } = {}) {
           width: 0;
           border-radius: 2px;
           background: #0e8fe0;
-          transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: width 2s cubic-bezier(0.4, 0, 0.2, 1);
         }
         @media (prefers-reduced-motion: reduce) {
           .kagu-loading__label { animation: none; }

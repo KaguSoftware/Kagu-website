@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
 import { LoadingScreen } from "@/components/hero3d/LoadingScreen";
 
 const SESSION_KEY = "kagu_visited";
-const FILL_MS = 1000; // fake progress duration
+const FILL_MS = 2000; // fake progress duration
 const FADE_MS = 360; // exit fade
 
 export function PreloadCurtain() {
