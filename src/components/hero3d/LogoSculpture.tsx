@@ -10,7 +10,7 @@ import * as THREE from "three";
 const TARGET_SIZE = 1.7;
 // Extrude depth in raw SVG units — normalized away, so it just sets how "thick"
 // the folded slab reads relative to its silhouette.
-const DEPTH = 130;
+export const DEPTH = 130;
 // Rounded-edge bevel (raw SVG units): generous + smooth so a bright reflection
 // streak rides along every edge — that highlight is what reveals the form of
 // the black glass against the black backdrop.
@@ -53,7 +53,7 @@ const FLOCK: BirdConfig[] = [
  * Load the SVG once and build the shared extruded geometry + materials.
  * Every bird in the flock reuses these — extruding per-instance would be wasteful.
  */
-function useLogoParts(url: string): { parts: Part[]; scale: number; materials: Materials } {
+export function useLogoParts(url: string): { parts: Part[]; scale: number; materials: Materials } {
   const data = useLoader(SVGLoader, url);
 
   const materials = useMemo<Materials>(() => {
