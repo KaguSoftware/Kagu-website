@@ -134,7 +134,7 @@ export function LoadingScreen({
           gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
           camera={{ position: [0, 0, 4.6], fov: 32, near: 0.1, far: 50 }}
         >
-          <fogExp2 attach="fog" args={["#04050a", 0.07]} />
+          <fogExp2 attach="fog" args={["#2a2f3b", 0.07]} />
           <ambientLight intensity={0.18} color="#9fb6d8" />
           <directionalLight position={[5, 8, 6]} intensity={1.7} color="#ffffff" />
           <directionalLight position={[-4, 2, -6]} intensity={1.35} color="#bfe0ff" />
@@ -173,7 +173,7 @@ export function LoadingScreen({
           z-index: var(--z-curtain);
           display: grid;
           place-items: center;
-          background: var(--paper, #14161d);
+          background: #2a2f3b;
         }
         .kagu-loading canvas { position: absolute; inset: 0; z-index: 1; }
 
