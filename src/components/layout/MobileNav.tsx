@@ -1,11 +1,13 @@
 "use client";
 
 /*
-  MobileNav — "Corner Nav" (after hover.dev): a square hamburger pinned to the
-  top-right corner that springs open a rounded dark card anchored to that same
-  corner. The button's two rules cross into an ✕; the card expands by animating
-  width/height from the button footprint (originX:1, originY:0) on a spring, and
-  the nav links stagger in. A dimmed scrim behind the card closes on tap.
+  MobileNav — "Ink-blot" full-screen menu.
+
+  Tapping the corner burger floods the screen with a mint-tinted ink-blot: a
+  clip-path circle expands from the button's corner until it covers the viewport,
+  then huge nav words rise + fade in one by one (refined overshoot, no cartoon
+  bounce). The active route gets a drawn-in underline; a small contact CTA +
+  cycling index sit at the foot. Closing collapses the blot back into the corner.
 
   Kagu-styled: dark surface tokens, mono display type, mint-deep accents.
   Shown < md only; the desktop inline nav stays as-is. Locks body scroll while
@@ -20,6 +22,15 @@ import { usePathname } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { navItems } from "./navItems";
+
+// Refined easing — fast, confident, no bounce.
+const EASE_BLOT = [0.16, 1, 0.3, 1] as const; // expo-out
+const EASE_WORD = [0.22, 1, 0.36, 1] as const; // out-quint
+
+// The blot originates at the burger (top-right corner) and must grow to cover
+// the far (bottom-left) corner — that radius is the viewport diagonal at 150%.
+const CLIP_CLOSED = "circle(0% at calc(100% - 32px) 36px)";
+const CLIP_OPEN = "circle(150% at calc(100% - 32px) 36px)";
 
 export function MobileNav() {
   const pathname = usePathname();
@@ -55,7 +66,6 @@ export function MobileNav() {
       if (e.key === "Escape") setOpen(false);
     };
     document.addEventListener("keydown", onKey);
-    // Move focus to the first link once the panel is mounted.
     const first = panelRef.current?.querySelector<HTMLElement>("a[href]");
     first?.focus();
     return () => {
@@ -64,107 +74,123 @@ export function MobileNav() {
     };
   }, [open]);
 
-  // Spring on open; quick fade-equivalent under reduced motion.
-  const panelTransition = reduced
+  // Ink-blot flood. Under reduced motion: plain fade, no clip animation.
+  const blotInitial = reduced ? { opacity: 0 } : { clipPath: CLIP_CLOSED, opacity: 1 };
+  const blotAnimate = reduced ? { opacity: 1 } : { clipPath: CLIP_OPEN, opacity: 1 };
+  const blotExit = reduced ? { opacity: 0 } : { clipPath: CLIP_CLOSED, opacity: 1 };
+  const blotTransition = reduced
     ? { duration: 0.2 }
-    : { type: "spring" as const, stiffness: 320, damping: 32, mass: 0.9 };
+    : { duration: 0.7, ease: EASE_BLOT };
 
-  // Stagger the links in once the card has started opening. No-op when reduced.
+  // Stagger the words in after the blot has begun flooding.
   const listVariants = {
     closed: {},
     open: reduced
       ? {}
-      : { transition: { staggerChildren: 0.06, delayChildren: 0.12 } },
+      : { transition: { staggerChildren: 0.07, delayChildren: 0.22 } },
+    exit: reduced
+      ? {}
+      : { transition: { staggerChildren: 0.04, staggerDirection: -1 } },
   };
   const itemVariants = reduced
-    ? { closed: {}, open: {} }
-    : { closed: { opacity: 0, x: 16 }, open: { opacity: 1, x: 0 } };
+    ? { closed: {}, open: {}, exit: {} }
+    : {
+        closed: { y: "120%", opacity: 0, rotate: 2 },
+        open: {
+          y: "0%",
+          opacity: 1,
+          rotate: 0,
+          transition: { duration: 0.7, ease: EASE_WORD },
+        },
+        exit: {
+          y: "60%",
+          opacity: 0,
+          transition: { duration: 0.3, ease: EASE_WORD },
+        },
+      };
 
   return (
     <>
       <AnimatePresence>
         {open && (
-          <>
-            <motion.div
-              className="kagu-corner__scrim"
-              aria-hidden
-              onClick={close}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: reduced ? 0.15 : 0.3 }}
-            />
+          <motion.div
+            id={panelId}
+            ref={panelRef}
+            className="kagu-blot"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Site menu"
+            initial={blotInitial}
+            animate={blotAnimate}
+            exit={blotExit}
+            transition={blotTransition}
+          >
+            {/* Faint dot-grid texture so the flooded field isn't a flat fill. */}
+            <span aria-hidden className="kagu-blot__grid" />
 
             <motion.nav
-              id={panelId}
-              ref={panelRef}
-              className="kagu-corner__panel"
-              role="dialog"
-              aria-modal="true"
-              aria-label="Site menu"
-              style={{ originX: 1, originY: 0 }}
-              variants={{
-                closed: { width: 48, height: 48 },
-                open: { width: "min(88vw, 360px)", height: "min(70vh, 460px)" },
-              }}
+              className="kagu-blot__nav"
+              aria-label="Primary"
+              variants={listVariants}
               initial="closed"
               animate="open"
-              exit="closed"
-              transition={panelTransition}
+              exit="exit"
             >
-              <motion.ul
-                className="kagu-corner__list"
-                variants={listVariants}
-                initial="closed"
-                animate="open"
-              >
+              <ul className="kagu-blot__list">
                 {navItems.map((item, i) => {
                   const isActive =
                     pathname === item.href || pathname?.startsWith(`${item.href}/`);
                   return (
-                    <motion.li
-                      key={item.href}
-                      className="kagu-corner__item"
-                      variants={itemVariants}
-                    >
-                      <Link
-                        href={item.href}
-                        onClick={close}
-                        className={`kagu-corner__link ${isActive ? "is-active" : ""}`}
-                        aria-current={isActive ? "page" : undefined}
-                      >
-                        <span className="kagu-corner__index">
-                          {String(i + 1).padStart(2, "0")}
-                        </span>
-                        <span className="kagu-corner__label">{item.label}</span>
-                      </Link>
-                    </motion.li>
+                    <li key={item.href} className="kagu-blot__item">
+                      {/* overflow-hidden mask so the word rises out of nothing */}
+                      <span className="kagu-blot__mask">
+                        <motion.span className="kagu-blot__word" variants={itemVariants}>
+                          <Link
+                            href={item.href}
+                            onClick={close}
+                            className={`kagu-blot__link ${isActive ? "is-active" : ""}`}
+                            aria-current={isActive ? "page" : undefined}
+                          >
+                            <span className="kagu-blot__index">
+                              {String(i + 1).padStart(2, "0")}
+                            </span>
+                            <span className="kagu-blot__label">{item.label}</span>
+                          </Link>
+                        </motion.span>
+                      </span>
+                    </li>
                   );
                 })}
-              </motion.ul>
-
-              <div className="kagu-corner__footer">
-                <Link href="/contact" onClick={close} className="kagu-corner__contact">
-                  Start a project →
-                </Link>
-                <span className="kagu-corner__est">Est. 2025 · Istanbul</span>
-              </div>
+              </ul>
             </motion.nav>
-          </>
+
+            <motion.div
+              className="kagu-blot__footer"
+              initial={reduced ? false : { opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduced ? undefined : { opacity: 0, y: 8 }}
+              transition={{ duration: 0.5, ease: EASE_WORD, delay: reduced ? 0 : 0.5 }}
+            >
+              <Link href="/contact" onClick={close} className="kagu-blot__contact">
+                Start a project →
+              </Link>
+              <span className="kagu-blot__est">Est. 2025 · Istanbul</span>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 
       <button
         ref={triggerRef}
         type="button"
-        className="kagu-corner__burger"
+        className="kagu-blot__burger"
         aria-label={open ? "Close menu" : "Open menu"}
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((o) => !o)}
       >
-        <span className={`kagu-corner__rule kagu-corner__rule--top ${open ? "is-open" : ""}`} />
-        <span className={`kagu-corner__rule kagu-corner__rule--bottom ${open ? "is-open" : ""}`} />
+        <span className={`kagu-blot__rule kagu-blot__rule--top ${open ? "is-open" : ""}`} />
+        <span className={`kagu-blot__rule kagu-blot__rule--bottom ${open ? "is-open" : ""}`} />
       </button>
     </>
   );

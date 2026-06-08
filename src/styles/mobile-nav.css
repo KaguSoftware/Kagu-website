@@ -1,11 +1,14 @@
 /*
-  MobileNav "Corner Nav" styles — paired with src/components/layout/MobileNav.tsx.
+  MobileNav "Ink-blot" styles — paired with src/components/layout/MobileNav.tsx.
   Kept in a global stylesheet (imported via globals.css) so structural rules are
   in the CSSOM before the panel mounts. Tokens come from tokens.css.
+
+  The flood field is full-screen; the clip-path circle (animated in JS) reveals
+  it from the burger corner. The burger sits above the field and crosses to an ✕.
 */
 
 /* --- trigger (top-right corner) --- */
-.kagu-corner__burger {
+.kagu-blot__burger {
   position: fixed;
   top: 14px;
   right: 14px;
@@ -19,71 +22,82 @@
   cursor: pointer;
   color: var(--ink);
   pointer-events: auto; /* header is pointer-events:none; the burger stays clickable */
-  z-index: calc(var(--z-curtain) + 1); /* above the panel so it can become the ✕ */
+  z-index: calc(var(--z-curtain) + 1); /* above the flood field */
 }
 /* Mobile only — the desktop inline nav takes over at md. */
 @media (min-width: 768px) {
-  .kagu-corner__burger { display: none; }
+  .kagu-blot__burger { display: none; }
 }
-.kagu-corner__rule {
+.kagu-blot__rule {
   position: absolute;
   left: 11px;
   width: 22px;
   height: 1.5px;
   background: currentColor;
   transition: transform 360ms cubic-bezier(0.76, 0, 0.24, 1),
-              width 360ms cubic-bezier(0.76, 0, 0.24, 1);
+              width 360ms cubic-bezier(0.76, 0, 0.24, 1),
+              background 360ms ease;
 }
-.kagu-corner__rule--top { transform: translateY(-4px); }
-.kagu-corner__rule--bottom { transform: translateY(4px); width: 14px; }
-.kagu-corner__rule--top.is-open { transform: translateY(0) rotate(45deg); }
-.kagu-corner__rule--bottom.is-open { transform: translateY(0) rotate(-45deg); width: 22px; }
+.kagu-blot__rule--top { transform: translateY(-4px); }
+.kagu-blot__rule--bottom { transform: translateY(4px); width: 14px; }
+.kagu-blot__rule--top.is-open { transform: translateY(0) rotate(45deg); }
+.kagu-blot__rule--bottom.is-open { transform: translateY(0) rotate(-45deg); width: 22px; }
 @media (prefers-reduced-motion: reduce) {
-  .kagu-corner__rule { transition: none; }
+  .kagu-blot__rule { transition: none; }
 }
 
-/* --- backdrop --- */
-.kagu-corner__scrim {
+/* --- flood field --- */
+.kagu-blot {
   position: fixed;
   inset: 0;
   z-index: var(--z-curtain);
   pointer-events: auto;
-  background: color-mix(in oklab, var(--paper) 70%, transparent);
-  backdrop-filter: blur(2px);
-}
-
-/* --- card panel (springs open from the top-right corner) --- */
-.kagu-corner__panel {
-  position: fixed;
-  top: 12px;
-  right: 12px;
-  z-index: var(--z-curtain);
-  pointer-events: auto;
-  overflow: hidden;
-  background: color-mix(in oklab, var(--mint-pale) 96%, var(--paper));
-  border: 1px solid var(--neutral);
-  border-radius: var(--radius-md);
-  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.6);
-  display: flex;
-  flex-direction: column;
-  padding: clamp(3.5rem, 8vh, 4.5rem) clamp(1.25rem, 5vw, 1.75rem) clamp(1rem, 3vh, 1.5rem);
-  will-change: width, height;
-}
-
-.kagu-corner__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  flex: 1;
+  /* Mint-deep wash bleeding into the dark page base — reads as "Kagu ink". */
+  background:
+    radial-gradient(circle at calc(100% - 32px) 36px,
+      color-mix(in oklab, var(--mint-deep) 34%, var(--paper)) 0%,
+      var(--paper) 62%);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: clamp(0.25rem, 1.5vh, 0.75rem);
+  padding: max(96px, 16vh) clamp(1.5rem, 8vw, 3rem) clamp(1.75rem, 6vh, 3rem);
+  overflow: hidden;
 }
-.kagu-corner__link {
+.kagu-blot__grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image: radial-gradient(
+    color-mix(in oklab, var(--ink) 14%, transparent) 1px,
+    transparent 1.5px
+  );
+  background-size: 26px 26px;
+  mask-image: radial-gradient(circle at calc(100% - 32px) 36px, #000 30%, transparent 80%);
+  -webkit-mask-image: radial-gradient(circle at calc(100% - 32px) 36px, #000 30%, transparent 80%);
+}
+
+/* --- nav words --- */
+.kagu-blot__nav { position: relative; z-index: 1; flex: 1; display: flex; align-items: center; }
+.kagu-blot__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.25rem, 1.5vh, 0.85rem);
+}
+.kagu-blot__mask {
+  display: block;
+  overflow: hidden; /* the word rises out of this mask */
+  padding-bottom: 0.06em; /* room for descenders so they aren't clipped */
+}
+.kagu-blot__word { display: block; transform-origin: left bottom; }
+.kagu-blot__link {
   display: flex;
   align-items: baseline;
-  gap: 0.7rem;
+  gap: 0.85rem;
   padding: 4px 0;
   min-height: 48px;
   font-family: var(--font-display, ui-monospace, monospace);
@@ -92,50 +106,55 @@
   line-height: 1;
   color: var(--ink);
   text-decoration: none;
-  white-space: nowrap;
 }
-.kagu-corner__index {
+.kagu-blot__index {
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: var(--type-xs);
   letter-spacing: 0.12em;
   color: var(--mint-deep);
-  transform: translateY(-0.55em); /* lift the numeral toward the cap line */
+  transform: translateY(-0.7em);
 }
-.kagu-corner__label {
-  font-size: clamp(1.75rem, 9vw, 2.5rem);
+.kagu-blot__label {
+  font-size: clamp(2.75rem, 15vw, 4.5rem);
   position: relative;
 }
-.kagu-corner__link.is-active .kagu-corner__label::after {
+/* Active route: a drawn-in underline. */
+.kagu-blot__link.is-active .kagu-blot__label::after {
   content: "";
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0.1em;
-  height: 2px;
+  bottom: 0.08em;
+  height: 3px;
   background: var(--mint-deep);
+  transform: scaleX(1);
+  transform-origin: left;
 }
 
 /* --- footer --- */
-.kagu-corner__footer {
+.kagu-blot__footer {
+  position: relative;
+  z-index: 1;
   display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  border-top: 1px solid var(--neutral);
-  padding-top: clamp(0.75rem, 2vh, 1rem);
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  border-top: 1px solid color-mix(in oklab, var(--ink) 18%, transparent);
+  padding-top: clamp(0.85rem, 2.5vh, 1.25rem);
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: var(--type-xs);
 }
-.kagu-corner__contact {
+.kagu-blot__contact {
   color: var(--ink);
   text-decoration: none;
   letter-spacing: 0.04em;
   transition: color 200ms var(--ease-arc, ease);
 }
-.kagu-corner__contact:hover,
-.kagu-corner__contact:focus-visible {
+.kagu-blot__contact:hover,
+.kagu-blot__contact:focus-visible {
   color: var(--mint-deep);
 }
-.kagu-corner__est {
+.kagu-blot__est {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: color-mix(in oklab, var(--ink) 55%, transparent);
