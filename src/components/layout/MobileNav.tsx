@@ -1,21 +1,17 @@
 "use client";
 
 /*
-  MobileNav — the brand's own full-screen menu, not a generic drawer.
+  MobileNav — "Corner Nav" (after hover.dev): a square hamburger pinned to the
+  top-right corner that springs open a rounded dark card anchored to that same
+  corner. The button's two rules cross into an ✕; the card expands by animating
+  width/height from the button footprint (originX:1, originY:0) on a spring, and
+  the nav links stagger in. A dimmed scrim behind the card closes on tap.
 
-  Motifs borrowed from the rest of the site so the menu reads as "Kagu":
-    · AmbientDrift backdrop (same wash as the hero / loading curtain)
-    · indexed numerals (01 / Work …) echoing the Approach section
-    · the cycling multilingual greeting + "Est. 2025" footer from the hero
-    · mono display type, mint-deep underline accent
-
-  Trigger is two short rules that cross into an ✕ on open (no stock hamburger).
+  Kagu-styled: dark surface tokens, mono display type, mint-deep accents.
   Shown < md only; the desktop inline nav stays as-is. Locks body scroll while
   open, closes on link tap / route change / Esc, traps focus, reduced-motion safe.
 
-  Static styles live in src/styles/mobile-nav.css (imported via globals.css) so
-  the panel's position:fixed/background are in the CSSOM before it mounts —
-  rendering them from an inline <style> caused a one-frame unstyled flash on open.
+  Static styles live in src/styles/mobile-nav.css (imported via globals.css).
 */
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
@@ -24,8 +20,6 @@ import { usePathname } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { navItems } from "./navItems";
-import { AmbientDrift } from "@/components/motion/AmbientDrift";
-import { GreetingCycle } from "@/components/motion/GreetingCycle";
 
 export function MobileNav() {
   const pathname = usePathname();
@@ -70,86 +64,108 @@ export function MobileNav() {
     };
   }, [open]);
 
+  // Spring on open; quick fade-equivalent under reduced motion.
+  const panelTransition = reduced
+    ? { duration: 0.2 }
+    : { type: "spring" as const, stiffness: 320, damping: 32, mass: 0.9 };
+
+  // Stagger the links in once the card has started opening. No-op when reduced.
+  const listVariants = {
+    closed: {},
+    open: reduced
+      ? {}
+      : { transition: { staggerChildren: 0.06, delayChildren: 0.12 } },
+  };
+  const itemVariants = reduced
+    ? { closed: {}, open: {} }
+    : { closed: { opacity: 0, x: 16 }, open: { opacity: 1, x: 0 } };
+
   return (
     <>
+      <AnimatePresence>
+        {open && (
+          <>
+            <motion.div
+              className="kagu-corner__scrim"
+              aria-hidden
+              onClick={close}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: reduced ? 0.15 : 0.3 }}
+            />
+
+            <motion.nav
+              id={panelId}
+              ref={panelRef}
+              className="kagu-corner__panel"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Site menu"
+              style={{ originX: 1, originY: 0 }}
+              variants={{
+                closed: { width: 48, height: 48 },
+                open: { width: "min(88vw, 360px)", height: "min(70vh, 460px)" },
+              }}
+              initial="closed"
+              animate="open"
+              exit="closed"
+              transition={panelTransition}
+            >
+              <motion.ul
+                className="kagu-corner__list"
+                variants={listVariants}
+                initial="closed"
+                animate="open"
+              >
+                {navItems.map((item, i) => {
+                  const isActive =
+                    pathname === item.href || pathname?.startsWith(`${item.href}/`);
+                  return (
+                    <motion.li
+                      key={item.href}
+                      className="kagu-corner__item"
+                      variants={itemVariants}
+                    >
+                      <Link
+                        href={item.href}
+                        onClick={close}
+                        className={`kagu-corner__link ${isActive ? "is-active" : ""}`}
+                        aria-current={isActive ? "page" : undefined}
+                      >
+                        <span className="kagu-corner__index">
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                        <span className="kagu-corner__label">{item.label}</span>
+                      </Link>
+                    </motion.li>
+                  );
+                })}
+              </motion.ul>
+
+              <div className="kagu-corner__footer">
+                <Link href="/contact" onClick={close} className="kagu-corner__contact">
+                  Start a project →
+                </Link>
+                <span className="kagu-corner__est">Est. 2025 · Istanbul</span>
+              </div>
+            </motion.nav>
+          </>
+        )}
+      </AnimatePresence>
+
       <button
         ref={triggerRef}
         type="button"
-        className="kagu-burger"
+        className="kagu-corner__burger"
         aria-label={open ? "Close menu" : "Open menu"}
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((o) => !o)}
       >
-        <span className={`kagu-burger__rule kagu-burger__rule--top ${open ? "is-open" : ""}`} />
-        <span className={`kagu-burger__rule kagu-burger__rule--bottom ${open ? "is-open" : ""}`} />
+        <span className={`kagu-corner__rule kagu-corner__rule--top ${open ? "is-open" : ""}`} />
+        <span className={`kagu-corner__rule kagu-corner__rule--bottom ${open ? "is-open" : ""}`} />
       </button>
-
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            id={panelId}
-            ref={panelRef}
-            className="kagu-mobilemenu"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Site menu"
-            initial={reduced ? { opacity: 0 } : { clipPath: "inset(0 0 100% 0)" }}
-            animate={reduced ? { opacity: 1 } : { clipPath: "inset(0 0 0% 0)" }}
-            exit={reduced ? { opacity: 0 } : { clipPath: "inset(0 0 100% 0)" }}
-            transition={{ duration: reduced ? 0.2 : 0.5, ease: [0.76, 0, 0.24, 1] }}
-          >
-            <motion.div
-              className="kagu-mobilemenu__drift"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: reduced ? 0 : 0.4, delay: reduced ? 0 : 0.45 }}
-            >
-              <AmbientDrift variant="light" />
-            </motion.div>
-
-            <nav className="kagu-mobilemenu__nav" aria-label="Primary">
-              <ul className="kagu-mobilemenu__list">
-                {navItems.map((item, i) => {
-                  const isActive =
-                    pathname === item.href || pathname?.startsWith(`${item.href}/`);
-                  return (
-                    <li key={item.href} className="kagu-mobilemenu__item">
-                      <motion.span
-                        className="kagu-mobilemenu__line"
-                        initial={reduced ? false : { y: "110%" }}
-                        animate={{ y: "0%" }}
-                        transition={{
-                          duration: reduced ? 0 : 0.6,
-                          ease: [0.16, 1, 0.3, 1],
-                          delay: reduced ? 0 : 0.12 + i * 0.07,
-                        }}
-                      >
-                        <Link
-                          href={item.href}
-                          onClick={close}
-                          className={`kagu-mobilemenu__link ${isActive ? "is-active" : ""}`}
-                          aria-current={isActive ? "page" : undefined}
-                        >
-                          <span className="kagu-mobilemenu__index">
-                            {String(i + 1).padStart(2, "0")}
-                          </span>
-                          <span className="kagu-mobilemenu__label">{item.label}</span>
-                        </Link>
-                      </motion.span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </nav>
-
-            <div className="kagu-mobilemenu__footer">
-              <GreetingCycle className="kagu-mobilemenu__greeting" />
-              <span className="kagu-mobilemenu__est">Est. 2025 · Istanbul</span>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </>
   );
 }
