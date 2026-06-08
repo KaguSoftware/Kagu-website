@@ -1,0 +1,122 @@
+/*
+  SiteHeader "Glass Navbar" — floating frosted pill (after hover.dev), Kagu-toned.
+  Paired with src/components/layout/SiteHeader.tsx. Kept in a global stylesheet
+  (imported via globals.css) so structural rules are in the CSSOM before paint.
+  Tokens come from tokens.css.
+*/
+
+/* --- the floating glass pill --- */
+.kagu-glassnav {
+  display: none; /* desktop only; the mobile Corner Nav covers < md */
+}
+
+@media (min-width: 768px) {
+  .kagu-glassnav {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: clamp(1rem, 3vw, 2rem);
+    width: min(100%, 64rem);
+    min-height: 56px;
+    padding: 0.5rem clamp(1rem, 3vw, 1.75rem);
+    border-radius: 9999px;
+    background: color-mix(in oklab, var(--mint-pale) 60%, transparent);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    border: 1px solid color-mix(in oklab, var(--ink) 12%, transparent);
+    box-shadow:
+      0 16px 40px -18px rgba(0, 0, 0, 0.55),
+      inset 0 1px 0 color-mix(in oklab, var(--ink) 10%, transparent); /* top sheen */
+  }
+}
+
+/* No blur support → bump opacity so the pill stays legible over content. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .kagu-glassnav {
+    background: color-mix(in oklab, var(--mint-pale) 94%, var(--paper));
+  }
+}
+
+/* --- clusters --- */
+.kagu-glassnav__left {
+  justify-self: start;
+}
+.kagu-glassnav__left ul {
+  display: flex;
+  align-items: center;
+  gap: clamp(1rem, 2.4vw, 1.75rem);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.kagu-glassnav__logo {
+  justify-self: center;
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--type-lg);
+}
+.kagu-glassnav__right {
+  justify-self: end;
+}
+
+/* --- nav links (mono underline sweep) --- */
+.kagu-nav-link {
+  position: relative;
+  display: inline-block;
+  padding: 8px 0;
+  font-family: var(--font-display);
+  font-size: var(--type-xs);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+}
+.kagu-nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: 4px;
+  height: 1px;
+  background: var(--mint-deep);
+  transition: right 220ms cubic-bezier(0.6, 0.01, 0.05, 0.95);
+}
+.kagu-nav-link:hover::after,
+.kagu-nav-link:focus-visible::after,
+.kagu-nav-link.is-active::after {
+  right: 0;
+}
+.kagu-nav-link.is-active {
+  color: var(--ink);
+}
+@media (prefers-reduced-motion: reduce) {
+  .kagu-nav-link::after { transition: none; }
+}
+
+/* --- CTA pill --- */
+.kagu-glassnav__cta {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1.1rem;
+  border-radius: 9999px;
+  background: var(--mint-deep);
+  color: var(--paper);
+  font-family: var(--font-display);
+  font-size: var(--type-xs);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: filter 200ms var(--ease-arc, ease), transform 200ms var(--ease-arc, ease);
+}
+.kagu-glassnav__cta:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+.kagu-glassnav__cta:focus-visible {
+  outline: 2px solid var(--mint-deep);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .kagu-glassnav__cta { transition: none; }
+}
