@@ -75,9 +75,11 @@ function StudioLights({ reducedMotion }: { reducedMotion: boolean }) {
 function CameraRig({
   reducedMotion,
   targetX,
+  coarse,
 }: {
   reducedMotion: boolean;
   targetX: number;
+  coarse: boolean;
 }) {
   const { camera } = useThree();
   const base = useMemo(() => new THREE.Vector3(0, 0.2, 6.4), []);
@@ -89,8 +91,9 @@ function CameraRig({
       return;
     }
     const t = state.clock.elapsedTime;
-    const px = base.x + Math.sin(t * 0.08) * 0.55 + state.pointer.x * 0.25;
-    const py = base.y + Math.sin(t * 0.06) * 0.28 + state.pointer.y * 0.15;
+    // On touch devices skip pointer tracking — high-frequency touch events cause stutter.
+    const px = base.x + Math.sin(t * 0.08) * 0.55 + (coarse ? 0 : state.pointer.x * 0.25);
+    const py = base.y + Math.sin(t * 0.06) * 0.28 + (coarse ? 0 : state.pointer.y * 0.15);
     const ease = Math.min(1, delta * 1.4);
     camera.position.x += (px - camera.position.x) * ease;
     camera.position.y += (py - camera.position.y) * ease;
@@ -107,11 +110,13 @@ function Scene({
   offsetX,
   count,
   flockScale,
+  coarse,
 }: {
   reducedMotion: boolean;
   offsetX: number;
   count: number;
   flockScale: number;
+  coarse: boolean;
 }) {
   return (
     <>
@@ -119,7 +124,7 @@ function Scene({
       <fogExp2 attach="fog" args={["#04050a", 0.07]} />
 
       <StudioLights reducedMotion={reducedMotion} />
-      <CameraRig reducedMotion={reducedMotion} targetX={offsetX} />
+      <CameraRig reducedMotion={reducedMotion} targetX={offsetX} coarse={coarse} />
 
       <Suspense fallback={null}>
         <Flock reducedMotion={reducedMotion} offsetX={offsetX} count={count} scale={flockScale} />
@@ -182,6 +187,7 @@ export function Hero3D({
   // The Canvas is mounted client-side only (WebGL never runs during SSR).
   const isClient = useIsClient();
   const isDesktop = useMediaQuery("(min-width: 768px)");
+  const coarse = useMediaQuery("(pointer: coarse)");
 
   // Push the flock to the right so the headline owns the left on desktop; on
   // phones center it (the headline sits below it) and thin it out for perf.
@@ -205,7 +211,7 @@ export function Hero3D({
               gl.toneMappingExposure = 1.05;
             }}
           >
-            <Scene reducedMotion={reducedMotion} offsetX={offsetX} count={count} flockScale={flockScale} />
+            <Scene reducedMotion={reducedMotion} offsetX={offsetX} count={count} flockScale={flockScale} coarse={coarse} />
           </Canvas>
         )}
       </div>

@@ -77,7 +77,7 @@ export function AmbientDrift({ variant = "light", className }: AmbientDriftProps
       className={className}
       style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden" }}
     >
-      {/* Layer 1: drifting color washes */}
+      {/* Layer 1: drifting color washes — use transform (GPU) not background-position */}
       <div
         ref={ref}
         className="kagu-ambient-washes"
@@ -86,8 +86,7 @@ export function AmbientDrift({ variant = "light", className }: AmbientDriftProps
           inset: "-15%",
           opacity: variant === "dark" ? 0.55 : 0.6,
           background: washes,
-          backgroundSize: "120% 120%",
-          willChange: "background-position",
+          willChange: "transform",
         }}
       />
       {/* Layer 2: plus pattern that breathes */}
@@ -95,7 +94,7 @@ export function AmbientDrift({ variant = "light", className }: AmbientDriftProps
         className="kagu-ambient-plus"
         style={{
           position: "absolute",
-          inset: 0,
+          inset: "-15%",
           opacity: variant === "dark" ? 0.18 : 0.22,
           backgroundImage: `url("${plusPatternSvg(plusStroke)}")`,
           backgroundRepeat: "repeat",
@@ -122,8 +121,8 @@ export function AmbientDrift({ variant = "light", className }: AmbientDriftProps
           animation: kagu-plus-breathe 14s ease-in-out infinite alternate;
         }
         @keyframes kagu-drift {
-          from { background-position: 0% 0%; }
-          to   { background-position: 100% 100%; }
+          from { transform: translate3d(0%, 0%, 0); }
+          to   { transform: translate3d(8%, 6%, 0); }
         }
         @keyframes kagu-plus-breathe {
           from { opacity: 0.14; transform: translate3d(0,0,0); }

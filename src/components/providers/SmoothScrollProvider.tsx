@@ -25,18 +25,9 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
 
     const coarse = window.matchMedia("(pointer: coarse)").matches;
 
-    // On touch devices use native scroll — Lenis fights iOS/Android momentum.
-    if (coarse) {
-      window.__kaguGsapReady = true;
-      requestAnimationFrame(() => requestAnimationFrame(() => ScrollTrigger.refresh()));
-      return () => {
-        ScrollTrigger.getAll().forEach((t) => t.kill());
-        delete window.__kaguGsapReady;
-      };
-    }
-
     const lenis = new Lenis({
-      lerp: 0.1,
+      // Higher lerp on touch = more responsive, stays close to native momentum feel.
+      lerp: coarse ? 0.18 : 0.1,
       smoothWheel: true,
       wheelMultiplier: 1,
     });

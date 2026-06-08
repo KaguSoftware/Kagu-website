@@ -1,7 +1,6 @@
 import { LoadingScreen } from "@/components/hero3d/LoadingScreen";
 
-// Route-level loading UI for the whole app — the spinning kagu sculpture.
-// Shown whenever a segment suspends (initial stream + client navigations).
+// Route-level loading UI — shown while the page streams in.
 export default function Loading() {
   return <LoadingScreen />;
 }
