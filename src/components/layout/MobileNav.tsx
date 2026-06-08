@@ -12,6 +12,10 @@
   Trigger is two short rules that cross into an ✕ on open (no stock hamburger).
   Shown < md only; the desktop inline nav stays as-is. Locks body scroll while
   open, closes on link tap / route change / Esc, traps focus, reduced-motion safe.
+
+  Static styles live in src/styles/mobile-nav.css (imported via globals.css) so
+  the panel's position:fixed/background are in the CSSOM before it mounts —
+  rendering them from an inline <style> caused a one-frame unstyled flash on open.
 */
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
@@ -25,7 +29,7 @@ import { GreetingCycle } from "@/components/motion/GreetingCycle";
 
 export function MobileNav() {
   const pathname = usePathname();
-  const reduced = useReducedMotion();
+  const reduced = useReducedMotion() ?? false;
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -71,7 +75,7 @@ export function MobileNav() {
       <button
         ref={triggerRef}
         type="button"
-        className="kagu-burger md:hidden"
+        className="kagu-burger"
         aria-label={open ? "Close menu" : "Open menu"}
         aria-expanded={open}
         aria-controls={panelId}
@@ -95,7 +99,14 @@ export function MobileNav() {
             exit={reduced ? { opacity: 0 } : { clipPath: "inset(0 0 100% 0)" }}
             transition={{ duration: reduced ? 0.2 : 0.5, ease: [0.76, 0, 0.24, 1] }}
           >
-            <AmbientDrift variant="light" className="kagu-mobilemenu__drift" />
+            <motion.div
+              className="kagu-mobilemenu__drift"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: reduced ? 0 : 0.4, delay: reduced ? 0 : 0.45 }}
+            >
+              <AmbientDrift variant="light" />
+            </motion.div>
 
             <nav className="kagu-mobilemenu__nav" aria-label="Primary">
               <ul className="kagu-mobilemenu__list">
@@ -139,125 +150,6 @@ export function MobileNav() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      <style>{`
-        /* --- trigger --- */
-        .kagu-burger {
-          position: relative;
-          width: 44px;
-          height: 44px;
-          margin-right: -10px; /* optical: align rules to container edge */
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          background: none;
-          border: 0;
-          cursor: pointer;
-          color: var(--ink);
-          z-index: calc(var(--z-curtain) + 1);
-        }
-        .kagu-burger__rule {
-          position: absolute;
-          left: 11px;
-          width: 22px;
-          height: 1.5px;
-          background: currentColor;
-          transition: transform 360ms cubic-bezier(0.76, 0, 0.24, 1),
-                      width 360ms cubic-bezier(0.76, 0, 0.24, 1);
-        }
-        .kagu-burger__rule--top { transform: translateY(-4px); }
-        .kagu-burger__rule--bottom { transform: translateY(4px); width: 14px; }
-        .kagu-burger__rule--top.is-open { transform: translateY(0) rotate(45deg); }
-        .kagu-burger__rule--bottom.is-open { transform: translateY(0) rotate(-45deg); width: 22px; }
-        @media (prefers-reduced-motion: reduce) {
-          .kagu-burger__rule { transition: none; }
-        }
-
-        /* --- panel --- */
-        .kagu-mobilemenu {
-          position: fixed;
-          inset: 0;
-          z-index: var(--z-curtain);
-          background: var(--paper);
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          padding: max(96px, 14vh) clamp(1.5rem, 7vw, 3rem) clamp(2rem, 6vh, 3.5rem);
-          overflow: hidden;
-        }
-        .kagu-mobilemenu__drift { z-index: 0; }
-
-        .kagu-mobilemenu__nav { position: relative; z-index: 1; flex: 1; display: flex; align-items: center; }
-        .kagu-mobilemenu__list {
-          list-style: none;
-          margin: 0;
-          padding: 0;
-          width: 100%;
-          display: flex;
-          flex-direction: column;
-          gap: clamp(0.5rem, 2vh, 1.1rem);
-        }
-        .kagu-mobilemenu__line {
-          display: block;
-          overflow: hidden; /* mask for the rise-in */
-        }
-        .kagu-mobilemenu__link {
-          display: flex;
-          align-items: baseline;
-          gap: 0.85rem;
-          padding: 6px 0;
-          min-height: 48px;
-          font-family: var(--font-display, ui-monospace, monospace);
-          font-weight: 500;
-          letter-spacing: -0.02em;
-          line-height: 1;
-          color: var(--ink);
-          text-decoration: none;
-        }
-        .kagu-mobilemenu__index {
-          font-family: var(--font-mono, ui-monospace, monospace);
-          font-size: var(--type-xs);
-          letter-spacing: 0.12em;
-          color: var(--mint-deep);
-          transform: translateY(-0.55em); /* lift the numeral toward the cap line */
-        }
-        .kagu-mobilemenu__label {
-          font-size: clamp(2.75rem, 13vw, 4rem);
-          position: relative;
-        }
-        .kagu-mobilemenu__link.is-active .kagu-mobilemenu__label::after {
-          content: "";
-          position: absolute;
-          left: 0;
-          right: 0;
-          bottom: 0.12em;
-          height: 2px;
-          background: var(--mint-deep);
-        }
-
-        .kagu-mobilemenu__footer {
-          position: relative;
-          z-index: 1;
-          display: flex;
-          align-items: baseline;
-          justify-content: space-between;
-          gap: 1rem;
-          border-top: 1px solid var(--neutral);
-          padding-top: clamp(1rem, 3vh, 1.5rem);
-        }
-        .kagu-mobilemenu__greeting {
-          font-family: var(--font-display, ui-monospace, monospace);
-          font-size: var(--type-lg);
-          color: var(--ink);
-        }
-        .kagu-mobilemenu__est {
-          font-family: var(--font-mono, ui-monospace, monospace);
-          font-size: var(--type-xs);
-          letter-spacing: 0.16em;
-          text-transform: uppercase;
-          color: color-mix(in oklab, var(--ink) 55%, transparent);
-        }
-      `}</style>
     </>
   );
 }

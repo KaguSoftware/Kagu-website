@@ -1,0 +1,130 @@
+/*
+  MobileNav styles — moved out of the component's inline <style> so the
+  structural rules live in the CSSOM before the panel ever mounts. Rendering
+  these from an inline <style> sibling caused a one-frame unstyled flash on
+  open (the motion.div painted before its position:fixed/background applied).
+  Tokens (--paper, --ink, --z-curtain, …) come from tokens.css, imported first.
+*/
+
+/* --- trigger --- */
+.kagu-burger {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  margin-right: -10px; /* optical: align rules to container edge */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  color: var(--ink);
+  z-index: calc(var(--z-curtain) + 1);
+}
+/* Mobile only — the desktop inline nav takes over at md. */
+@media (min-width: 768px) {
+  .kagu-burger { display: none; }
+}
+.kagu-burger__rule {
+  position: absolute;
+  left: 11px;
+  width: 22px;
+  height: 1.5px;
+  background: currentColor;
+  transition: transform 360ms cubic-bezier(0.76, 0, 0.24, 1),
+              width 360ms cubic-bezier(0.76, 0, 0.24, 1);
+}
+.kagu-burger__rule--top { transform: translateY(-4px); }
+.kagu-burger__rule--bottom { transform: translateY(4px); width: 14px; }
+.kagu-burger__rule--top.is-open { transform: translateY(0) rotate(45deg); }
+.kagu-burger__rule--bottom.is-open { transform: translateY(0) rotate(-45deg); width: 22px; }
+@media (prefers-reduced-motion: reduce) {
+  .kagu-burger__rule { transition: none; }
+}
+
+/* --- panel --- */
+.kagu-mobilemenu {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-curtain);
+  background: var(--paper); /* opaque — any sub-frame is solid paper, never transparent */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: max(96px, 14vh) clamp(1.5rem, 7vw, 3rem) clamp(2rem, 6vh, 3.5rem);
+  overflow: hidden;
+  will-change: clip-path; /* own layer so the clip animates cleanly */
+  transform: translateZ(0); /* stable compositing layer, prevents re-raster during clip */
+}
+.kagu-mobilemenu__drift { position: absolute; inset: 0; z-index: 0; }
+
+.kagu-mobilemenu__nav { position: relative; z-index: 1; flex: 1; display: flex; align-items: center; }
+.kagu-mobilemenu__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.5rem, 2vh, 1.1rem);
+}
+.kagu-mobilemenu__line {
+  display: block;
+  overflow: hidden; /* mask for the rise-in */
+}
+.kagu-mobilemenu__link {
+  display: flex;
+  align-items: baseline;
+  gap: 0.85rem;
+  padding: 6px 0;
+  min-height: 48px;
+  font-family: var(--font-display, ui-monospace, monospace);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--ink);
+  text-decoration: none;
+}
+.kagu-mobilemenu__index {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--type-xs);
+  letter-spacing: 0.12em;
+  color: var(--mint-deep);
+  transform: translateY(-0.55em); /* lift the numeral toward the cap line */
+}
+.kagu-mobilemenu__label {
+  font-size: clamp(2.75rem, 13vw, 4rem);
+  position: relative;
+}
+.kagu-mobilemenu__link.is-active .kagu-mobilemenu__label::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.12em;
+  height: 2px;
+  background: var(--mint-deep);
+}
+
+.kagu-mobilemenu__footer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  border-top: 1px solid var(--neutral);
+  padding-top: clamp(1rem, 3vh, 1.5rem);
+}
+.kagu-mobilemenu__greeting {
+  font-family: var(--font-display, ui-monospace, monospace);
+  font-size: var(--type-lg);
+  color: var(--ink);
+}
+.kagu-mobilemenu__est {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--type-xs);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--ink) 55%, transparent);
+}

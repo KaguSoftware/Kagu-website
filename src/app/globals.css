@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "../styles/tokens.css";
 @import "../styles/view-transitions.css";
+@import "../styles/mobile-nav.css";
 
 @theme inline {
   /* Colors → expose every token to Tailwind */
