@@ -24,8 +24,19 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
     if (window.__kaguLenis) return; // strict-mode double-effect guard
 
     const coarse = window.matchMedia("(pointer: coarse)").matches;
+
+    // On touch devices use native scroll — Lenis fights iOS/Android momentum.
+    if (coarse) {
+      window.__kaguGsapReady = true;
+      requestAnimationFrame(() => requestAnimationFrame(() => ScrollTrigger.refresh()));
+      return () => {
+        ScrollTrigger.getAll().forEach((t) => t.kill());
+        delete window.__kaguGsapReady;
+      };
+    }
+
     const lenis = new Lenis({
-      lerp: coarse ? 0.06 : 0.1,
+      lerp: 0.1,
       smoothWheel: true,
       wheelMultiplier: 1,
     });

@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
 import { LoadingScreen } from "@/components/hero3d/LoadingScreen";
 
 const SESSION_KEY = "kagu_visited";
-const FILL_MS = 2800; // fake progress duration — long enough to cycle all four greetings
+const FILL_MS = 1800; // fake progress duration
 const FADE_MS = 600; // exit fade
 
 export function PreloadCurtain() {
@@ -69,7 +69,7 @@ export function PreloadCurtain() {
         pointerEvents: leaving ? "none" : "auto",
       }}
     >
-      <LoadingScreen progress={progress} greeting skeleton={false} />
+      <LoadingScreen progress={progress} bare skeleton={false} />
     </div>
   );
 }

@@ -32,6 +32,7 @@ export function ScrollSkew({
 
   useEffect(() => {
     if (reduced) return;
+    if (window.matchMedia("(pointer: coarse)").matches) return;
     const el = ref.current;
     if (!el) return;
 

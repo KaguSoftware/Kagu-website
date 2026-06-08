@@ -105,22 +105,16 @@ export function LoadingScreen({
   progress,
   greeting = false,
   skeleton = true,
-}: { progress?: number; greeting?: boolean; skeleton?: boolean } = {}) {
+  bare = false,
+}: { progress?: number; greeting?: boolean; skeleton?: boolean; bare?: boolean } = {}) {
   // WebGL only mounts on the client; until then the dark backdrop stands in.
   const isClient = useIsClient();
   const reducedMotion = useReducedMotion();
 
   return (
     <div className="kagu-loading" role="status" aria-label="Loading">
-      {/* Same ambient treatment as the hero (mint washes + plus-pattern +
-          grain), sitting behind the transparent canvas so the two screens
-          share one backdrop. */}
-      <AmbientDrift variant="light" className="kagu-loading__drift" />
+      {!bare && <AmbientDrift variant="light" className="kagu-loading__drift" />}
 
-      {/* Layout skeleton behind the (transparent) canvas — a header bar, a big
-          headline, and a content row, all shimmering, so the screen reads as
-          "the page is arriving". Suppressed on the initial curtain, which is
-          just the bird on the dark backdrop. */}
       {skeleton && (
       <div className="kagu-skeleton" aria-hidden>
         <div className="kagu-skeleton__header">
@@ -172,11 +166,9 @@ export function LoadingScreen({
         </Canvas>
       )}
 
-      {/* Light spilling in from the top-right — `screen` blend so it brightens
-          the bird and the backdrop together, not just tints the corner. */}
-      <div className="kagu-loading__glow" aria-hidden />
+      {!bare && <div className="kagu-loading__glow" aria-hidden />}
 
-      {greeting && <FastGreeting />}
+      {!bare && greeting && <FastGreeting />}
 
       {progress == null ? (
         <span className="kagu-loading__label">Loading</span>
