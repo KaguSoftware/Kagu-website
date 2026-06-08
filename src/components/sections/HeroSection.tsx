@@ -78,8 +78,10 @@ export function HeroSection({ heroMarquee }: { heroMarquee: MarqueeItem[] }) {
         background: "var(--paper)",
         position: "relative",
         overflow: "hidden",
+        // Clear the fixed floating header (pill ≈ 56px + its vertical padding).
+        paddingTop: "clamp(88px, 12vh, 120px)",
       }}
-      className="px-(--container-x) pt-(--space-8) pb-(--section-y) flex flex-col"
+      className="px-(--container-x) pb-(--section-y) flex flex-col"
     >
       {/* Ambient drift (M15 use #1 of 2): plus-pattern + grain + drift */}
       <AmbientDrift variant="light" />
@@ -164,7 +166,7 @@ export function HeroSection({ heroMarquee }: { heroMarquee: MarqueeItem[] }) {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.2 }}
           className="grid grid-cols-2 md:grid-cols-12 gap-4 items-baseline"
-          style={{ paddingTop: "var(--space-12)" }}
+          style={{ paddingTop: "var(--space-4)" }}
         >
           <div className="col-span-1 md:col-span-5">
             <span className="eyebrow inline-flex items-baseline gap-3 flex-wrap">

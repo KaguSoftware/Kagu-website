@@ -18,6 +18,7 @@
   border: 0;
   cursor: pointer;
   color: var(--ink);
+  pointer-events: auto; /* header is pointer-events:none; the burger stays clickable */
   z-index: calc(var(--z-curtain) + 1); /* above the panel so it can become the ✕ */
 }
 /* Mobile only — the desktop inline nav takes over at md. */
@@ -46,6 +47,7 @@
   position: fixed;
   inset: 0;
   z-index: var(--z-curtain);
+  pointer-events: auto;
   background: color-mix(in oklab, var(--paper) 70%, transparent);
   backdrop-filter: blur(2px);
 }
@@ -56,6 +58,7 @@
   top: 12px;
   right: 12px;
   z-index: var(--z-curtain);
+  pointer-events: auto;
   overflow: hidden;
   background: color-mix(in oklab, var(--mint-pale) 96%, var(--paper));
   border: 1px solid var(--neutral);

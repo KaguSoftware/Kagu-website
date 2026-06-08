@@ -23,11 +23,12 @@ export function SiteHeader() {
   const pathname = usePathname();
   return (
     <header
-      className="sticky top-0 flex justify-center"
+      className="fixed top-0 left-0 right-0 flex justify-center"
       style={{
         viewTransitionName: "site-header",
         padding: "clamp(0.6rem, 2vh, 1rem) var(--container-x)",
         zIndex: "var(--z-nav)" as unknown as number,
+        pointerEvents: "none", // let the transparent gutter pass clicks through; pill re-enables
       }}
     >
       <div className="kagu-glassnav">
