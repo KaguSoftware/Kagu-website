@@ -1,8 +1,8 @@
 "use client";
 
 /*
-  M05 — image-mask-sweep. Directional clip-path reveal driven by ScrollTrigger.
-  Single-fire (`once: true`). Reduced-motion: instant reveal.
+  M05 — image-mask-sweep. Directional clip-path reveal driven by Framer Motion's
+  whileInView. Single-fire (`viewport.once`). Reduced-motion: instant reveal.
 
   Direction semantics (be intentional — don't randomize):
   - "top"    → starts hidden from top; reveals top→bottom. Use for "arrival" feel.
@@ -11,9 +11,7 @@
   - "left"   → reveals right→left. Use for "looking back" / return cards.
 */
 
-import { useEffect, useRef } from "react";
-import { gsap, ScrollTrigger } from "@/lib/gsap";
-import { useReducedMotion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import type { ReactNode } from "react";
 
 export type SweepDirection = "top" | "right" | "bottom" | "left";
@@ -37,6 +35,9 @@ const CLIPS: Record<SweepDirection, { from: string; to: string }> = {
   },
 };
 
+// GSAP "expo.inOut" ≈ this cubic-bezier (replaces the former ease: "expo.inOut").
+const EXPO_IN_OUT = [0.87, 0, 0.13, 1] as const;
+
 interface MaskSweepProps {
   children: ReactNode;
   direction?: SweepDirection;
@@ -54,44 +55,30 @@ export function MaskSweep({
   className,
   style,
 }: MaskSweepProps) {
-  const ref = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
+  const clip = CLIPS[direction];
 
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (reduced) {
-      el.style.clipPath = "inset(0)";
-      return;
-    }
-    const clip = CLIPS[direction];
-    gsap.set(el, { clipPath: clip.from, opacity: 1 });
-    const trigger = ScrollTrigger.create({
-      trigger: el,
-      start: "top bottom-=120",
-      once: true,
-      onEnter() {
-        gsap.to(el, {
-          clipPath: clip.to,
-          duration,
-          delay,
-          ease: "expo.inOut",
-        });
-      },
-    });
-    return () => trigger.kill();
-  }, [direction, duration, delay, reduced]);
+  if (reduced) {
+    return (
+      <div className={className} style={{ clipPath: "inset(0)", ...style }}>
+        {children}
+      </div>
+    );
+  }
 
   return (
-    <div
-      ref={ref}
+    <motion.div
       className={className}
-      style={{
-        clipPath: reduced ? "inset(0)" : CLIPS[direction].from,
-        ...style,
-      }}
+      // Keep `from` inline so SSR/first paint shows the masked state (no flash
+      // of fully-revealed content before the reveal runs).
+      style={{ clipPath: clip.from, ...style }}
+      initial={{ clipPath: clip.from }}
+      whileInView={{ clipPath: clip.to }}
+      // margin shrinks the viewport's bottom by 120px ≈ the old "top bottom-=120".
+      viewport={{ once: true, margin: "0px 0px -120px 0px" }}
+      transition={{ duration, delay, ease: EXPO_IN_OUT }}
     >
       {children}
-    </div>
+    </motion.div>
   );
 }

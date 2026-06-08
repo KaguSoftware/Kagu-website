@@ -8,15 +8,15 @@
   Frame 0 is the optional thumbnail (used as the establishing shot
   with the case lede). Frames 1..N are the features.
 
-  Pin/scrub piped through ScrollTrigger so it stays in lockstep
-  with Lenis smooth scroll (bridged in SmoothScrollProvider).
+  Pin/scrub via CSS `position: sticky` + Framer Motion useScroll: a tall
+  container provides the scroll travel, the stage sticks to the top, and
+  scrollYProgress drives the active frame index.
 */
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ScrollTrigger } from "@/lib/gsap";
-import { useReducedMotion } from "motion/react";
+import { useScroll, useMotionValueEvent, useReducedMotion } from "motion/react";
 import type { Case } from "@/lib/content";
 
 interface CaseReelProps {
@@ -159,56 +159,21 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
   // is exhausting at phone scale.
   const HOLD_PER_FRAME = preview ? 0.25 : isMobile ? 0.55 : 1;
 
-  useEffect(() => {
+  // Drive the active frame from scroll progress over the container.
+  //   - preview (homepage): no pin. offset ["start 0.75","end 0.5"] ≈ the old
+  //     ScrollTrigger start "top 25%" / end "bottom center".
+  //   - full reel: the stage sticks (CSS) inside a tall container; offset
+  //     ["start start","end end"] ≈ the old pin start "top top" + scrub travel.
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: preview ? ["start 0.75", "end 0.5"] : ["start start", "end end"],
+  });
+
+  useMotionValueEvent(scrollYProgress, "change", (p) => {
     if (reduced || total === 0) return;
-    const container = containerRef.current;
-    const stage = stageRef.current;
-    if (!container || !stage) return;
-
-    // Preview mode (homepage) doesn't lock scroll — the section scrolls past
-    // normally and the displayed frame changes based on scroll progress over
-    // the container's bounds. Full reels still pin.
-    const trigger = preview
-      ? ScrollTrigger.create({
-          trigger: container,
-          // Desktop fires earlier (top hits center) so the phone-frame cases
-          // swap before the user scrolls past most of the section. Mobile
-          // keeps the later trigger.
-          start: "top 25%",
-          end: "bottom center",
-          scrub: 0.4,
-          onUpdate: (self) => {
-            const idx = Math.min(total - 1, Math.floor(self.progress * total));
-            setActive((curr) => (curr === idx ? curr : idx));
-          },
-          invalidateOnRefresh: true,
-        })
-      : ScrollTrigger.create({
-          trigger: container,
-          start: "top top",
-          end: () => `+=${window.innerHeight * HOLD_PER_FRAME * total}`,
-          pin: stage,
-          pinSpacing: true,
-          scrub: 0.4,
-          refreshPriority: 1,
-          onUpdate: (self) => {
-            const idx = Math.min(total - 1, Math.floor(self.progress * total));
-            setActive((curr) => (curr === idx ? curr : idx));
-          },
-          invalidateOnRefresh: true,
-        });
-
-    // Force a refresh after mount so triggers that registered before the pin
-    // spacer was inserted (or that depend on this section's height) recalc.
-    const refreshId = requestAnimationFrame(() => {
-      requestAnimationFrame(() => ScrollTrigger.refresh());
-    });
-
-    return () => {
-      cancelAnimationFrame(refreshId);
-      trigger.kill();
-    };
-  }, [reduced, total, isMobile, preview]);
+    const idx = Math.min(total - 1, Math.max(0, Math.floor(p * total)));
+    setActive((curr) => (curr === idx ? curr : idx));
+  });
 
   if (total === 0) return null;
 
@@ -219,27 +184,31 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
       ref={containerRef}
       style={{
         position: "relative",
-        // Total scroll distance = (frames * hold) + 1 viewport for the pin itself.
-        // pinSpacing: true means GSAP adds spacing; we only need this on the
-        // container so layout calculates the right height.
+        // Full reels need explicit scroll travel now that GSAP pinSpacing is
+        // gone: the sticky stage occupies 1 viewport (+1) and each frame holds
+        // for HOLD_PER_FRAME viewports. Preview doesn't pin, so it sizes to its
+        // content.
+        height: preview ? undefined : `${(HOLD_PER_FRAME * total + 1) * 100}vh`,
       }}
       aria-label={`${caseData.client} feature reel`}
     >
       <div
         ref={stageRef}
         style={{
-          // Full reels pin to one viewport (the scroll-lock), so they lock to
-          // 100vh. Preview (homepage) does NOT pin — on desktop it fits its
-          // content instead of stretching to 100vh, so the aspect-ratio'd frame
-          // (which animates its own size smoothly) drives the height and the
-          // desktop frame isn't left floating in empty space. Mobile keeps a
-          // viewport height so its flex rows have a height authority to fill.
+          // Full reels stick to the top of the viewport (the scroll-lock) for
+          // the height of the tall container, so they lock to 100vh. Preview
+          // (homepage) does NOT pin — on desktop it fits its content instead of
+          // stretching to 100vh, so the aspect-ratio'd frame (which animates its
+          // own size smoothly) drives the height and the desktop frame isn't
+          // left floating in empty space. Mobile keeps a viewport height so its
+          // flex rows have a height authority to fill.
           height: isMobile ? "100svh" : preview ? "auto" : "100vh",
           minHeight: preview && !isMobile ? 0 : "100svh",
           display: "flex",
           flexDirection: "column",
           background: "var(--paper)",
-          position: "relative",
+          position: preview ? "relative" : "sticky",
+          top: preview ? undefined : 0,
           zIndex: 1,
           isolation: "isolate",
           paddingTop: "clamp(76px, 9vh, 91px)",

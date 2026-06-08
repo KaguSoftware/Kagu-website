@@ -3,7 +3,6 @@ import { Suspense } from "react";
 import { Public_Sans, Space_Mono } from "next/font/google";
 import "./globals.css";
 
-import { SmoothScrollProvider } from "@/components/providers/SmoothScrollProvider";
 import { NavigationEvents } from "@/components/providers/NavigationEvents";
 import { SiteHeaderGate } from "@/components/layout/SiteHeaderGate";
 import { PreloadCurtain } from "@/components/motion/PreloadCurtain";
@@ -45,11 +44,9 @@ export default function RootLayout({
         <a href="#main" className="skip-link">
           Skip to content
         </a>
-        <SmoothScrollProvider>
-          <PreloadCurtain />
-          <SiteHeaderGate />
-          <main id="main">{children}</main>
-        </SmoothScrollProvider>
+        <PreloadCurtain />
+        <SiteHeaderGate />
+        <main id="main">{children}</main>
         <Suspense fallback={null}>
           <NavigationEvents />
         </Suspense>

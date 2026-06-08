@@ -4,82 +4,89 @@
   Section 4 — Approach.
   Background: --mint-soft.
   Type-dominance: 8xl numerals.
-  Primary motion: M07 sticky-numeral via ScrollTrigger.pin — the left numeral
-  column is pinned for the duration of the steps; the active numeral
-  cross-fades as the user scrolls through steps.
+  Primary motion: M07 sticky-numeral — the left numeral column is pinned via
+  CSS `position: sticky` for the duration of the steps; the active numeral
+  cross-fades as each step scrolls into the detection band (Framer Motion
+  useInView per step).
   VARIANCE 8 / MOTION 5 / DENSITY 3.
 */
 
-import { useEffect, useRef, useState } from "react";
-import { gsap, ScrollTrigger } from "@/lib/gsap";
-import { useReducedMotion } from "motion/react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useInView, useReducedMotion } from "motion/react";
 import type { ApproachStep } from "@/lib/content";
 import { SectionRise } from "@/components/motion/SectionRise";
 import { Eyebrow } from "@/components/layout/Eyebrow";
 
-export function ApproachSection({ approach }: { approach: ApproachStep[] }) {
-  const stepsRef = useRef<HTMLDivElement>(null);
-  const pinRef = useRef<HTMLDivElement>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const reduced = useReducedMotion();
+/*
+  One step. Owns its own useInView so the parent can mark it active when it
+  reaches the upper-middle of the viewport. The margin shrinks the viewport top
+  40% and bottom 45%, leaving a thin band ~the 45% anchor the GSAP pin used, so
+  the active numeral lines up with the step heading in view.
+*/
+function ApproachStepItem({
+  step,
+  index,
+  reduced,
+  onActive,
+}: {
+  step: ApproachStep;
+  index: number;
+  reduced: boolean;
+  onActive: (i: number) => void;
+}) {
+  const ref = useRef<HTMLElement>(null);
+  const inView = useInView(ref, { margin: "-40% 0px -45% 0px" });
 
   useEffect(() => {
     if (reduced) return;
-    const stepsEl = stepsRef.current;
-    const pinEl = pinRef.current;
-    if (!stepsEl || !pinEl) return;
+    if (inView) onActive(index);
+  }, [inView, index, reduced, onActive]);
 
-    // Pin the sticky numeral on all sizes. Desktop pin holds longer
-    // ("bottom+=200 bottom") so the final "4" lingers a beat past the
-    // last step before releasing.
-    const mm = gsap.matchMedia();
+  return (
+    <article ref={ref} data-step style={{ minHeight: "40vh" }}>
+      <SectionRise amount={0.3} delay={0.05 * index}>
+        <h3
+          className="display"
+          style={{
+            fontSize: "var(--type-4xl)",
+            lineHeight: 1,
+            marginBottom: "var(--space-6)",
+          }}
+        >
+          {step.title}
+        </h3>
+        <p
+          style={{
+            fontSize: "var(--type-md)",
+            lineHeight: 1.7,
+            color: "var(--ink)",
+            maxWidth: "52ch",
+          }}
+        >
+          {step.body}
+        </p>
+      </SectionRise>
+    </article>
+  );
+}
 
-    // The numeral pin line and the per-step active triggers must use the SAME
-    // vertical anchor so the numeral visually aligns with the active step's
-    // heading at all times.
-    //   - Desktop: anchor at 35% from viewport top (paragraph in the upper-
-    //     middle of the viewport feels more comfortable than top-pinned).
-    //   - Mobile:  anchor at 88px from viewport top (right under the nav).
-    const buildTriggers = (anchor: string, pin: boolean) => {
-      const pinTrigger = pin
-        ? ScrollTrigger.create({
-            trigger: stepsEl,
-            start: `top ${anchor}`,
-            end: `bottom ${anchor}`,
-            pin: pinEl,
-            pinSpacing: false,
-            invalidateOnRefresh: true,
-          })
-        : null;
+export function ApproachSection({ approach }: { approach: ApproachStep[] }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const reduced = useReducedMotion() ?? false;
 
-      const stepEls = Array.from(stepsEl.querySelectorAll<HTMLElement>("[data-step]"));
-      const stepTriggers = stepEls.map((el, i) =>
-        ScrollTrigger.create({
-          trigger: el,
-          start: `top ${anchor}`,
-          end: `bottom ${anchor}`,
-          invalidateOnRefresh: true,
-          onEnter: () => setActiveIndex(i),
-          onEnterBack: () => setActiveIndex(i),
-        }),
-      );
+  // Desktop pins the numeral column via CSS sticky; mobile lets it scroll
+  // naturally (the old GSAP behavior pinned only ≥768px).
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const on = () => setIsDesktop(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
 
-      return () => {
-        pinTrigger?.kill();
-        stepTriggers.forEach((t) => t.kill());
-      };
-    };
-
-    // Desktop pins the numeral column through the steps. On phones, pinning
-    // during touch scroll reads as sticky/janky, so we only drive the active
-    // numeral (no pin) — the column scrolls naturally with the content.
-    mm.add("(min-width: 768px)", () => buildTriggers("45%", true));
-    mm.add("(max-width: 767px)", () => buildTriggers("top+=88", false));
-
-    return () => {
-      mm.revert();
-    };
-  }, [reduced]);
+  const onActive = useCallback((i: number) => setActiveIndex(i), []);
+  const sticky = isDesktop && !reduced;
 
   return (
     <section
@@ -107,13 +114,18 @@ export function ApproachSection({ approach }: { approach: ApproachStep[] }) {
           </div>
         </SectionRise>
 
-        <div ref={stepsRef} className="grid grid-cols-12 gap-4 md:gap-8 items-start">
-          {/* Pinned numeral column — visible on all sizes, pinned via gsap.
-              Anchored to the top of the column on all sizes so the first
+        <div className="grid grid-cols-12 gap-4 md:gap-8 items-start">
+          {/* Pinned numeral column — sticks at the 45vh anchor on desktop via
+              CSS sticky; scrolls naturally on mobile. Anchored so the first
               numeral lines up with the first step ("Listen"). */}
           <div
-            ref={pinRef}
-            className="col-span-3 md:col-span-4 flex items-start md:min-h-[60vh]"
+            className="col-span-3 md:col-span-4 flex items-start"
+            style={{
+              position: sticky ? "sticky" : "static",
+              top: sticky ? "45vh" : undefined,
+              alignSelf: "start",
+              height: sticky ? "1em" : undefined,
+            }}
           >
             <div style={{ position: "relative", height: "1em", width: "100%" }}>
               {approach.map((step, i) => (
@@ -141,34 +153,13 @@ export function ApproachSection({ approach }: { approach: ApproachStep[] }) {
           {/* Steps stack */}
           <div className="col-span-9 md:col-span-7 md:col-start-6 flex flex-col gap-(--space-40)">
             {approach.map((step, i) => (
-              <article
+              <ApproachStepItem
                 key={step.number}
-                data-step
-                style={{ minHeight: "40vh" }}
-              >
-                <SectionRise amount={0.3} delay={0.05 * i}>
-                  <h3
-                    className="display"
-                    style={{
-                      fontSize: "var(--type-4xl)",
-                      lineHeight: 1,
-                      marginBottom: "var(--space-6)",
-                    }}
-                  >
-                    {step.title}
-                  </h3>
-                  <p
-                    style={{
-                      fontSize: "var(--type-md)",
-                      lineHeight: 1.7,
-                      color: "var(--ink)",
-                      maxWidth: "52ch",
-                    }}
-                  >
-                    {step.body}
-                  </p>
-                </SectionRise>
-              </article>
+                step={step}
+                index={i}
+                reduced={reduced}
+                onActive={onActive}
+              />
             ))}
           </div>
         </div>
