@@ -104,42 +104,14 @@ function SpinSculpture({ reducedMotion }: { reducedMotion: boolean }) {
 export function LoadingScreen({
   progress,
   greeting = false,
-  skeleton = true,
-  bare = false,
-}: { progress?: number; greeting?: boolean; skeleton?: boolean; bare?: boolean } = {}) {
+}: { progress?: number; greeting?: boolean } = {}) {
   // WebGL only mounts on the client; until then the dark backdrop stands in.
   const isClient = useIsClient();
   const reducedMotion = useReducedMotion();
 
   return (
     <div className="kagu-loading" role="status" aria-label="Loading">
-      {!bare && <AmbientDrift variant="light" className="kagu-loading__drift" />}
-
-      {skeleton && (
-      <div className="kagu-skeleton" aria-hidden>
-        <div className="kagu-skeleton__header">
-          <div className="kagu-skeleton__row">
-            <div className="kg-sk kagu-skeleton__logo" />
-            <div className="kagu-skeleton__nav">
-              <div className="kg-sk kagu-skeleton__navitem" />
-              <div className="kg-sk kagu-skeleton__navitem" />
-              <div className="kg-sk kagu-skeleton__navitem" />
-              <div className="kg-sk kagu-skeleton__navitem" />
-            </div>
-          </div>
-        </div>
-        <div className="kagu-skeleton__main">
-          <div className="kg-sk kagu-skeleton__title" />
-          <div className="kg-sk kagu-skeleton__title kagu-skeleton__title--short" />
-          <div className="kg-sk kagu-skeleton__sub" />
-          <div className="kagu-skeleton__cards">
-            <div className="kg-sk kagu-skeleton__card" />
-            <div className="kg-sk kagu-skeleton__card" />
-            <div className="kg-sk kagu-skeleton__card" />
-          </div>
-        </div>
-      </div>
-      )}
+      <AmbientDrift variant="light" className="kagu-loading__drift" />
 
       {isClient && (
         <Canvas
@@ -166,9 +138,9 @@ export function LoadingScreen({
         </Canvas>
       )}
 
-      {!bare && <div className="kagu-loading__glow" aria-hidden />}
+      <div className="kagu-loading__glow" aria-hidden />
 
-      {!bare && greeting && <FastGreeting />}
+      {greeting && <FastGreeting />}
 
       {progress == null ? (
         <span className="kagu-loading__label">Loading</span>
@@ -206,76 +178,6 @@ export function LoadingScreen({
               rgba(168, 200, 255, 0.5) 0%,
               rgba(130, 168, 235, 0.26) 38%,
               transparent 72%);
-        }
-
-        /* --- layout skeleton --- */
-        .kagu-skeleton {
-          position: absolute;
-          inset: 0;
-          z-index: 0;
-          display: flex;
-          flex-direction: column;
-          padding: 0 var(--container-x, clamp(1.25rem, 5vw, 5rem));
-        }
-        .kagu-skeleton__row,
-        .kagu-skeleton__main {
-          width: 100%;
-          max-width: var(--container-max, 96rem);
-          margin: 0 auto;
-        }
-        .kagu-skeleton__header {
-          border-bottom: 1px solid color-mix(in oklab, var(--ink, #eef1f5) 8%, transparent);
-        }
-        .kagu-skeleton__row {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          min-height: 64px;
-        }
-        .kagu-skeleton__logo { width: 42px; height: 20px; border-radius: 5px; }
-        .kagu-skeleton__nav { display: flex; gap: clamp(1.25rem, 3vw, 2.5rem); }
-        .kagu-skeleton__navitem { width: 54px; height: 11px; border-radius: 4px; }
-        .kagu-skeleton__main {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          gap: 1.25rem;
-          padding-block: clamp(2rem, 8vh, 6rem);
-        }
-        .kagu-skeleton__title { width: 80%; height: clamp(40px, 7vw, 78px); border-radius: 10px; }
-        .kagu-skeleton__title--short { width: 52%; }
-        .kagu-skeleton__sub { width: 36%; height: 16px; border-radius: 6px; margin-top: 0.5rem; }
-        .kagu-skeleton__cards {
-          margin-top: clamp(1.5rem, 4vh, 3rem);
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: clamp(1rem, 2vw, 1.75rem);
-        }
-        .kagu-skeleton__card { height: clamp(120px, 18vh, 220px); border-radius: 12px; }
-        @media (max-width: 767px) {
-          .kagu-skeleton__nav { display: none; }
-          .kagu-skeleton__cards { grid-template-columns: 1fr; }
-          .kagu-skeleton__title { width: 92%; }
-        }
-        /* shimmering placeholder fill */
-        .kg-sk {
-          background:
-            linear-gradient(
-              100deg,
-              color-mix(in oklab, var(--ink, #eef1f5) 5%, transparent) 30%,
-              color-mix(in oklab, var(--ink, #eef1f5) 11%, transparent) 50%,
-              color-mix(in oklab, var(--ink, #eef1f5) 5%, transparent) 70%
-            );
-          background-size: 200% 100%;
-          animation: kagu-skeleton-shimmer 1.5s ease-in-out infinite;
-        }
-        @keyframes kagu-skeleton-shimmer {
-          0% { background-position: 180% 0; }
-          100% { background-position: -180% 0; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .kg-sk { animation: none; }
         }
 
         .kagu-loading__greeting {

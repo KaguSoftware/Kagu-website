@@ -26,10 +26,14 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
     const coarse = window.matchMedia("(pointer: coarse)").matches;
 
     const lenis = new Lenis({
-      // Higher lerp on touch = more responsive, stays close to native momentum feel.
-      lerp: coarse ? 0.18 : 0.1,
-      smoothWheel: true,
+      lerp: 0.1,
+      // Smooth the wheel on desktop. On touch we deliberately DON'T sync touch
+      // (syncTouch:false) — Lenis leaves native momentum alone, which is what
+      // makes phones feel responsive instead of fighting the OS scroller.
+      smoothWheel: !coarse,
+      syncTouch: false,
       wheelMultiplier: 1,
+      touchMultiplier: 1.2,
     });
     window.__kaguLenis = lenis;
 

@@ -32,6 +32,7 @@ export function ClientsRecognitionSection({
       {/* Decorative geometry — large quiet shapes layered behind the content. */}
       <svg
         aria-hidden
+        className="kagu-recognition-deco"
         viewBox="0 0 1200 800"
         preserveAspectRatio="xMidYMid slice"
         style={{
@@ -172,22 +173,39 @@ export function ClientsRecognitionSection({
         {clients.map((c) => (
           <span
             key={c.slug}
+            className="kagu-client-token"
             style={{
               fontFamily: "var(--font-display)",
-              fontSize: "var(--type-6xl)",
               color: "var(--ink)",
-              padding: "0 var(--space-12)",
               whiteSpace: "nowrap",
               lineHeight: 1,
             }}
           >
             {c.client}
-            <span style={{ color: "var(--mint-deep)", marginLeft: "var(--space-12)" }} aria-hidden>
+            <span className="kagu-client-token__dot" style={{ color: "var(--mint-deep)" }} aria-hidden>
               ·
             </span>
           </span>
         ))}
       </Marquee>
+      <style>{`
+        /* Client names shrink on phones so each fits the viewport and the
+           strip reads instead of strobing. */
+        .kagu-client-token {
+          font-size: var(--type-3xl);
+          padding: 0 var(--space-6);
+        }
+        .kagu-client-token__dot { margin-left: var(--space-6); }
+        @media (min-width: 768px) {
+          .kagu-client-token { font-size: var(--type-6xl); padding: 0 var(--space-12); }
+          .kagu-client-token__dot { margin-left: var(--space-12); }
+        }
+        /* On narrow viewports the slice-cropped decorative geometry loses its
+           right-edge ring; pull the focal shapes inward so nothing vanishes. */
+        @media (max-width: 767px) {
+          .kagu-recognition-deco { transform: translateX(-22%) scale(1.1); }
+        }
+      `}</style>
     </section>
   );
 }

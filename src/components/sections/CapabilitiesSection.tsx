@@ -159,21 +159,33 @@ export function CapabilitiesSection({
             {stackTokens.map((t) => (
               <span
                 key={t.label}
+                className="kagu-marquee-token"
                 style={{
                   fontFamily: "var(--font-display)",
-                  fontSize: "var(--type-4xl)",
                   color: "var(--slate-ink)",
-                  padding: "0 var(--space-8)",
                   whiteSpace: "nowrap",
                 }}
               >
                 {t.label}
-                <span style={{ color: "var(--mint-deep)", marginLeft: "var(--space-8)" }} aria-hidden>
+                <span className="kagu-marquee-token__dot" style={{ color: "var(--mint-deep)" }} aria-hidden>
                   ·
                 </span>
               </span>
             ))}
           </Marquee>
+          <style>{`
+            /* Marquee text is sized down on phones so a single token doesn't
+               span the whole viewport and strobe past. */
+            .kagu-marquee-token {
+              font-size: var(--type-2xl);
+              padding: 0 var(--space-5);
+            }
+            .kagu-marquee-token__dot { margin-left: var(--space-5); }
+            @media (min-width: 768px) {
+              .kagu-marquee-token { font-size: var(--type-4xl); padding: 0 var(--space-8); }
+              .kagu-marquee-token__dot { margin-left: var(--space-8); }
+            }
+          `}</style>
         </div>
       </div>
     </section>

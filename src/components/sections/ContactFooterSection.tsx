@@ -179,9 +179,9 @@ export function ContactFooterSection({ studio }: { studio: Studio }) {
           </div>
         </div>
 
-        {/* Clocks */}
+        {/* Clocks — stack on the narrowest phones, 3-up once there's room. */}
         <div
-          className="grid grid-cols-3 gap-6 mb-(--space-24)"
+          className="grid grid-cols-1 min-[460px]:grid-cols-3 gap-6 mb-(--space-24)"
           style={{
             borderTop: "1px solid color-mix(in oklab, var(--ink) 14%, transparent)",
             paddingTop: "var(--space-12)",

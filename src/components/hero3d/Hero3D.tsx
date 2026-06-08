@@ -382,7 +382,8 @@ export function Hero3D({
         .kagu-hero__subtitle {
           margin: 0;
           max-width: 30ch;
-          font-size: clamp(1.05rem, 1.4vw, 1.4rem);
+          /* min stays ~17px on phones; the vw term only adds size on wider screens */
+          font-size: clamp(1.0625rem, 1.0125rem + 0.6vw, 1.4rem);
           line-height: 1.5;
           color: rgba(234,244,255,0.76);
         }

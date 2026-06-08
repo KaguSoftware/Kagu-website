@@ -40,15 +40,17 @@ export function ApproachSection({ approach }: { approach: ApproachStep[] }) {
     //   - Desktop: anchor at 35% from viewport top (paragraph in the upper-
     //     middle of the viewport feels more comfortable than top-pinned).
     //   - Mobile:  anchor at 88px from viewport top (right under the nav).
-    const buildTriggers = (anchor: string) => {
-      const pinTrigger = ScrollTrigger.create({
-        trigger: stepsEl,
-        start: `top ${anchor}`,
-        end: `bottom ${anchor}`,
-        pin: pinEl,
-        pinSpacing: false,
-        invalidateOnRefresh: true,
-      });
+    const buildTriggers = (anchor: string, pin: boolean) => {
+      const pinTrigger = pin
+        ? ScrollTrigger.create({
+            trigger: stepsEl,
+            start: `top ${anchor}`,
+            end: `bottom ${anchor}`,
+            pin: pinEl,
+            pinSpacing: false,
+            invalidateOnRefresh: true,
+          })
+        : null;
 
       const stepEls = Array.from(stepsEl.querySelectorAll<HTMLElement>("[data-step]"));
       const stepTriggers = stepEls.map((el, i) =>
@@ -63,13 +65,16 @@ export function ApproachSection({ approach }: { approach: ApproachStep[] }) {
       );
 
       return () => {
-        pinTrigger.kill();
+        pinTrigger?.kill();
         stepTriggers.forEach((t) => t.kill());
       };
     };
 
-    mm.add("(min-width: 768px)", () => buildTriggers("45%"));
-    mm.add("(max-width: 767px)", () => buildTriggers("top+=88"));
+    // Desktop pins the numeral column through the steps. On phones, pinning
+    // during touch scroll reads as sticky/janky, so we only drive the active
+    // numeral (no pin) — the column scrolls naturally with the content.
+    mm.add("(min-width: 768px)", () => buildTriggers("45%", true));
+    mm.add("(max-width: 767px)", () => buildTriggers("top+=88", false));
 
     return () => {
       mm.revert();

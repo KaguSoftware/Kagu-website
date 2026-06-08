@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/Logo";
+import { MobileNav } from "./MobileNav";
+import { navItems } from "./navItems";
 
 /*
   SiteHeader — anchored via viewTransitionName: 'site-header' so it does not
@@ -10,15 +12,9 @@ import { Logo } from "@/components/Logo";
   full-page curtain visuals; the header stays put).
 
   Sticky, paper background, hairline bottom. Two clusters: brand (left) and
-  primary nav (right). Mono-cased nav labels per INTERACTION_GRAMMAR.
+  primary nav (right). Inline nav ≥ md; a full-screen MobileNav < md.
+  Mono-cased nav labels per INTERACTION_GRAMMAR.
 */
-
-const navItems = [
-  { href: "/work", label: "Work" },
-  { href: "/about", label: "About" },
-  { href: "/team", label: "Team" },
-  { href: "/contact", label: "Contact" },
-];
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -41,7 +37,7 @@ export function SiteHeader() {
         >
           <Logo wordmarkOnly size={28} />
         </Link>
-        <nav>
+        <nav className="hidden md:block">
           <ul className="flex items-center gap-8 list-none m-0 p-0">
             {navItems.map((item) => {
               const isActive =
@@ -71,6 +67,7 @@ export function SiteHeader() {
             })}
           </ul>
         </nav>
+        <MobileNav />
       </div>
       <style>{`
         .kagu-nav-link::after {
