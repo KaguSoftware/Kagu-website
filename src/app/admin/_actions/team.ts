@@ -6,6 +6,8 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/supabase/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePublic } from "./revalidate";
+import { flash } from "./flash";
+import { withFlash } from "./with-flash";
 
 const Schema = z.object({
   name: z.string().min(1, { error: "Name is required." }).trim(),
@@ -37,17 +39,18 @@ function parse(formData: FormData) {
   };
 }
 
-export async function createTeamMember(formData: FormData) {
+export const createTeamMember = withFlash(async (formData: FormData) => {
   await requireAdmin();
   const db = createAdminClient();
   const { error } = await db.from("team_members").insert(parse(formData));
   if (error) throw new Error(error.message);
   revalidatePath("/admin/team");
   revalidatePublic();
+  await flash("success", "Team member added.");
   redirect("/admin/team");
-}
+});
 
-export async function updateTeamMember(formData: FormData) {
+export const updateTeamMember = withFlash(async (formData: FormData) => {
   await requireAdmin();
   const id = String(formData.get("id"));
   const db = createAdminClient();
@@ -58,10 +61,11 @@ export async function updateTeamMember(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath("/admin/team");
   revalidatePublic();
+  await flash("success", "Team member saved.");
   redirect("/admin/team");
-}
+});
 
-export async function deleteTeamMember(formData: FormData) {
+export const deleteTeamMember = withFlash(async (formData: FormData) => {
   await requireAdmin();
   const id = String(formData.get("id"));
   const db = createAdminClient();
@@ -69,4 +73,5 @@ export async function deleteTeamMember(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath("/admin/team");
   revalidatePublic();
-}
+  await flash("success", "Team member deleted.");
+});

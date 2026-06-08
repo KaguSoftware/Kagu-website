@@ -6,6 +6,8 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/supabase/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePublic } from "./revalidate";
+import { flash } from "./flash";
+import { withFlash } from "./with-flash";
 
 const Schema = z.object({
   kind: z.enum(["mission", "paragraph", "principle", "metric"]),
@@ -32,17 +34,18 @@ function parse(formData: FormData) {
   };
 }
 
-export async function createAboutBlock(formData: FormData) {
+export const createAboutBlock = withFlash(async (formData: FormData) => {
   await requireAdmin();
   const db = createAdminClient();
   const { error } = await db.from("about_blocks").insert(parse(formData));
   if (error) throw new Error(error.message);
   revalidatePath("/admin/about");
   revalidatePublic();
+  await flash("success", "About block added.");
   redirect("/admin/about");
-}
+});
 
-export async function updateAboutBlock(formData: FormData) {
+export const updateAboutBlock = withFlash(async (formData: FormData) => {
   await requireAdmin();
   const id = String(formData.get("id"));
   const db = createAdminClient();
@@ -50,10 +53,11 @@ export async function updateAboutBlock(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath("/admin/about");
   revalidatePublic();
+  await flash("success", "About block saved.");
   redirect("/admin/about");
-}
+});
 
-export async function deleteAboutBlock(formData: FormData) {
+export const deleteAboutBlock = withFlash(async (formData: FormData) => {
   await requireAdmin();
   const id = String(formData.get("id"));
   const db = createAdminClient();
@@ -61,4 +65,5 @@ export async function deleteAboutBlock(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath("/admin/about");
   revalidatePublic();
-}
+  await flash("success", "About block deleted.");
+});

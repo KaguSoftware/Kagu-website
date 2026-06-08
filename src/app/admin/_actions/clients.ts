@@ -7,6 +7,8 @@ import { requireAdmin } from "@/lib/supabase/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { slugify } from "@/lib/slug";
 import { revalidatePublic } from "./revalidate";
+import { flash } from "./flash";
+import { withFlash } from "./with-flash";
 
 const ClientSchema = z.object({
   name: z.string().min(1, { error: "Name is required." }).trim(),
@@ -22,7 +24,7 @@ function parse(formData: FormData) {
   });
 }
 
-export async function createClientRecord(formData: FormData) {
+export const createClientRecord = withFlash(async (formData: FormData) => {
   await requireAdmin();
   const data = parse(formData);
   const db = createAdminClient();
@@ -34,10 +36,11 @@ export async function createClientRecord(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath("/admin/clients");
   revalidatePublic();
+  await flash("success", `“${data.name}” added.`);
   redirect("/admin/clients");
-}
+});
 
-export async function updateClientRecord(formData: FormData) {
+export const updateClientRecord = withFlash(async (formData: FormData) => {
   await requireAdmin();
   const id = String(formData.get("id"));
   const data = parse(formData);
@@ -53,10 +56,11 @@ export async function updateClientRecord(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath("/admin/clients");
   revalidatePublic();
+  await flash("success", `“${data.name}” saved.`);
   redirect("/admin/clients");
-}
+});
 
-export async function deleteClientRecord(formData: FormData) {
+export const deleteClientRecord = withFlash(async (formData: FormData) => {
   await requireAdmin();
   const id = String(formData.get("id"));
   const db = createAdminClient();
@@ -69,4 +73,5 @@ export async function deleteClientRecord(formData: FormData) {
   }
   revalidatePath("/admin/clients");
   revalidatePublic();
-}
+  await flash("success", "Client deleted.");
+});

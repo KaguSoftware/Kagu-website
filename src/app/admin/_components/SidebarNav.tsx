@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 
 const NAV = [
@@ -16,6 +16,20 @@ const NAV = [
   { href: "/admin/settings", label: "Settings" },
 ];
 
+/* A tiny pending dot that appears while THIS link's navigation is in flight
+   (useLinkStatus must run inside the Link subtree). Pairs with the top
+   RouteProgress bar for immediate, per-item feedback. */
+function PendingDot() {
+  const { pending } = useLinkStatus();
+  if (!pending) return null;
+  return (
+    <span
+      aria-hidden
+      className="ml-auto inline-block size-1.5 animate-pulse rounded-full bg-mint-deep"
+    />
+  );
+}
+
 export function SidebarNav() {
   const pathname = usePathname();
 
@@ -29,13 +43,15 @@ export function SidebarNav() {
           <Link
             key={item.href}
             href={item.href}
-            className={`border-l-2 px-4 py-2 text-xs font-mono uppercase tracking-[0.18em] transition-colors ${
+            aria-current={active ? "page" : undefined}
+            className={`flex items-center gap-2 border-l-2 px-4 py-2 text-xs font-mono uppercase tracking-[0.18em] transition-colors ${
               active
                 ? "border-mint-deep text-ink"
                 : "border-transparent text-slate-ink hover:text-ink"
             }`}
           >
-            {item.label}
+            <span>{item.label}</span>
+            <PendingDot />
           </Link>
         );
       })}

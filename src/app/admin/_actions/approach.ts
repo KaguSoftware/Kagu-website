@@ -6,6 +6,8 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/supabase/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePublic } from "./revalidate";
+import { flash } from "./flash";
+import { withFlash } from "./with-flash";
 
 const Schema = z.object({
   number: z.string().min(1, { error: "Number is required." }).trim(),
@@ -23,17 +25,18 @@ function parse(formData: FormData) {
   });
 }
 
-export async function createApproachStep(formData: FormData) {
+export const createApproachStep = withFlash(async (formData: FormData) => {
   await requireAdmin();
   const db = createAdminClient();
   const { error } = await db.from("approach_steps").insert(parse(formData));
   if (error) throw new Error(error.message);
   revalidatePath("/admin/approach");
   revalidatePublic();
+  await flash("success", "Approach step added.");
   redirect("/admin/approach");
-}
+});
 
-export async function updateApproachStep(formData: FormData) {
+export const updateApproachStep = withFlash(async (formData: FormData) => {
   await requireAdmin();
   const id = String(formData.get("id"));
   const db = createAdminClient();
@@ -41,10 +44,11 @@ export async function updateApproachStep(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath("/admin/approach");
   revalidatePublic();
+  await flash("success", "Approach step saved.");
   redirect("/admin/approach");
-}
+});
 
-export async function deleteApproachStep(formData: FormData) {
+export const deleteApproachStep = withFlash(async (formData: FormData) => {
   await requireAdmin();
   const id = String(formData.get("id"));
   const db = createAdminClient();
@@ -52,4 +56,5 @@ export async function deleteApproachStep(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath("/admin/approach");
   revalidatePublic();
-}
+  await flash("success", "Approach step deleted.");
+});

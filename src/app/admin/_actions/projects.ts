@@ -7,6 +7,8 @@ import { requireAdmin } from "@/lib/supabase/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { slugify } from "@/lib/slug";
 import { revalidatePublic } from "./revalidate";
+import { flash } from "./flash";
+import { withFlash } from "./with-flash";
 
 const FeatureSchema = z.object({
   image: z.string().trim().min(1),
@@ -95,7 +97,7 @@ async function resolveClientId(
   return created.id;
 }
 
-export async function createProject(formData: FormData) {
+export const createProject = withFlash(async (formData: FormData) => {
   await requireAdmin();
   const db = createAdminClient();
   const { d, features } = parse(formData);
@@ -145,10 +147,11 @@ export async function createProject(formData: FormData) {
 
   revalidatePath("/admin/projects");
   revalidatePublic();
+  await flash("success", `“${d.project}” created.`);
   redirect("/admin/projects");
-}
+});
 
-export async function updateProject(formData: FormData) {
+export const updateProject = withFlash(async (formData: FormData) => {
   await requireAdmin();
   const db = createAdminClient();
   const id = String(formData.get("id"));
@@ -200,10 +203,11 @@ export async function updateProject(formData: FormData) {
 
   revalidatePath("/admin/projects");
   revalidatePublic();
+  await flash("success", `“${d.project}” saved.`);
   redirect("/admin/projects");
-}
+});
 
-export async function deleteProject(formData: FormData) {
+export const deleteProject = withFlash(async (formData: FormData) => {
   await requireAdmin();
   const id = String(formData.get("id"));
   const db = createAdminClient();
@@ -212,4 +216,5 @@ export async function deleteProject(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath("/admin/projects");
   revalidatePublic();
-}
+  await flash("success", "Project deleted.");
+});

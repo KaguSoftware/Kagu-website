@@ -1,10 +1,13 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/supabase/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePublic } from "./revalidate";
+import { flash } from "./flash";
+import { withFlash } from "./with-flash";
 
 const ClockSchema = z.object({
   city: z.string().trim(),
@@ -21,7 +24,7 @@ const Schema = z.object({
   clocks: z.string().optional(),
 });
 
-export async function updateSettings(formData: FormData) {
+export const updateSettings = withFlash(async (formData: FormData) => {
   await requireAdmin();
 
   const d = Schema.parse({
@@ -58,4 +61,6 @@ export async function updateSettings(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath("/admin/settings");
   revalidatePublic();
-}
+  await flash("success", "Settings saved.");
+  redirect("/admin/settings");
+});

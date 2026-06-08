@@ -7,6 +7,8 @@ import { requireAdmin } from "@/lib/supabase/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { slugify } from "@/lib/slug";
 import { revalidatePublic } from "./revalidate";
+import { flash } from "./flash";
+import { withFlash } from "./with-flash";
 
 const Schema = z.object({
   title: z.string().min(1, { error: "Title is required." }).trim(),
@@ -33,17 +35,18 @@ function parse(formData: FormData) {
   };
 }
 
-export async function createCapability(formData: FormData) {
+export const createCapability = withFlash(async (formData: FormData) => {
   await requireAdmin();
   const db = createAdminClient();
   const { error } = await db.from("capabilities").insert(parse(formData));
   if (error) throw new Error(error.message);
   revalidatePath("/admin/capabilities");
   revalidatePublic();
+  await flash("success", "Capability added.");
   redirect("/admin/capabilities");
-}
+});
 
-export async function updateCapability(formData: FormData) {
+export const updateCapability = withFlash(async (formData: FormData) => {
   await requireAdmin();
   const id = String(formData.get("id"));
   const db = createAdminClient();
@@ -51,10 +54,11 @@ export async function updateCapability(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath("/admin/capabilities");
   revalidatePublic();
+  await flash("success", "Capability saved.");
   redirect("/admin/capabilities");
-}
+});
 
-export async function deleteCapability(formData: FormData) {
+export const deleteCapability = withFlash(async (formData: FormData) => {
   await requireAdmin();
   const id = String(formData.get("id"));
   const db = createAdminClient();
@@ -62,4 +66,5 @@ export async function deleteCapability(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath("/admin/capabilities");
   revalidatePublic();
-}
+  await flash("success", "Capability deleted.");
+});

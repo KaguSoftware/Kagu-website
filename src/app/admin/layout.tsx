@@ -3,6 +3,9 @@ import Link from "next/link";
 import { getAdminUser } from "@/lib/supabase/auth";
 import { SidebarNav } from "./_components/SidebarNav";
 import { AdminLoader } from "./_components/AdminLoader";
+import { Toaster } from "./_components/toast";
+import { RouteProgress } from "./_components/RouteProgress";
+import { readFlash } from "./_actions/flash";
 import { logout } from "./_actions/auth";
 
 export const metadata: Metadata = {
@@ -16,15 +19,23 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const user = await getAdminUser();
+  const flash = await readFlash();
 
   // Unauthenticated: render bare (only /admin/login is reachable — proxy.ts guards the rest).
   if (!user) {
-    return <>{children}</>;
+    return (
+      <>
+        <RouteProgress />
+        {children}
+        <Toaster initialFlash={flash} />
+      </>
+    );
   }
 
   return (
     <div className="min-h-screen bg-paper text-ink">
       <AdminLoader />
+      <RouteProgress />
       <div className="mx-auto flex max-w-(--container-max) flex-col gap-8 px-(--container-x) py-8 lg:flex-row">
         <aside className="lg:w-56 lg:shrink-0">
           <div className="flex items-center justify-between border-b border-neutral pb-4 lg:block lg:border-0 lg:pb-0">
@@ -60,6 +71,7 @@ export default async function AdminLayout({
 
         <main className="min-w-0 flex-1">{children}</main>
       </div>
+      <Toaster initialFlash={flash} />
     </div>
   );
 }

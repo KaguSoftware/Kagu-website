@@ -6,6 +6,8 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/supabase/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePublic } from "./revalidate";
+import { flash } from "./flash";
+import { withFlash } from "./with-flash";
 
 const Schema = z.object({
   title: z.string().min(1, { error: "Title is required." }).trim(),
@@ -32,17 +34,18 @@ function parse(formData: FormData) {
   };
 }
 
-export async function createAward(formData: FormData) {
+export const createAward = withFlash(async (formData: FormData) => {
   await requireAdmin();
   const db = createAdminClient();
   const { error } = await db.from("awards").insert(parse(formData));
   if (error) throw new Error(error.message);
   revalidatePath("/admin/awards");
   revalidatePublic();
+  await flash("success", "Award added.");
   redirect("/admin/awards");
-}
+});
 
-export async function updateAward(formData: FormData) {
+export const updateAward = withFlash(async (formData: FormData) => {
   await requireAdmin();
   const id = String(formData.get("id"));
   const db = createAdminClient();
@@ -50,10 +53,11 @@ export async function updateAward(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath("/admin/awards");
   revalidatePublic();
+  await flash("success", "Award saved.");
   redirect("/admin/awards");
-}
+});
 
-export async function deleteAward(formData: FormData) {
+export const deleteAward = withFlash(async (formData: FormData) => {
   await requireAdmin();
   const id = String(formData.get("id"));
   const db = createAdminClient();
@@ -61,4 +65,5 @@ export async function deleteAward(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath("/admin/awards");
   revalidatePublic();
-}
+  await flash("success", "Award deleted.");
+});
