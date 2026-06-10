@@ -63,7 +63,7 @@ export function SiteHeader() {
         </Link>
 
         <div className="kagu-glassnav__right">
-          <Link href="/contact" data-cursor="nav-link" className="kagu-glassnav__cta">
+          <Link href="/start-project" data-cursor="nav-link" className="kagu-glassnav__cta">
             Start a project
           </Link>
         </div>

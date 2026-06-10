@@ -54,7 +54,14 @@ function FilterSelect({
   );
 }
 
-export function LeadFilters({ params }: { params: LeadsListParams }) {
+export function LeadFilters({
+  params,
+  categories,
+}: {
+  params: LeadsListParams;
+  /* Distinct categories from scrape_jobs — the taxonomy leads were scraped under. */
+  categories: string[];
+}) {
   const router = useRouter();
 
   const apply = (patch: Partial<LeadsListParams>) => {
@@ -76,22 +83,13 @@ export function LeadFilters({ params }: { params: LeadsListParams }) {
         allLabel="All districts"
         options={ISTANBUL_DISTRICTS.map((d) => ({ value: d, label: d }))}
       />
-      <label className="flex min-w-36 flex-col gap-1.5">
-        <span className="eyebrow">Category</span>
-        <input
-          defaultValue={params.category ?? ""}
-          placeholder="Any"
-          onKeyDown={(e) => {
-            if (e.key === "Enter")
-              apply({ category: e.currentTarget.value.trim() || undefined });
-          }}
-          onBlur={(e) => {
-            const category = e.currentTarget.value.trim() || undefined;
-            if ((params.category ?? undefined) !== category) apply({ category });
-          }}
-          className="border border-neutral bg-transparent px-2 py-1.5 text-sm text-ink outline-none placeholder:text-neutral focus-visible:border-mint-deep"
-        />
-      </label>
+      <FilterSelect
+        label="Category"
+        value={params.category ?? ""}
+        onChange={(category) => apply({ category })}
+        allLabel="All categories"
+        options={categories.map((c) => ({ value: c, label: c }))}
+      />
       <FilterSelect
         label="Pipeline"
         value={params.status ?? ""}

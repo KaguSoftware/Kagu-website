@@ -49,9 +49,23 @@ export default async function LeadsListPage({
   const minScore = Number(params.minScore) || 0;
 
   const supabase = await createClient();
+
+  // Scrape jobs are the category taxonomy: the filter dropdown lists the
+  // categories that were actually scraped, and category filtering matches
+  // leads through their source job (Google relabels leads with its own
+  // sub-categories like "Turkish restaurant", so leads.category ≠ job
+  // category and can't be matched directly).
+  const { data: jobs } = await supabase.from("scrape_jobs").select("id, category");
+  const categories = [...new Set((jobs ?? []).map((j) => j.category))].sort();
+
   let query = supabase.from("leads").select("*", { count: "exact" });
   if (params.district) query = query.eq("district", params.district);
-  if (params.category) query = query.eq("category", params.category);
+  if (params.category) {
+    const jobIds = (jobs ?? [])
+      .filter((j) => j.category === params.category)
+      .map((j) => j.id);
+    query = query.in("source_job_id", jobIds);
+  }
   if (status) query = query.eq("pipeline_status", status);
   if (flag) query = query.contains("audit_flags", JSON.stringify([flag]));
   if (minScore > 0) query = query.gte("lead_score", minScore);
@@ -67,7 +81,7 @@ export default async function LeadsListPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <LeadFilters params={params} />
+      <LeadFilters params={params} categories={categories} />
       <LeadsTable leads={leads ?? []} totalCount={totalCount} />
       <PaginationNav page={page} totalPages={totalPages} params={params} />
     </div>
