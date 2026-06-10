@@ -1,3 +1,4 @@
+import { chromium, type Browser, type Page } from "playwright";
 import { config } from "./config.js";
 import type { RawLead } from "./types.js";
 
@@ -5,24 +6,11 @@ import type { RawLead } from "./types.js";
   crawlMaps — collect business listings from Google Maps for one
   "<category> <district> Istanbul" search.
 
-  REAL IMPLEMENTATION (TODO):
-  1. const browser = await chromium.launch({ headless: true })   // import { chromium } from "playwright"
-     - Consider a persistent context with a real user profile dir to look
-       less like a bot; rotate user agents sparingly (consistency > variety).
-  2. Open https://www.google.com/maps/search/<encodeURIComponent(`${category} ${district} Istanbul`)>
-     and dismiss the consent dialog if shown.
-  3. Scroll the results feed (div[role="feed"]) with HUMAN PACING:
-     - random 1.2–3.5s pauses between scrolls, occasional jitter/mouse moves,
-     - stop when the "end of list" marker appears or after ~N items (cap, e.g. 60).
-  4. For each result card, open the place panel and extract:
-     - place_id: from the share URL or the card href (!1s… token / ?q=place_id:…)
-     - name, category (subtitle), address, lat/lng (from the URL @lat,lng),
-     - phone, website URL (button[data-item-id="authority"]),
-     - rating + review count.
-  5. Dedupe by place_id within the run (the feed repeats items while scrolling).
-  6. Be polite: one search at a time, no parallel tabs, abort on CAPTCHA and
-     fail the job rather than hammering retries.
-  7. await browser.close() in a finally block.
+  Real implementation: one headless Chromium per job, one search at a time,
+  human pacing between scrolls/clicks, abort on CAPTCHA. `hl=en` keeps the
+  DOM labels predictable regardless of the machine's locale. Google Maps
+  markup is volatile — every selector below is best-effort with a null
+  fallback so a single missing field never kills the lead.
 
   MOCK_MODE returns deterministic fake listings so the whole pipeline
   (panel → DB → worker → DB → panel) can be exercised without crawling.
@@ -30,10 +18,195 @@ import type { RawLead } from "./types.js";
 export async function crawlMaps(category: string, district: string): Promise<RawLead[]> {
   if (config.mockMode) return mockListings(category, district);
 
-  throw new Error(
-    "crawlMaps is not implemented yet — run with MOCK_MODE=1 or implement the Playwright crawl (see TODOs in worker/src/crawl.ts)."
-  );
+  const browser: Browser = await chromium.launch({ headless: true });
+  try {
+    const context = await browser.newContext({
+      locale: "en-US",
+      viewport: { width: 1366, height: 900 },
+      userAgent:
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " +
+        "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    });
+    const page = await context.newPage();
+
+    const query = `${category} ${district} Istanbul`;
+    await page.goto(
+      `https://www.google.com/maps/search/${encodeURIComponent(query)}?hl=en`,
+      { waitUntil: "domcontentloaded", timeout: 45000 }
+    );
+
+    await dismissConsent(page);
+    await assertNoCaptcha(page);
+
+    // The results feed. A direct hit (single place, no feed) is handled too.
+    const feed = page.locator('div[role="feed"]');
+    let cardHrefs: string[];
+    if (await feed.count()) {
+      await scrollFeedToEnd(page);
+      cardHrefs = await feed
+        .locator('a[href*="/maps/place/"]')
+        .evaluateAll((as) => as.map((a) => (a as unknown as { href: string }).href));
+    } else if (await page.locator("h1").count()) {
+      cardHrefs = [page.url()]; // search resolved straight to one place
+    } else {
+      cardHrefs = [];
+    }
+
+    // Dedupe by hex place token (the feed repeats items while scrolling).
+    const seen = new Set<string>();
+    const targets: string[] = [];
+    for (const href of cardHrefs) {
+      const id = extractPlaceId(href) ?? href;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      targets.push(href);
+      if (targets.length >= config.maxListings) break;
+    }
+    console.log(`[crawl] ${targets.length} unique listings for "${query}"`);
+
+    const leads: RawLead[] = [];
+    for (const href of targets) {
+      await assertNoCaptcha(page);
+      try {
+        const lead = await extractPlace(page, href, category, district);
+        if (lead) leads.push(lead);
+      } catch (err) {
+        console.warn(`[crawl] failed to extract ${href}:`, err);
+      }
+      await sleep(rand(1200, 3500)); // polite pacing between places
+    }
+    return leads;
+  } finally {
+    await browser.close();
+  }
 }
+
+/* Open one place page and pull every field we can. */
+async function extractPlace(
+  page: Page,
+  href: string,
+  category: string,
+  district: string
+): Promise<RawLead | null> {
+  await page.goto(href.includes("hl=") ? href : `${href}${href.includes("?") ? "&" : "?"}hl=en`, {
+    waitUntil: "domcontentloaded",
+    timeout: 30000,
+  });
+  await page.waitForSelector("h1", { timeout: 15000 });
+  await sleep(rand(600, 1400)); // let the panel hydrate
+
+  const url = page.url();
+  const place_id = extractPlaceId(url) ?? extractPlaceId(href);
+  const name = (await textOf(page, "h1"))?.trim() ?? null;
+  if (!place_id || !name) return null;
+
+  // !3d/!4d carry the place's own coords; @lat,lng is just the map center.
+  const coord = url.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) ?? url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+
+  const ratingLabel = await attrOf(page, 'div[role="main"] span[role="img"][aria-label*="star"]', "aria-label");
+  const rating = ratingLabel ? parseFloat(ratingLabel.replace(",", ".")) : null;
+
+  const reviewLabel = await attrOf(page, 'div[role="main"] span[aria-label*="review"]', "aria-label");
+  const review_count = reviewLabel ? parseInt(reviewLabel.replace(/[^\d]/g, ""), 10) : null;
+
+  return {
+    place_id,
+    name,
+    category: (await textOf(page, 'button[jsaction*="category"]')) ?? category,
+    district,
+    address: cleanField(await textOf(page, 'button[data-item-id="address"]')),
+    lat: coord ? parseFloat(coord[1]) : null,
+    lng: coord ? parseFloat(coord[2]) : null,
+    phone: cleanField(await textOf(page, 'button[data-item-id^="phone"]')),
+    website_url: (await attrOf(page, 'a[data-item-id="authority"]', "href")) ?? null,
+    rating: rating != null && Number.isFinite(rating) ? rating : null,
+    review_count: review_count != null && Number.isFinite(review_count) ? review_count : null,
+  };
+}
+
+/* Scroll div[role="feed"] with human pacing until the end marker or the cap. */
+async function scrollFeedToEnd(page: Page): Promise<void> {
+  const feed = page.locator('div[role="feed"]');
+  let lastCount = 0;
+  let stalls = 0;
+
+  for (let i = 0; i < 40; i++) {
+    await feed.evaluate((el) => el.scrollBy(0, el.scrollHeight));
+    await sleep(rand(1200, 3500));
+
+    // Occasional jitter so the trace looks less mechanical.
+    if (Math.random() < 0.3) {
+      await page.mouse.move(rand(200, 900), rand(200, 700));
+    }
+
+    const count = await feed.locator('a[href*="/maps/place/"]').count();
+    const atEnd = await page
+      .getByText("You've reached the end of the list", { exact: false })
+      .count();
+    if (atEnd > 0 || count >= config.maxListings) return;
+
+    stalls = count === lastCount ? stalls + 1 : 0;
+    if (stalls >= 3) return; // nothing new after 3 scrolls — assume done
+    lastCount = count;
+  }
+}
+
+/* Consent interstitial (consent.google.com or in-page dialog). */
+async function dismissConsent(page: Page): Promise<void> {
+  try {
+    const accept = page.getByRole("button", { name: /accept all|reject all/i }).first();
+    if (await accept.count()) {
+      await accept.click({ timeout: 5000 });
+      await page.waitForLoadState("domcontentloaded");
+      await sleep(rand(800, 1500));
+    }
+  } catch {
+    /* no consent screen — fine */
+  }
+}
+
+/* Abort the whole job on CAPTCHA — hammering retries only digs the hole deeper. */
+async function assertNoCaptcha(page: Page): Promise<void> {
+  if (page.url().includes("/sorry/") || (await page.locator("iframe[src*='recaptcha']").count()) > 0) {
+    throw new Error("Google CAPTCHA encountered — aborting job. Wait before retrying.");
+  }
+}
+
+/* The 0x…:0x… hex pair in place URLs is a stable per-place identifier. */
+function extractPlaceId(url: string): string | null {
+  const m = url.match(/!1s(0x[0-9a-f]+:0x[0-9a-f]+)/i) ?? url.match(/19s(ChIJ[\w-]+)/);
+  return m ? m[1] : null;
+}
+
+async function textOf(page: Page, selector: string): Promise<string | null> {
+  try {
+    const el = page.locator(selector).first();
+    if ((await el.count()) === 0) return null;
+    return await el.innerText({ timeout: 3000 });
+  } catch {
+    return null;
+  }
+}
+
+async function attrOf(page: Page, selector: string, attr: string): Promise<string | null> {
+  try {
+    const el = page.locator(selector).first();
+    if ((await el.count()) === 0) return null;
+    return await el.getAttribute(attr, { timeout: 3000 });
+  } catch {
+    return null;
+  }
+}
+
+/* Maps prefixes button text with an icon glyph + newline — keep the last line. */
+function cleanField(s: string | null): string | null {
+  if (!s) return null;
+  const lines = s.split("\n").map((l) => l.trim()).filter(Boolean);
+  return lines.length ? lines[lines.length - 1] : null;
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const rand = (min: number, max: number) => min + Math.random() * (max - min);
 
 /* Deterministic per (category, district): re-runs upsert the same place_ids. */
 function mockListings(category: string, district: string): RawLead[] {

@@ -8,7 +8,7 @@
 import { config } from "./config.js";
 import { db } from "./db.js";
 import { crawlMaps } from "./crawl.js";
-import { enrichLead } from "./enrich.js";
+import { closeEnrichBrowser, enrichLead } from "./enrich.js";
 import { scoreLead } from "./score.js";
 import { draftMessages } from "./draft.js";
 import {
@@ -126,6 +126,8 @@ async function main(): Promise<void> {
         const message = err instanceof Error ? err.message : String(err);
         console.error(`[job ${job.id}] failed:`, message);
         await failJob(job.id, message);
+      } finally {
+        await closeEnrichBrowser(); // don't keep Chromium alive between jobs
       }
       if (config.runOnce) break;
       continue; // look for the next job immediately
