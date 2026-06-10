@@ -15,7 +15,13 @@ import type { RawLead } from "./types.js";
   MOCK_MODE returns deterministic fake listings so the whole pipeline
   (panel → DB → worker → DB → panel) can be exercised without crawling.
 */
-export async function crawlMaps(category: string, district: string): Promise<RawLead[]> {
+export async function crawlMaps(
+  category: string,
+  district: string,
+  /* Called after each place is visited — lets the caller report real progress
+     and abort (by throwing) on job cancellation. */
+  onProgress?: (done: number, total: number) => Promise<void> | void
+): Promise<RawLead[]> {
   if (config.mockMode) return mockListings(category, district);
 
   const browser: Browser = await chromium.launch({ headless: true });
@@ -37,6 +43,13 @@ export async function crawlMaps(category: string, district: string): Promise<Raw
 
     await dismissConsent(page);
     await assertNoCaptcha(page);
+
+    // The feed renders client-side well after domcontentloaded — wait for
+    // either a results feed or a direct place page before deciding which
+    // path we're on. Checking too early reads as "0 results".
+    await page
+      .waitForSelector('div[role="feed"], div[role="main"] h1', { timeout: 20000 })
+      .catch(() => {});
 
     // The results feed. A direct hit (single place, no feed) is handled too.
     const feed = page.locator('div[role="feed"]');
@@ -64,15 +77,25 @@ export async function crawlMaps(category: string, district: string): Promise<Raw
     }
     console.log(`[crawl] ${targets.length} unique listings for "${query}"`);
 
+    // A populated-Istanbul-district search should never be empty — fail loudly
+    // (panel offers Retry) instead of completing a job with silent 0 leads.
+    if (targets.length === 0) {
+      throw new Error(
+        `0 listings extracted for "${query}" — page title was "${await page.title()}". ` +
+          "Google may have served an unexpected layout or interstitial; retry the job."
+      );
+    }
+
     const leads: RawLead[] = [];
-    for (const href of targets) {
+    for (let i = 0; i < targets.length; i++) {
       await assertNoCaptcha(page);
       try {
-        const lead = await extractPlace(page, href, category, district);
+        const lead = await extractPlace(page, targets[i], category, district);
         if (lead) leads.push(lead);
       } catch (err) {
-        console.warn(`[crawl] failed to extract ${href}:`, err);
+        console.warn(`[crawl] failed to extract ${targets[i]}:`, err);
       }
+      await onProgress?.(i + 1, targets.length);
       await sleep(rand(1200, 3500)); // polite pacing between places
     }
     return leads;
