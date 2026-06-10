@@ -8,7 +8,7 @@
 import { config } from "./config.js";
 import { db } from "./db.js";
 import { crawlMaps } from "./crawl.js";
-import { enrichLead } from "./enrich.js";
+import { closeEnrichBrowser, enrichLead } from "./enrich.js";
 import { scoreLead } from "./score.js";
 import { draftMessages } from "./draft.js";
 import {
@@ -22,12 +22,34 @@ import {
 import type { ScrapeJobRow } from "./types.js";
 
 const CANCEL_CHECK_EVERY = 3; // leads between cancellation checks
+// Progress is phase-weighted: visiting place pages (crawl) and processing
+// leads (enrich/screenshot/draft) take roughly as long per item.
+const CRAWL_SHARE = 50; // % of the bar the crawl phase owns
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+/* Thrown from inside the crawl progress callback to abort on cancellation. */
+class JobCancelled extends Error {}
+
 async function processJob(job: ScrapeJobRow): Promise<void> {
   console.log(`[job ${job.id}] ${job.category} / ${job.district} — crawling…`);
-  const listings = await crawlMaps(job.category, job.district);
+
+  let listings;
+  try {
+    listings = await crawlMaps(job.category, job.district, async (done, total) => {
+      if (done % CANCEL_CHECK_EVERY === 0 && (await isCancelRequested(job.id))) {
+        throw new JobCancelled();
+      }
+      await updateJobProgress(job.id, (done / total) * CRAWL_SHARE, 0);
+    });
+  } catch (err) {
+    if (err instanceof JobCancelled) {
+      console.log(`[job ${job.id}] cancellation requested during crawl — stopping`);
+      await markCancelled(job.id);
+      return;
+    }
+    throw err;
+  }
   console.log(`[job ${job.id}] ${listings.length} listings found`);
 
   let processed = 0;
@@ -99,17 +121,41 @@ async function processJob(job: ScrapeJobRow): Promise<void> {
     }
 
     processed++;
-    await updateJobProgress(job.id, (processed / listings.length) * 100, upserted);
+    await updateJobProgress(
+      job.id,
+      CRAWL_SHARE + (processed / listings.length) * (100 - CRAWL_SHARE),
+      upserted
+    );
   }
 
   await completeJob(job.id, upserted);
   console.log(`[job ${job.id}] done — ${upserted}/${listings.length} leads upserted`);
 }
 
+/*
+  Re-queue jobs orphaned in "running" by a previous worker process dying
+  mid-job (deploy restart, crash, reboot). Safe with a single worker —
+  re-processing is idempotent (leads upsert on place_id, drafting skips
+  leads that already have messages). Don't run multiple workers with this on.
+*/
+async function requeueOrphanedJobs(): Promise<void> {
+  const { data, error } = await db
+    .from("scrape_jobs")
+    .update({ status: "pending", progress: 0, started_at: null })
+    .eq("status", "running")
+    .select("id");
+  if (error) {
+    console.warn("Failed to re-queue orphaned jobs:", error.message);
+    return;
+  }
+  if (data?.length) console.log(`Re-queued ${data.length} orphaned running job(s)`);
+}
+
 async function main(): Promise<void> {
   console.log(
     `Kagu leads worker starting (mock=${config.mockMode}, once=${config.runOnce}, poll=${config.pollIntervalMs}ms)`
   );
+  await requeueOrphanedJobs();
 
   for (;;) {
     let job: ScrapeJobRow | null = null;
@@ -126,6 +172,8 @@ async function main(): Promise<void> {
         const message = err instanceof Error ? err.message : String(err);
         console.error(`[job ${job.id}] failed:`, message);
         await failJob(job.id, message);
+      } finally {
+        await closeEnrichBrowser(); // don't keep Chromium alive between jobs
       }
       if (config.runOnce) break;
       continue; // look for the next job immediately

@@ -17,7 +17,7 @@ What this is **NOT**:
 
 - Node 20+
 - `npm install` inside `worker/`
-- For real crawling/screenshots (once implemented): `npx playwright install chromium`
+- For real crawling/screenshots: `npx playwright install chromium`
 
 ## Configuration
 
@@ -29,6 +29,10 @@ cp .env.example .env   # then fill in the values
 | --- | --- | --- | --- |
 | `SUPABASE_URL` | yes | — | Same project the admin panel uses |
 | `SUPABASE_SERVICE_ROLE_KEY` | yes | — | Service role (bypasses RLS). Keep this machine private. |
+| `GROQ_API_KEY` | no | — | Groq key for outreach drafts. Unset = leads saved without drafts. |
+| `GROQ_MODEL` | no | `llama-3.3-70b-versatile` | Groq model used for drafting |
+| `DRAFT_LANGUAGE` | no | `tr` | Outreach draft language: `tr` / `ar` / `en` |
+| `MAX_LISTINGS` | no | `60` | Cap on listings collected per job |
 | `POLL_INTERVAL_MS` | no | `15000` | Idle delay between polls for pending jobs |
 | `MOCK_MODE` | no | `0` | `1` = deterministic fake leads, no crawling/LLM |
 | `RUN_ONCE` | no | `0` | `1` = process at most one job, then exit |
@@ -83,14 +87,21 @@ WantedBy=multi-user.target
 - Pipeline status and notes are never touched by the worker, so re-scrapes
   can't clobber sales work.
 
-## Remaining TODOs (stubs)
+## Pipeline implementation notes
 
-1. `src/crawl.ts` — real Playwright Google Maps crawl (human pacing, feed
-   scrolling, place extraction, CAPTCHA abort).
-2. `src/enrich.ts` — real audits (SSL, viewport meta, timing, FB/Linktree
-   detection, IG lookup) + screenshot upload to the `lead-screenshots` bucket.
-3. `src/draft.ts` — LLM call using the exported `PROMPT_TEMPLATE`
-   (strict-JSON response, one retry on parse failure).
+- `src/crawl.ts` — Playwright Google Maps crawl: human pacing, feed
+  scrolling, place extraction, dedupe by place token, CAPTCHA abort (the job
+  fails with a clear error; retry later from the panel). Google Maps markup
+  is volatile — selectors are best-effort with null fallbacks, so a missing
+  field never kills a lead. Requires `npx playwright install chromium`.
+- `src/enrich.ts` — audits each site with one fetch (SSL / response time /
+  viewport meta), detects facebook-only / linktree-only presences, and
+  uploads a 1280×800 screenshot to the public `lead-screenshots` bucket.
+  IG discovery via search scraping is deliberately skipped (block-prone);
+  `instagram_*` only populate when the listing's website IS an IG profile.
+- `src/draft.ts` — Groq chat completion (OpenAI-compatible, plain `fetch`)
+  using `PROMPT_TEMPLATE`, JSON-forced response, one retry on malformed
+  output, then the lead is saved without drafts.
 
-`src/score.ts` is fully implemented; `npm run mock` exercises the entire
-pipeline with deterministic fake data.
+`npm run mock` still exercises the entire pipeline with deterministic fake
+data and no crawling/LLM calls.

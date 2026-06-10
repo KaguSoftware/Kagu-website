@@ -43,3 +43,6 @@ worker/node_modules
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# leads worker runtime log
+worker/worker.log
