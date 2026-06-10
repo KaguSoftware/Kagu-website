@@ -29,6 +29,40 @@ export type TeamSegment = "cofounder" | "senior_associate" | "associate";
 
 export type Clock = { city: string; tz: string; utc: string };
 
+// Lead generation module (supabase/leads_module.sql)
+export type JobStatus =
+  | "pending"
+  | "running"
+  | "done"
+  | "failed"
+  | "cancel_requested"
+  | "cancelled";
+
+export type PipelineStatus =
+  | "new"
+  | "queued"
+  | "contacted"
+  | "replied"
+  | "meeting"
+  | "won"
+  | "lost"
+  | "do_not_contact";
+
+export type MessageStatus = "draft" | "approved" | "rejected" | "sent";
+
+export type MessageChannel = "email" | "whatsapp";
+
+export type MessageLanguage = "tr" | "ar" | "en";
+
+export type AuditFlag =
+  | "no_website"
+  | "facebook_only"
+  | "linktree_only"
+  | "no_ssl"
+  | "not_mobile_friendly"
+  | "slow_site"
+  | "active_ig_no_website";
+
 export interface Database {
   public: {
     Tables: {
@@ -377,6 +411,179 @@ export interface Database {
           updated_at?: string;
         };
         Relationships: [];
+      };
+      scrape_jobs: {
+        Row: {
+          id: string;
+          category: string;
+          district: string;
+          status: JobStatus;
+          progress: number;
+          leads_found: number;
+          error: string | null;
+          requested_by: string | null;
+          started_at: string | null;
+          finished_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          category: string;
+          district: string;
+          status?: JobStatus;
+          progress?: number;
+          leads_found?: number;
+          error?: string | null;
+          requested_by?: string | null;
+          started_at?: string | null;
+          finished_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          category?: string;
+          district?: string;
+          status?: JobStatus;
+          progress?: number;
+          leads_found?: number;
+          error?: string | null;
+          requested_by?: string | null;
+          started_at?: string | null;
+          finished_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      leads: {
+        Row: {
+          id: string;
+          place_id: string;
+          name: string;
+          category: string | null;
+          district: string | null;
+          address: string | null;
+          lat: number | null;
+          lng: number | null;
+          phone: string | null;
+          website_url: string | null;
+          rating: number | null;
+          review_count: number | null;
+          instagram_handle: string | null;
+          instagram_followers: number | null;
+          audit_flags: AuditFlag[];
+          review_themes: string[];
+          screenshot_url: string | null;
+          lead_score: number;
+          pipeline_status: PipelineStatus;
+          notes: string | null;
+          source_job_id: string | null;
+          contacted_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          place_id: string;
+          name: string;
+          category?: string | null;
+          district?: string | null;
+          address?: string | null;
+          lat?: number | null;
+          lng?: number | null;
+          phone?: string | null;
+          website_url?: string | null;
+          rating?: number | null;
+          review_count?: number | null;
+          instagram_handle?: string | null;
+          instagram_followers?: number | null;
+          audit_flags?: AuditFlag[];
+          review_themes?: string[];
+          screenshot_url?: string | null;
+          lead_score?: number;
+          pipeline_status?: PipelineStatus;
+          notes?: string | null;
+          source_job_id?: string | null;
+          contacted_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          place_id?: string;
+          name?: string;
+          category?: string | null;
+          district?: string | null;
+          address?: string | null;
+          lat?: number | null;
+          lng?: number | null;
+          phone?: string | null;
+          website_url?: string | null;
+          rating?: number | null;
+          review_count?: number | null;
+          instagram_handle?: string | null;
+          instagram_followers?: number | null;
+          audit_flags?: AuditFlag[];
+          review_themes?: string[];
+          screenshot_url?: string | null;
+          lead_score?: number;
+          pipeline_status?: PipelineStatus;
+          notes?: string | null;
+          source_job_id?: string | null;
+          contacted_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      lead_messages: {
+        Row: {
+          id: string;
+          lead_id: string;
+          channel: MessageChannel;
+          language: MessageLanguage;
+          subject: string | null;
+          body: string;
+          variant_label: string | null;
+          status: MessageStatus;
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          lead_id: string;
+          channel?: MessageChannel;
+          language?: MessageLanguage;
+          subject?: string | null;
+          body: string;
+          variant_label?: string | null;
+          status?: MessageStatus;
+          created_by?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          lead_id?: string;
+          channel?: MessageChannel;
+          language?: MessageLanguage;
+          subject?: string | null;
+          body?: string;
+          variant_label?: string | null;
+          status?: MessageStatus;
+          created_by?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "lead_messages_lead_id_fkey";
+            columns: ["lead_id"];
+            isOneToOne: false;
+            referencedRelation: "leads";
+            referencedColumns: ["id"];
+          },
+        ];
       };
     };
     Views: Record<never, never>;
