@@ -3,7 +3,15 @@
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 
-const NAV = [
+type NavItem = {
+  href: string;
+  label: string;
+  exact?: boolean;
+  /** Extra path prefixes that should light this item up (e.g. tool pages). */
+  match?: string[];
+};
+
+const NAV: NavItem[] = [
   { href: "/admin", label: "Dashboard", exact: true },
   { href: "/admin/projects", label: "Projects" },
   { href: "/admin/clients", label: "Clients" },
@@ -12,7 +20,11 @@ const NAV = [
   { href: "/admin/awards", label: "Awards" },
   { href: "/admin/approach", label: "Approach" },
   { href: "/admin/team", label: "Team" },
-  { href: "/admin/leads", label: "Leads" },
+  {
+    href: "/admin/tools",
+    label: "Tools",
+    match: ["/admin/leads", "/admin/learnings"],
+  },
   { href: "/admin/inquiries", label: "Inquiries" },
   { href: "/admin/about", label: "About" },
   { href: "/admin/settings", label: "Settings" },
@@ -40,7 +52,9 @@ export function SidebarNav() {
       {NAV.map((item) => {
         const active = item.exact
           ? pathname === item.href
-          : pathname.startsWith(item.href);
+          : [item.href, ...(item.match ?? [])].some((p) =>
+              pathname.startsWith(p),
+            );
         return (
           <Link
             key={item.href}

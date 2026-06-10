@@ -126,6 +126,104 @@ h1, h2, h3, h4, .display {
   top: var(--space-4);
 }
 
+/* ---------------------------------------------------------------------------
+   Markdown body (/admin/learnings) — flow rhythm the react-markdown components
+   map can't express cleanly, plus hljs token colors hand-tuned to the dark
+   palette (no stock highlight.js theme import).
+--------------------------------------------------------------------------- */
+
+.md-body > :first-child {
+  margin-top: 0;
+}
+.md-body p {
+  margin: var(--space-4) 0;
+}
+.md-body ul,
+.md-body ol {
+  margin: var(--space-4) 0;
+  padding-left: var(--space-6);
+}
+.md-body ul {
+  list-style: disc;
+}
+.md-body ol {
+  list-style: decimal;
+}
+.md-body li {
+  margin: var(--space-2) 0;
+}
+.md-body li::marker {
+  color: var(--slate-ink);
+}
+.md-body ul ul,
+.md-body ol ol,
+.md-body ul ol,
+.md-body ol ul {
+  margin: var(--space-1) 0;
+}
+.md-body li:has(> input[type="checkbox"]) {
+  list-style: none;
+  margin-left: calc(var(--space-6) * -1);
+  padding-left: var(--space-6);
+}
+.md-body strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* highlight.js tokens — graded greys + the single sky accent */
+.md-body .hljs-comment,
+.md-body .hljs-quote {
+  color: #6b7280;
+  font-style: italic;
+}
+.md-body .hljs-keyword,
+.md-body .hljs-selector-tag,
+.md-body .hljs-built_in,
+.md-body .hljs-type,
+.md-body .hljs-tag {
+  color: var(--mint-deep);
+}
+.md-body .hljs-string,
+.md-body .hljs-regexp,
+.md-body .hljs-addition,
+.md-body .hljs-meta .hljs-string {
+  color: #3ecf8e;
+}
+.md-body .hljs-number,
+.md-body .hljs-literal,
+.md-body .hljs-symbol,
+.md-body .hljs-bullet {
+  color: #f5a623;
+}
+.md-body .hljs-title,
+.md-body .hljs-section,
+.md-body .hljs-name,
+.md-body .hljs-function .hljs-title,
+.md-body .hljs-title.function_,
+.md-body .hljs-title.class_ {
+  color: #7cc5f4;
+}
+.md-body .hljs-attr,
+.md-body .hljs-attribute,
+.md-body .hljs-variable,
+.md-body .hljs-template-variable,
+.md-body .hljs-selector-attr,
+.md-body .hljs-selector-class,
+.md-body .hljs-selector-id,
+.md-body .hljs-property {
+  color: var(--slate-ink);
+}
+.md-body .hljs-deletion {
+  color: #ef5350;
+}
+.md-body .hljs-emphasis {
+  font-style: italic;
+}
+.md-body .hljs-strong {
+  font-weight: 600;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

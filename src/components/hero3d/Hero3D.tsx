@@ -291,7 +291,9 @@ export function Hero3D({
           padding-inline: clamp(1.5rem, 6vw, 7rem);
           padding-block: clamp(1.5rem, 4vh, 2.5rem) clamp(2.5rem, 6vh, 4rem);
         }
-        /* full-width top bar: greeting left, availability right */
+        /* full-width top bar: greeting left, availability right.
+           Pushed well below the fixed floating header pill (~56px + offset)
+           so the nav always has breathing room above the hero meta. */
         .kagu-hero__meta {
           display: flex;
           flex-wrap: wrap;
@@ -299,7 +301,7 @@ export function Hero3D({
           justify-content: space-between;
           gap: 0.75rem 1.5rem;
           width: 100%;
-          padding-top: clamp(1rem, 3vh, 2rem);
+          padding-top: clamp(5.5rem, 12vh, 8.5rem);
         }
         /* headline block, pushed toward the bottom of the remaining height,
            left-aligned */

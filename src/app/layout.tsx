@@ -6,7 +6,7 @@ import "./globals.css";
 import { SmoothScrollProvider } from "@/components/providers/SmoothScrollProvider";
 import { NavigationEvents } from "@/components/providers/NavigationEvents";
 import { SiteHeaderGate } from "@/components/layout/SiteHeaderGate";
-import { PreloadCurtain } from "@/components/motion/PreloadCurtain";
+import { BootLoader } from "@/components/motion/BootLoader";
 
 const spaceMono = Space_Mono({
   variable: "--font-space-mono",
@@ -46,7 +46,7 @@ export default function RootLayout({
           Skip to content
         </a>
         <SmoothScrollProvider>
-          <PreloadCurtain />
+          <BootLoader sessionKey="kagu_visited" />
           <SiteHeaderGate />
           <main id="main">{children}</main>
         </SmoothScrollProvider>
