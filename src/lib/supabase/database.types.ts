@@ -535,6 +535,42 @@ export interface Database {
         };
         Relationships: [];
       };
+      learnings: {
+        Row: {
+          id: string;
+          title: string;
+          summary: string;
+          body: string;
+          tags: string[];
+          author_email: string;
+          author_name: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          summary?: string;
+          body?: string;
+          tags?: string[];
+          author_email: string;
+          author_name?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          summary?: string;
+          body?: string;
+          tags?: string[];
+          author_email?: string;
+          author_name?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       lead_messages: {
         Row: {
           id: string;
