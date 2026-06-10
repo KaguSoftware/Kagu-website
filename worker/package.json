@@ -1,0 +1,22 @@
+{
+  "name": "kagu-leads-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Standalone Google Maps lead-gen crawler. Runs on a VPS or locally — never deployed with the site. Talks to the same Supabase project as the admin panel.",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "once": "RUN_ONCE=1 tsx src/index.ts",
+    "mock": "MOCK_MODE=1 RUN_ONCE=1 tsx src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.106.2",
+    "playwright": "^1.50.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "tsx": "^4.19.0",
+    "typescript": "^5"
+  }
+}
