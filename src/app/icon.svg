@@ -1,10 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Kagu">
   <!-- Brand tile: dark paper base so the mark reads on any browser-tab theme -->
   <rect width="100" height="100" rx="20" fill="#14161d"/>
-  <!-- Kagu bird mark, centered. Three-tone (grey ribbon, darker fold, bright wing). -->
-  <g transform="translate(15 34.33) scale(0.064875)" fill="#eef1f5">
-    <path d="M 1078 5 L 800 1 Q 706 2 646 60 L 418 267 L 300 169 L 62 167 L 146 236 L 300 374 L 550 374 L 638 457 L 684 481 L 895 482 L 722 325 Z" opacity="0.5"/>
-    <path d="M 62 167 L 0 231 L 146 236 Z" opacity="0.32"/>
-    <path d="M 1078 6 L 800 1 Q 706 2 646 60 L 300 373 L 666 372 Z" opacity="0.96"/>
+  <!-- Kagu bird mark, centered. Three-tone (grey ribbon, darker fold, bright wing),
+       geometry measured pixel-exact from the 2026 brand PNG. -->
+  <g transform="translate(15 34.24) scale(0.064875)" fill="#eef1f5">
+    <path d="M 1078 0 L 778 0 Q 741 0 719 19 L 459 262 L 340 146 L 104 146 L 218 256 L 345 368 L 564 369 L 663 463 L 911 486 L 733 317 Z" opacity="0.6"/>
+    <path d="M 104 146 L 0 256 L 218 256 Z" opacity="0.5"/>
+    <path d="M 1078 0 L 778 0 Q 741 0 719 19 L 345 368 L 677 368 Z" opacity="0.96"/>
   </g>
 </svg>

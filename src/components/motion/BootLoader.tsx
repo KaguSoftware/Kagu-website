@@ -18,13 +18,13 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 // Same flat-2D paths as KaguMark (kept inline so we can stroke-draw them).
 // Full silhouette (with the head-fold detour) for the stroke draw-on; the
 // fills split into ribbon (fold cut out) / fold / wing for the 3-tone read.
-const VIEWBOX = "0 0 1079 483";
+const VIEWBOX = "0 0 1079 486";
 const SILHOUETTE =
-  "M 1078 5 L 800 1 Q 706 2 646 60 L 418 267 L 300 169 L 62 167 L 0 231 L 146 236 L 300 374 L 550 374 L 638 457 L 684 481 L 895 482 L 722 325 Z";
+  "M 1078 0 L 778 0 Q 741 0 719 19 L 459 262 L 340 146 L 104 146 L 0 256 L 218 256 L 345 368 L 564 369 L 663 463 L 911 486 L 733 317 Z";
 const RIBBON =
-  "M 1078 5 L 800 1 Q 706 2 646 60 L 418 267 L 300 169 L 62 167 L 146 236 L 300 374 L 550 374 L 638 457 L 684 481 L 895 482 L 722 325 Z";
-const FOLD = "M 62 167 L 0 231 L 146 236 Z";
-const WING = "M 1078 6 L 800 1 Q 706 2 646 60 L 300 373 L 666 372 Z";
+  "M 1078 0 L 778 0 Q 741 0 719 19 L 459 262 L 340 146 L 104 146 L 218 256 L 345 368 L 564 369 L 663 463 L 911 486 L 733 317 Z";
+const FOLD = "M 104 146 L 0 256 L 218 256 Z";
+const WING = "M 1078 0 L 778 0 Q 741 0 719 19 L 345 368 L 677 368 Z";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -95,15 +95,15 @@ export function BootLoader({
               <motion.path
                 d={RIBBON}
                 fill="var(--ink)"
-                initial={reduced ? { opacity: 0.42 } : { opacity: 0 }}
-                animate={{ opacity: 0.42 }}
+                initial={reduced ? { opacity: 0.57 } : { opacity: 0 }}
+                animate={{ opacity: 0.57 }}
                 transition={{ duration: reduced ? 0 : 0.6, delay: reduced ? 0 : 1.15 }}
               />
               <motion.path
                 d={FOLD}
                 fill="var(--ink)"
-                initial={reduced ? { opacity: 0.26 } : { opacity: 0 }}
-                animate={{ opacity: 0.26 }}
+                initial={reduced ? { opacity: 0.47 } : { opacity: 0 }}
+                animate={{ opacity: 0.47 }}
                 transition={{ duration: reduced ? 0 : 0.6, delay: reduced ? 0 : 1.15 }}
               />
               <motion.path
