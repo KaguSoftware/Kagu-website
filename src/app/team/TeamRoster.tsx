@@ -264,19 +264,27 @@ export function TeamRoster({
     if (next) selectAndScroll(next);
   };
 
+  // Max 3 members per row — overflow starts a new centered row beneath.
+  const rows: RosterMember[][] = [];
+  for (let i = 0; i < members.length; i += 3) rows.push(members.slice(i, i + 3));
+
   return (
     <>
       <div
         className={`kagu-roster${open ? " is-selecting" : ""}`}
         style={{ marginTop: "var(--space-12)" }}
       >
-        {members.map((member) => (
-          <MemberCard
-            key={member.id}
-            member={member}
-            open={open === member.slug}
-            onToggle={toggle}
-          />
+        {rows.map((row) => (
+          <div className="kagu-roster-row" key={row[0].id}>
+            {row.map((member) => (
+              <MemberCard
+                key={member.id}
+                member={member}
+                open={open === member.slug}
+                onToggle={toggle}
+              />
+            ))}
+          </div>
         ))}
       </div>
       <style>{`
@@ -286,6 +294,14 @@ export function TeamRoster({
           --kagu-bio-w: clamp(240px, 26vw, 360px);
           /* one shared timing so open and close move in lockstep (no jump) */
           --kagu-bio-ease: 520ms cubic-bezier(0.6, 0.01, 0.05, 0.95);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: var(--space-12);
+        }
+        /* One row = up to 3 members; the hover-bio still pushes siblings
+           aside within its own row. */
+        .kagu-roster-row {
           display: flex;
           flex-wrap: nowrap;
           justify-content: center;
@@ -353,6 +369,9 @@ export function TeamRoster({
            vertically and only for the selected (tapped) card. */
         @media (max-width: 767px) {
           .kagu-roster {
+            align-items: stretch;
+          }
+          .kagu-roster-row {
             flex-direction: column;
             align-items: stretch;
             gap: var(--space-12);
