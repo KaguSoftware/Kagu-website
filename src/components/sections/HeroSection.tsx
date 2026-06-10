@@ -78,8 +78,9 @@ export function HeroSection({ heroMarquee }: { heroMarquee: MarqueeItem[] }) {
         background: "var(--paper)",
         position: "relative",
         overflow: "hidden",
-        // Clear the fixed floating header (pill ≈ 56px + its vertical padding).
-        paddingTop: "clamp(88px, 12vh, 120px)",
+        // Clear the fixed floating header (pill ≈ 56px + its vertical padding)
+        // with generous breathing room so the nav never crowds the hero meta.
+        paddingTop: "clamp(128px, 18vh, 192px)",
       }}
       className="px-(--container-x) pb-(--section-y) flex flex-col"
     >

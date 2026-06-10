@@ -1,9 +1,11 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ButtonLink } from "../../_components/ui";
 import { DeleteButton } from "../../_components/DeleteButton";
 import { deleteLearning } from "../../_actions/learnings";
 import { Markdown } from "../_components/Markdown";
+import { ReadingProgress } from "../_components/ReadingProgress";
 import { TagChip, AuthorChip, relativeDate } from "../_components/chips";
 import { extractToc, readingTime } from "../_lib/markdown";
 
@@ -34,11 +36,31 @@ export default async function LearningPage({
   const learning = await getLearning((await params).id);
   if (!learning) notFound();
 
+  // Neighbours by creation date for prev/next reading flow.
+  const supabase = await createClient();
+  const [{ data: older }, { data: newer }] = await Promise.all([
+    supabase
+      .from("learnings")
+      .select("id,title")
+      .lt("created_at", learning.created_at)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("learnings")
+      .select("id,title")
+      .gt("created_at", learning.created_at)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle(),
+  ]);
+
   const toc = extractToc(learning.body);
   const edited = learning.updated_at.slice(0, 16) !== learning.created_at.slice(0, 16);
 
   return (
     <div className="space-y-8">
+      <ReadingProgress />
       <div className="flex flex-wrap items-center justify-between gap-4">
         <ButtonLink href="/admin/learnings">← All learnings</ButtonLink>
         <div className="flex items-center gap-4">
@@ -80,6 +102,42 @@ export default async function LearningPage({
           <div className="pt-8">
             <Markdown source={learning.body} />
           </div>
+
+          {older || newer ? (
+            <nav
+              aria-label="More learnings"
+              className="mt-14 grid gap-4 border-t border-neutral pt-8 sm:grid-cols-2"
+            >
+              {older ? (
+                <Link
+                  href={`/admin/learnings/${older.id}`}
+                  className="group border border-neutral p-5 transition-colors hover:border-mint-deep"
+                >
+                  <span className="font-mono text-xs uppercase tracking-[0.18em] text-slate-ink">
+                    ← Older
+                  </span>
+                  <p className="mt-2 text-sm text-ink transition-colors group-hover:text-mint-deep">
+                    {older.title}
+                  </p>
+                </Link>
+              ) : (
+                <span aria-hidden />
+              )}
+              {newer ? (
+                <Link
+                  href={`/admin/learnings/${newer.id}`}
+                  className="group border border-neutral p-5 text-right transition-colors hover:border-mint-deep"
+                >
+                  <span className="font-mono text-xs uppercase tracking-[0.18em] text-slate-ink">
+                    Newer →
+                  </span>
+                  <p className="mt-2 text-sm text-ink transition-colors group-hover:text-mint-deep">
+                    {newer.title}
+                  </p>
+                </Link>
+              ) : null}
+            </nav>
+          ) : null}
         </article>
 
         {toc.length > 1 ? (

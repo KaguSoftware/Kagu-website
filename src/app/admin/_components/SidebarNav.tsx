@@ -1,13 +1,17 @@
 "use client";
 
-import { useState } from "react";
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 
-type NavLinkItem = { href: string; label: string; exact?: boolean };
-type NavEntry = NavLinkItem | { group: string; items: NavLinkItem[] };
+type NavItem = {
+  href: string;
+  label: string;
+  exact?: boolean;
+  /** Extra path prefixes that should light this item up (e.g. tool pages). */
+  match?: string[];
+};
 
-const NAV: NavEntry[] = [
+const NAV: NavItem[] = [
   { href: "/admin", label: "Dashboard", exact: true },
   { href: "/admin/projects", label: "Projects" },
   { href: "/admin/clients", label: "Clients" },
@@ -17,11 +21,9 @@ const NAV: NavEntry[] = [
   { href: "/admin/approach", label: "Approach" },
   { href: "/admin/team", label: "Team" },
   {
-    group: "Tools",
-    items: [
-      { href: "/admin/leads", label: "Leads" },
-      { href: "/admin/learnings", label: "Learnings" },
-    ],
+    href: "/admin/tools",
+    label: "Tools",
+    match: ["/admin/leads", "/admin/learnings"],
   },
   { href: "/admin/about", label: "About" },
   { href: "/admin/settings", label: "Settings" },
@@ -41,101 +43,33 @@ function PendingDot() {
   );
 }
 
-function isActive(pathname: string, item: NavLinkItem) {
-  return item.exact ? pathname === item.href : pathname.startsWith(item.href);
-}
-
-function NavLink({
-  item,
-  pathname,
-  indent = false,
-}: {
-  item: NavLinkItem;
-  pathname: string;
-  indent?: boolean;
-}) {
-  const active = isActive(pathname, item);
-  return (
-    <Link
-      href={item.href}
-      aria-current={active ? "page" : undefined}
-      className={`flex items-center gap-2 border-l-2 py-2 text-xs font-mono uppercase tracking-[0.18em] transition-colors ${
-        indent ? "pl-7 pr-4" : "px-4"
-      } ${
-        active
-          ? "border-mint-deep text-ink"
-          : "border-transparent text-slate-ink hover:text-ink"
-      }`}
-    >
-      <span>{item.label}</span>
-      <PendingDot />
-    </Link>
-  );
-}
-
-function NavGroup({
-  group,
-  items,
-  pathname,
-}: {
-  group: string;
-  items: NavLinkItem[];
-  pathname: string;
-}) {
-  const childActive = items.some((item) => isActive(pathname, item));
-  // Follows the route (open while a child is active) until the user toggles,
-  // after which their choice wins.
-  const [toggled, setToggled] = useState<boolean | null>(null);
-  const open = toggled ?? childActive;
-
-  return (
-    <div>
-      <button
-        type="button"
-        onClick={() => setToggled(!open)}
-        aria-expanded={open}
-        className={`flex w-full items-center gap-2 border-l-2 px-4 py-2 text-xs font-mono uppercase tracking-[0.18em] transition-colors ${
-          childActive
-            ? "border-mint-deep text-ink"
-            : "border-transparent text-slate-ink hover:text-ink"
-        }`}
-      >
-        <span>{group}</span>
-        <span
-          aria-hidden
-          className={`ml-auto text-[0.625rem] transition-transform ${open ? "rotate-90" : ""}`}
-        >
-          ›
-        </span>
-      </button>
-      {open ? (
-        <div className="flex flex-col">
-          {items.map((item) => (
-            <NavLink key={item.href} item={item} pathname={pathname} indent />
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 export function SidebarNav() {
   const pathname = usePathname();
 
   return (
     <nav className="flex flex-col gap-1">
-      {NAV.map((entry) =>
-        "group" in entry ? (
-          <NavGroup
-            key={entry.group}
-            group={entry.group}
-            items={entry.items}
-            pathname={pathname}
-          />
-        ) : (
-          <NavLink key={entry.href} item={entry} pathname={pathname} />
-        ),
-      )}
+      {NAV.map((item) => {
+        const active = item.exact
+          ? pathname === item.href
+          : [item.href, ...(item.match ?? [])].some((p) =>
+              pathname.startsWith(p),
+            );
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            aria-current={active ? "page" : undefined}
+            className={`flex items-center gap-2 border-l-2 px-4 py-2 text-xs font-mono uppercase tracking-[0.18em] transition-colors ${
+              active
+                ? "border-mint-deep text-ink"
+                : "border-transparent text-slate-ink hover:text-ink"
+            }`}
+          >
+            <span>{item.label}</span>
+            <PendingDot />
+          </Link>
+        );
+      })}
     </nav>
   );
 }
