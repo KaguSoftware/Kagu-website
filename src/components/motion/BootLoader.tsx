@@ -16,10 +16,15 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 // Same flat-2D paths as KaguMark (kept inline so we can stroke-draw them).
+// Full silhouette (with the head-fold detour) for the stroke draw-on; the
+// fills split into ribbon (fold cut out) / fold / wing for the 3-tone read.
 const VIEWBOX = "0 0 1079 483";
-const WING =
-  "M 1078 5 L 776 0 L 733 9 L 669 47 L 418 267 L 300 169 L 62 167 L 0 231 L 146 236 L 300 374 L 550 374 L 638 457 L 684 481 L 895 482 L 722 325 Z";
-const BODY = "M 1078 6 L 770 1 L 724 13 L 666 50 L 300 373 L 666 372 Z";
+const SILHOUETTE =
+  "M 1078 5 L 800 1 Q 706 2 646 60 L 418 267 L 300 169 L 62 167 L 0 231 L 146 236 L 300 374 L 550 374 L 638 457 L 684 481 L 895 482 L 722 325 Z";
+const RIBBON =
+  "M 1078 5 L 800 1 Q 706 2 646 60 L 418 267 L 300 169 L 62 167 L 146 236 L 300 374 L 550 374 L 638 457 L 684 481 L 895 482 L 722 325 Z";
+const FOLD = "M 62 167 L 0 231 L 146 236 Z";
+const WING = "M 1078 6 L 800 1 Q 706 2 646 60 L 300 373 L 666 372 Z";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -67,7 +72,7 @@ export function BootLoader({
           <div className="kagu-bootloader__mark">
             <svg viewBox={VIEWBOX} className="kagu-bootloader__svg" aria-hidden>
               {/* Stroke draw-on layer */}
-              {[WING, BODY].map((d, i) => (
+              {[SILHOUETTE, WING].map((d, i) => (
                 <motion.path
                   key={`stroke-${i}`}
                   d={d}
@@ -85,19 +90,27 @@ export function BootLoader({
                   }}
                 />
               ))}
-              {/* Solid fill blooms in after the stroke has drawn */}
+              {/* Solid fills bloom in after the stroke has drawn — grey ribbon,
+                  darker head fold, then the bright wing on top */}
               <motion.path
-                d={WING}
+                d={RIBBON}
                 fill="var(--ink)"
-                initial={reduced ? { opacity: 0.17 } : { opacity: 0 }}
-                animate={{ opacity: 0.17 }}
+                initial={reduced ? { opacity: 0.42 } : { opacity: 0 }}
+                animate={{ opacity: 0.42 }}
                 transition={{ duration: reduced ? 0 : 0.6, delay: reduced ? 0 : 1.15 }}
               />
               <motion.path
-                d={BODY}
+                d={FOLD}
                 fill="var(--ink)"
-                initial={reduced ? { opacity: 0.85 } : { opacity: 0 }}
-                animate={{ opacity: 0.85 }}
+                initial={reduced ? { opacity: 0.26 } : { opacity: 0 }}
+                animate={{ opacity: 0.26 }}
+                transition={{ duration: reduced ? 0 : 0.6, delay: reduced ? 0 : 1.15 }}
+              />
+              <motion.path
+                d={WING}
+                fill="var(--ink)"
+                initial={reduced ? { opacity: 0.95 } : { opacity: 0 }}
+                animate={{ opacity: 0.95 }}
                 transition={{ duration: reduced ? 0 : 0.6, delay: reduced ? 0 : 1.25 }}
               />
             </svg>

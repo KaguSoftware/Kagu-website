@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1079" height="483" viewBox="0 0 1079 483" role="img" aria-label="Kagu geometric logo">
   <title>Kagu geometric logo</title>
-  <path d="M 1078 5 L 776 0 L 733 9 L 669 47 L 418 267 L 300 169 L 62 167 L 0 231 L 146 236 L 300 374 L 550 374 L 638 457 L 684 481 L 895 482 L 722 325 Z" fill="#000000" opacity="0.17"/>
-  <path d="M 1078 6 L 770 1 L 724 13 L 666 50 L 300 373 L 666 372 Z" fill="#000000" opacity="0.85"/>
+  <!-- Two paths on purpose: the 3D sculpture (LogoSculpture.tsx) extrudes each
+       path into a slab and reads opacity < 0.5 as the ghosted layer. The 2D
+       head-fold tone lives only in the inline marks (KaguMark.tsx). -->
+  <path d="M 1078 5 L 800 1 Q 706 2 646 60 L 418 267 L 300 169 L 62 167 L 0 231 L 146 236 L 300 374 L 550 374 L 638 457 L 684 481 L 895 482 L 722 325 Z" fill="#000000" opacity="0.17"/>
+  <path d="M 1078 6 L 800 1 Q 706 2 646 60 L 300 373 L 666 372 Z" fill="#000000" opacity="0.85"/>
 </svg>

@@ -148,6 +148,9 @@ export function HeroSection({ heroMarquee }: { heroMarquee: MarqueeItem[] }) {
         >
           <KaguMark
             preserveAspectRatio="xMaxYMax meet"
+            /* ghosted background read — quieter than the mark's defaults */
+            wingOpacity={0.2}
+            bodyOpacity={0.85}
             style={{
               position: "absolute",
               inset: 0,
