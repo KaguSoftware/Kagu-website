@@ -98,7 +98,7 @@ function MemberCard({
     <SectionRise
       as="article"
       amount={0.3}
-      className={`kagu-profile${open ? " is-open" : ""}`}
+      className={`kagu-profile kagu-profile--${member.segment}${open ? " is-open" : ""}`}
     >
       <div
         id={`member-${member.slug}`}
@@ -290,25 +290,66 @@ export function TeamRoster({
       <style>{`
         .kagu-roster {
           /* widths the cards and their hover-bio share */
-          --kagu-card-w: clamp(150px, 17vw, 200px);
+          --kagu-card-w: clamp(150px, 16vw, 196px);
           --kagu-bio-w: clamp(240px, 26vw, 360px);
           /* one shared timing so open and close move in lockstep (no jump) */
           --kagu-bio-ease: 520ms cubic-bezier(0.6, 0.01, 0.05, 0.95);
           display: flex;
           flex-direction: column;
-          align-items: center;
-          gap: var(--space-12);
+          align-items: flex-start;
+          /* tight row gap — the vertical scatter offsets supply the air */
+          gap: clamp(var(--space-8), 5vw, var(--space-16));
         }
-        /* One row = up to 3 members; the hover-bio still pushes siblings
-           aside within its own row. */
+        /*
+          Scattered composition: up to 3 members per row, rows drifting
+          left / right alternately, each member dropped to a different
+          baseline. The offsets are plain margins (not transforms), so the
+          hover-bio still reflows siblings and deep-link scroll still
+          measures true layout positions.
+        */
         .kagu-roster-row {
           display: flex;
           flex-wrap: nowrap;
-          justify-content: center;
           align-items: flex-start;
-          gap: var(--space-10);
+          gap: clamp(var(--space-10), 7vw, var(--space-20));
+        }
+        @media (min-width: 768px) {
+          .kagu-roster-row:nth-child(odd) {
+            align-self: flex-start;
+            margin-left: clamp(0px, 3vw, 56px);
+          }
+          .kagu-roster-row:nth-child(even) {
+            align-self: flex-end;
+            margin-right: clamp(0px, 5vw, 88px);
+          }
+          /* A lone member on the final row sits off-center, not dead-center. */
+          .kagu-roster-row:has(> .kagu-profile:only-child) {
+            align-self: center;
+            margin-left: clamp(0px, 8vw, 120px);
+          }
+          /* Falling diagonal on odd rows… */
+          .kagu-roster-row:nth-child(odd) .kagu-profile:nth-child(2) {
+            margin-top: clamp(40px, 7vw, 104px);
+          }
+          .kagu-roster-row:nth-child(odd) .kagu-profile:nth-child(3) {
+            margin-top: clamp(16px, 3vw, 48px);
+          }
+          /* …mirrored rising diagonal on even rows. */
+          .kagu-roster-row:nth-child(even) .kagu-profile:nth-child(1) {
+            margin-top: clamp(32px, 6vw, 88px);
+          }
+          .kagu-roster-row:nth-child(even) .kagu-profile:nth-child(3) {
+            margin-top: clamp(48px, 8vw, 120px);
+          }
         }
         .kagu-profile { flex: 0 0 auto; }
+        /* Scale signals seniority: cofounders read first. */
+        .kagu-profile--cofounder {
+          --kagu-card-w: clamp(176px, 19vw, 236px);
+        }
+        .kagu-profile--associate {
+          --kagu-card-w: clamp(136px, 14vw, 176px);
+        }
         .kagu-profile-row {
           display: flex;
           align-items: flex-start;
@@ -370,7 +411,10 @@ export function TeamRoster({
         @media (max-width: 767px) {
           .kagu-roster {
             align-items: stretch;
+            gap: var(--space-12);
           }
+          /* No scatter on phones — one calm column (the desktop drift and
+             offsets are scoped to min-width: 768px above). */
           .kagu-roster-row {
             flex-direction: column;
             align-items: stretch;
