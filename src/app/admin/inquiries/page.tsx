@@ -3,6 +3,8 @@ import { PageHeader, EmptyState } from "../_components/ui";
 import {
   formatPrice,
   getComponentGroup,
+  getPalette,
+  getThemeOption,
   getVariant,
   getWebsiteType,
   FEATURES,
@@ -20,12 +22,21 @@ const STATUS_CLASSES: Record<InquiryStatus, string> = {
 
 const FEATURE_LABELS = new Map(FEATURES.map((f) => [f.id, f.label]));
 
-/* Resolves both feature ids and "zone:variant" component tokens to labels. */
+/* Resolves feature ids and prefixed tokens ("navbar:floating", "theme:both",
+   "palette:violet", "idea:…") to readable labels. */
 function labelFor(id: string): string {
-  if (id.includes(":")) {
-    const [zone, variantId] = id.split(":");
-    const variant = getVariant(zone as PreviewZone, variantId);
-    if (variant) return `${getComponentGroup(zone as PreviewZone).label}: ${variant.label}`;
+  const sep = id.indexOf(":");
+  if (sep > -1) {
+    const prefix = id.slice(0, sep);
+    const value = id.slice(sep + 1);
+    if (prefix === "theme") return `Theme: ${getThemeOption(value)?.label ?? value}`;
+    if (prefix === "palette") {
+      if (value === "branding") return "Branding: full identity";
+      return `Palette: ${getPalette(value)?.label ?? value}`;
+    }
+    if (prefix === "idea") return `Idea: “${value}”`;
+    const variant = getVariant(prefix as PreviewZone, value);
+    if (variant) return `${getComponentGroup(prefix as PreviewZone).label}: ${variant.label}`;
   }
   return FEATURE_LABELS.get(id) ?? id;
 }

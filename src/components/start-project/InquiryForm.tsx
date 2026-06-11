@@ -14,11 +14,15 @@ import { createClient } from "@/lib/supabase/client";
 import { HoverMagnet } from "@/components/motion/HoverMagnet";
 import { HoverTextSwap } from "@/components/motion/HoverTextSwap";
 import {
+  BRANDING_ID,
+  BRANDING_PRICE,
   CURRENCY,
   computeTotals,
   formatPrice,
+  getPalette,
   getWebsiteType,
   zoneTokens,
+  type ThemeChoice,
   type WebsiteTypeId,
   type ZoneChoices,
 } from "./catalog";
@@ -29,10 +33,16 @@ export function InquiryForm({
   typeId,
   selected,
   zoneChoices,
+  theme,
+  paletteId,
+  ideas,
 }: {
   typeId: WebsiteTypeId;
   selected: ReadonlySet<string>;
   zoneChoices: ZoneChoices;
+  theme: ThemeChoice;
+  paletteId: string;
+  ideas: string[];
 }) {
   const [stage, setStage] = useState<Stage>("default");
   const [studioEmail, setStudioEmail] = useState("");
@@ -72,13 +82,20 @@ export function InquiryForm({
     }
 
     const type = getWebsiteType(typeId);
-    const totals = computeTotals(typeId, selected, zoneChoices);
+    const totals = computeTotals(typeId, selected, zoneChoices, theme, paletteId);
 
     const supabase = createClient();
     const { error } = await supabase.from("project_inquiries").insert({
       website_type: typeId,
-      // Component choices ride along as "zone:variant" tokens.
-      features: [...zoneTokens(zoneChoices), ...totals.features.map((f) => f.id)],
+      // Component/theme/palette choices and custom ideas ride along as
+      // prefixed tokens ("navbar:floating", "theme:both", "idea:…").
+      features: [
+        ...zoneTokens(zoneChoices),
+        `theme:${theme}`,
+        `palette:${paletteId}`,
+        ...totals.features.map((f) => f.id),
+        ...ideas.map((idea) => `idea:${idea}`),
+      ],
       base_price: totals.base,
       features_price: totals.featuresPrice + totals.variantsPrice,
       total_price: totals.total,
@@ -93,17 +110,26 @@ export function InquiryForm({
       console.warn("project_inquiries insert failed:", error.message);
     }
 
-    const componentLines = totals.variants
-      .map(
+    const componentLines = [
+      ...totals.variants.map(
         ({ group, variant }) =>
           `  · ${group.label} — ${variant.label} ${
             variant.price > 0 ? `(+ ${formatPrice(variant.price)})` : "(included)"
           }`
-      )
-      .join("\n");
+      ),
+      `  · Theme — ${totals.themeOption.label} ${
+        totals.themeOption.price > 0
+          ? `(+ ${formatPrice(totals.themeOption.price)})`
+          : "(included)"
+      }`,
+      paletteId === BRANDING_ID
+        ? `  · Branding — palette, logo direction & identity (+ ${formatPrice(BRANDING_PRICE)})`
+        : `  · Palette — ${getPalette(paletteId)?.label ?? paletteId}`,
+    ].join("\n");
     const featureLines = totals.features
       .map((f) => `  + ${f.label} — ${formatPrice(f.price)}`)
       .join("\n");
+    const ideaLines = ideas.map((idea) => `  ? ${idea} (to be quoted)`).join("\n");
     const subject = `Project request: ${type?.label} — est. ${formatPrice(totals.total)} — ${name}`;
     const body =
       `Name: ${name}\n` +
@@ -113,6 +139,7 @@ export function InquiryForm({
       `Website type: ${type?.label} (${formatPrice(totals.base)})\n` +
       `Components:\n${componentLines}\n` +
       (featureLines ? `Features:\n${featureLines}\n` : `Features: none\n`) +
+      (ideaLines ? `Custom ideas:\n${ideaLines}\n` : "") +
       `Estimated total: ${formatPrice(totals.total)} ${CURRENCY}\n` +
       (notes ? `\n— Notes —\n${notes}\n` : "") +
       `\nSent from the package builder.`;
@@ -126,7 +153,7 @@ export function InquiryForm({
 
   if (stage === "success") {
     const type = getWebsiteType(typeId);
-    const totals = computeTotals(typeId, selected, zoneChoices);
+    const totals = computeTotals(typeId, selected, zoneChoices, theme, paletteId);
     return (
       <div
         role="status"
