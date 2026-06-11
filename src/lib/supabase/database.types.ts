@@ -54,6 +54,8 @@ export type MessageChannel = "email" | "whatsapp";
 
 export type MessageLanguage = "tr" | "ar" | "en";
 
+export type InquiryStatus = "new" | "contacted" | "archived";
+
 export type AuditFlag =
   | "no_website"
   | "facebook_only"
@@ -620,6 +622,54 @@ export interface Database {
             referencedColumns: ["id"];
           },
         ];
+      };
+      project_inquiries: {
+        Row: {
+          id: string;
+          website_type: string;
+          features: string[];
+          base_price: number;
+          features_price: number;
+          total_price: number;
+          currency: string;
+          name: string;
+          email: string;
+          company: string | null;
+          notes: string | null;
+          status: InquiryStatus;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          website_type: string;
+          features?: string[];
+          base_price: number;
+          features_price: number;
+          total_price: number;
+          currency?: string;
+          name: string;
+          email: string;
+          company?: string | null;
+          notes?: string | null;
+          status?: InquiryStatus;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          website_type?: string;
+          features?: string[];
+          base_price?: number;
+          features_price?: number;
+          total_price?: number;
+          currency?: string;
+          name?: string;
+          email?: string;
+          company?: string | null;
+          notes?: string | null;
+          status?: InquiryStatus;
+          created_at?: string;
+        };
+        Relationships: [];
       };
     };
     Views: Record<never, never>;

@@ -25,6 +25,7 @@ const NAV: NavItem[] = [
     label: "Tools",
     match: ["/admin/leads", "/admin/learnings"],
   },
+  { href: "/admin/inquiries", label: "Inquiries" },
   { href: "/admin/about", label: "About" },
   { href: "/admin/settings", label: "Settings" },
 ];
