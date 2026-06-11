@@ -20,6 +20,12 @@ import { adminToast } from "./toast";
    dev — dedupe toasts per row across all hook instances. */
 const toastedIds = new Set<string>();
 
+/* The browser Supabase client is a singleton that caches channels by topic.
+   Two hook instances asking for the same topic would get the same channel —
+   the second .on() after the first .subscribe() throws. Unique topic per
+   mount keeps every instance on its own channel. */
+let channelSeq = 0;
+
 type RequestKind = "contact" | "inquiry";
 
 function notifyOnce(kind: RequestKind, payload: { [key: string]: unknown }) {
@@ -98,7 +104,7 @@ export function useNewRequestCount(
       };
 
     const channel = supabase
-      .channel("admin-request-badge")
+      .channel(`admin-request-badge-${++channelSeq}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "contact_requests" },
