@@ -11,10 +11,13 @@ import { animate, useReducedMotion } from "motion/react";
 import { Eyebrow } from "@/components/layout/Eyebrow";
 import { WordMaskReveal } from "@/components/motion/WordMaskReveal";
 import {
+  DEFAULT_PALETTE,
   computeTotals,
   featuresForType,
   formatPrice,
+  getPalette,
   type PreviewZone,
+  type ThemeChoice,
   type WebsiteTypeId,
   type ZoneChoices,
 } from "./catalog";
@@ -56,6 +59,135 @@ function AnimatedPrice({ value }: { value: number }) {
   );
 }
 
+/*
+  "I have an idea" — free-text requests that don't fit the catalog. No price
+  attached (quoted on the call); they ride along in the inquiry + email.
+*/
+function IdeaInput({
+  ideas,
+  onChange,
+}: {
+  ideas: string[];
+  onChange: (ideas: string[]) => void;
+}) {
+  const [draft, setDraft] = useState("");
+
+  const add = () => {
+    const text = draft.trim();
+    if (!text || ideas.includes(text)) return;
+    onChange([...ideas, text]);
+    setDraft("");
+  };
+
+  return (
+    <div style={{ marginTop: "var(--space-5)" }}>
+      <label
+        htmlFor="custom-idea"
+        className="font-mono block"
+        style={{
+          fontSize: "var(--type-xs)",
+          letterSpacing: "var(--tracking-eyebrow)",
+          textTransform: "uppercase",
+          color: "var(--slate-ink)",
+          marginBottom: "var(--space-2)",
+        }}
+      >
+        I have an idea
+      </label>
+      <div className="flex items-center gap-3">
+        <input
+          id="custom-idea"
+          type="text"
+          value={draft}
+          placeholder="Something specific in mind? Type it here…"
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              add();
+            }
+          }}
+          style={{
+            flex: 1,
+            background: "transparent",
+            border: 0,
+            borderBottom: "1px solid var(--neutral)",
+            padding: "var(--space-2) 0",
+            fontSize: "var(--type-base)",
+            fontFamily: "var(--font-body)",
+            color: "var(--ink)",
+            outline: "none",
+          }}
+        />
+        <button
+          type="button"
+          data-cursor="view"
+          onClick={add}
+          disabled={!draft.trim()}
+          className="font-mono"
+          style={{
+            fontSize: "var(--type-xs)",
+            letterSpacing: "var(--tracking-eyebrow)",
+            textTransform: "uppercase",
+            color: draft.trim() ? "var(--mint-deep)" : "var(--slate-ink)",
+            background: "transparent",
+            border: "1px solid",
+            borderColor: draft.trim() ? "var(--mint-deep)" : "var(--neutral)",
+            padding: "7px 14px",
+            cursor: draft.trim() ? "pointer" : "default",
+            whiteSpace: "nowrap",
+          }}
+        >
+          + Add
+        </button>
+      </div>
+      {ideas.length > 0 ? (
+        <ul className="flex flex-wrap gap-2" style={{ marginTop: "var(--space-3)" }}>
+          {ideas.map((idea) => (
+            <li
+              key={idea}
+              className="inline-flex items-center gap-2"
+              style={{
+                border: "1px solid var(--neutral)",
+                borderRadius: 999,
+                padding: "4px 6px 4px 12px",
+                fontSize: "var(--type-xs)",
+                color: "var(--ink)",
+              }}
+            >
+              {idea}
+              <span
+                className="font-mono"
+                style={{ color: "var(--slate-ink)", fontSize: 10 }}
+              >
+                we’ll quote
+              </span>
+              <button
+                type="button"
+                aria-label={`Remove "${idea}"`}
+                onClick={() => onChange(ideas.filter((i) => i !== idea))}
+                style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: 999,
+                  border: 0,
+                  background: "color-mix(in oklab, var(--neutral) 60%, transparent)",
+                  color: "var(--ink)",
+                  fontSize: 11,
+                  lineHeight: 1,
+                  cursor: "pointer",
+                }}
+              >
+                ×
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
 function StepLabel({ number, children }: { number: string; children: React.ReactNode }) {
   return (
     <span className="eyebrow block" style={{ marginBottom: "var(--space-5)" }}>
@@ -71,16 +203,23 @@ export function StartProjectBuilder({
   initialTypeId,
   initialFeatureIds,
   initialZoneChoices,
+  initialTheme,
+  initialPaletteId,
 }: {
   initialTypeId: WebsiteTypeId;
   initialFeatureIds: string[];
   initialZoneChoices: ZoneChoices;
+  initialTheme: ThemeChoice;
+  initialPaletteId: string;
 }) {
   const [typeId, setTypeId] = useState<WebsiteTypeId>(initialTypeId);
   const [selected, setSelected] = useState<Set<string>>(
     () => new Set(initialFeatureIds)
   );
   const [zoneChoices, setZoneChoices] = useState<ZoneChoices>(initialZoneChoices);
+  const [theme, setTheme] = useState<ThemeChoice>(initialTheme);
+  const [paletteId, setPaletteId] = useState(initialPaletteId);
+  const [ideas, setIdeas] = useState<string[]>([]);
 
   // Shareable URL — replaceState only, never a navigation/refetch.
   useEffect(() => {
@@ -90,8 +229,10 @@ export function StartProjectBuilder({
     search.set("nav", zoneChoices.navbar);
     search.set("hero", zoneChoices.hero);
     search.set("foot", zoneChoices.footer);
+    search.set("theme", theme);
+    search.set("accent", paletteId);
     window.history.replaceState(null, "", `?${search.toString()}`);
-  }, [typeId, selected, zoneChoices]);
+  }, [typeId, selected, zoneChoices, theme, paletteId]);
 
   const changeZone = (zone: PreviewZone, variantId: string) => {
     setZoneChoices((current) => ({ ...current, [zone]: variantId }));
@@ -115,7 +256,8 @@ export function StartProjectBuilder({
     });
   };
 
-  const totals = computeTotals(typeId, selected, zoneChoices);
+  const totals = computeTotals(typeId, selected, zoneChoices, theme, paletteId);
+  const accent = getPalette(paletteId)?.color ?? getPalette(DEFAULT_PALETTE)!.color;
 
   return (
     <>
@@ -178,6 +320,8 @@ export function StartProjectBuilder({
                 typeId={typeId}
                 selected={selected}
                 zoneChoices={zoneChoices}
+                theme={theme}
+                accent={accent}
               />
             </div>
           </div>
@@ -186,12 +330,20 @@ export function StartProjectBuilder({
           <div className="order-3 lg:order-none lg:col-span-5 lg:col-start-1 flex flex-col gap-(--space-12)">
             <div>
               <StepLabel number="02">Shape the components</StepLabel>
-              <ZoneOptions choices={zoneChoices} onChange={changeZone} />
+              <ZoneOptions
+                choices={zoneChoices}
+                onChange={changeZone}
+                theme={theme}
+                onThemeChange={setTheme}
+                paletteId={paletteId}
+                onPaletteChange={setPaletteId}
+              />
             </div>
 
             <div>
               <StepLabel number="03">Add features</StepLabel>
               <FeatureList typeId={typeId} selected={selected} onToggle={toggleFeature} />
+              <IdeaInput ideas={ideas} onChange={setIdeas} />
             </div>
 
             {/* Running total */}
@@ -237,7 +389,14 @@ export function StartProjectBuilder({
             {/* Final step — send */}
             <div>
               <StepLabel number="04">Send it over</StepLabel>
-              <InquiryForm typeId={typeId} selected={selected} zoneChoices={zoneChoices} />
+              <InquiryForm
+                typeId={typeId}
+                selected={selected}
+                zoneChoices={zoneChoices}
+                theme={theme}
+                paletteId={paletteId}
+                ideas={ideas}
+              />
             </div>
           </div>
         </div>

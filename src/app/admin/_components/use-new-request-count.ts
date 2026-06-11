@@ -92,7 +92,10 @@ export function useNewRequestCount(
     };
 
     // If we never reach SUBSCRIBED, fall back after a grace period.
-    let safety: ReturnType<typeof setTimeout> | null = setTimeout(startPolling, 5000);
+    const safety: ReturnType<typeof setTimeout> | null = setTimeout(
+      startPolling,
+      5000
+    );
 
     const onEvent =
       (kind: RequestKind) =>

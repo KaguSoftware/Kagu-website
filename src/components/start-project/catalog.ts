@@ -15,7 +15,7 @@ export type PreviewZone = "navbar" | "hero" | "footer";
 
 export type PreviewEffect =
   | { kind: "nav-icon"; icon: "globe" | "currency" | "card" | "avatar" | "theme" }
-  | { kind: "chat-bubble" }
+  | { kind: "chat-bubble"; style: "ai" | "whatsapp" }
   | { kind: "section"; section: "blog" | "booking" | "analytics" }
   | { kind: "chrome-badge"; label: string }
   | { kind: "cms-outline" }
@@ -204,6 +204,75 @@ export const DEFAULT_ZONE_CHOICES: ZoneChoices = {
   footer: "columns",
 };
 
+/* ------------------------------------------------------------------ */
+/* Theme + palette                                                     */
+/* ------------------------------------------------------------------ */
+
+export type ThemeChoice = "dark" | "light" | "both";
+
+export interface ThemeOption {
+  id: ThemeChoice;
+  label: string;
+  description: string;
+  price: number;
+}
+
+export const THEME_OPTIONS: ThemeOption[] = [
+  {
+    id: "dark",
+    label: "Dark",
+    description: "One committed dark theme.",
+    price: 0,
+  },
+  {
+    id: "light",
+    label: "Light",
+    description: "One committed light theme.",
+    price: 0,
+  },
+  {
+    id: "both",
+    label: "Light & dark",
+    description: "Two themes, remembered per visitor.",
+    price: 350,
+  },
+];
+
+export const DEFAULT_THEME: ThemeChoice = "dark";
+
+export function getThemeOption(id: string): ThemeOption | undefined {
+  return THEME_OPTIONS.find((t) => t.id === id);
+}
+
+export interface Palette {
+  id: string;
+  label: string;
+  color: string;
+}
+
+export const PALETTES: Palette[] = [
+  { id: "sky", label: "Sky", color: "#1f8fe0" },
+  { id: "violet", label: "Violet", color: "#7c5cff" },
+  { id: "teal", label: "Teal", color: "#2dd4bf" },
+  { id: "amber", label: "Amber", color: "#e8a33d" },
+  { id: "rose", label: "Rose", color: "#e25c7a" },
+];
+
+export const DEFAULT_PALETTE = "sky";
+
+/* "I want branding" — no preset accent; we design the identity. */
+export const BRANDING_ID = "branding";
+export const BRANDING_PRICE = 500;
+export const BRANDING_LABEL = "I want branding";
+
+export function getPalette(id: string): Palette | undefined {
+  return PALETTES.find((p) => p.id === id);
+}
+
+export function isValidPaletteChoice(id: string): boolean {
+  return id === BRANDING_ID || !!getPalette(id);
+}
+
 export function getComponentGroup(zone: PreviewZone): ComponentGroup {
   return COMPONENT_GROUPS.find((g) => g.zone === zone)!;
 }
@@ -212,7 +281,9 @@ export function getVariant(
   zone: PreviewZone,
   variantId: string
 ): ComponentVariant | undefined {
-  return getComponentGroup(zone).variants.find((v) => v.id === variantId);
+  // Tolerates arbitrary zone strings (admin resolves stored tokens with it).
+  const group = COMPONENT_GROUPS.find((g) => g.zone === zone);
+  return group?.variants.find((v) => v.id === variantId);
 }
 
 /** "navbar:floating" tokens — how zone choices are stored alongside feature ids. */
@@ -277,11 +348,25 @@ export const FEATURES: Feature[] = [
     effect: { kind: "nav-icon", icon: "currency" },
   },
   {
-    id: "chatbot",
-    label: "AI chatbot",
-    description: "Answers visitors 24/7, trained on your content.",
+    id: "llm",
+    label: "LLM API integration",
+    description: "AI chat, translation, smart drafting — wired to your content.",
     price: 1500,
-    effect: { kind: "chat-bubble" },
+    effect: { kind: "chat-bubble", style: "ai" },
+  },
+  {
+    id: "messaging",
+    label: "WhatsApp / Telegram API",
+    description: "Enquiries and orders land as structured messages where your team lives.",
+    price: 700,
+    effect: { kind: "chat-bubble", style: "whatsapp" },
+  },
+  {
+    id: "pdf",
+    label: "PDF generation",
+    description: "Documents generated server-side, downloadable in a click.",
+    price: 600,
+    effect: { kind: "chrome-badge", label: "PDF" },
   },
   {
     id: "seo",
@@ -296,13 +381,6 @@ export const FEATURES: Feature[] = [
     description: "Privacy-friendly traffic and conversion insight.",
     price: 700,
     effect: { kind: "section", section: "analytics" },
-  },
-  {
-    id: "darkmode",
-    label: "Dark / light mode",
-    description: "Two themes, remembered per visitor.",
-    price: 350,
-    effect: { kind: "nav-icon", icon: "theme" },
   },
   {
     id: "animations",
@@ -324,7 +402,9 @@ export function featuresForType(typeId: WebsiteTypeId): Feature[] {
 export function computeTotals(
   typeId: WebsiteTypeId,
   selected: ReadonlySet<string>,
-  zoneChoices: ZoneChoices
+  zoneChoices: ZoneChoices,
+  theme: ThemeChoice,
+  paletteId: string
 ) {
   const type = getWebsiteType(typeId);
   const base = type?.basePrice ?? 0;
@@ -335,12 +415,16 @@ export function computeTotals(
     variant: getVariant(group.zone, zoneChoices[group.zone]) ?? group.variants[0],
   }));
   const variantsPrice = variants.reduce((sum, v) => sum + v.variant.price, 0);
+  const themeOption = getThemeOption(theme) ?? THEME_OPTIONS[0];
+  const brandingPrice = paletteId === BRANDING_ID ? BRANDING_PRICE : 0;
   return {
     base,
     featuresPrice,
     variants,
     variantsPrice,
-    total: base + featuresPrice + variantsPrice,
+    themeOption,
+    brandingPrice,
+    total: base + featuresPrice + variantsPrice + themeOption.price + brandingPrice,
     features,
   };
 }

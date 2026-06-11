@@ -115,13 +115,13 @@ function Card({ children, style }: { children?: ReactNode; style?: CSSProperties
     <div
       className="spv-cms-target"
       style={{
-        border: "1px solid color-mix(in oklab, var(--neutral) 70%, transparent)",
+        border: "1px solid var(--spv-hairline)",
         borderRadius: 4,
         padding: 10,
         display: "flex",
         flexDirection: "column",
         gap: 7,
-        background: "color-mix(in oklab, var(--mint-soft) 55%, transparent)",
+        background: "var(--spv-card)",
         ...style,
       }}
     >
@@ -138,7 +138,7 @@ function EcommerceBody() {
           <Stub h={44} r={3} style={{ width: "100%" }} />
           <Stub w="80%" h={6} />
           <Stub w="45%" h={6} />
-          <Stub w="30%" h={7} style={{ background: "color-mix(in oklab, var(--mint-deep) 65%, transparent)" }} />
+          <Stub w="30%" h={7} style={{ background: "color-mix(in oklab, var(--spv-accent) 65%, transparent)" }} />
         </Card>
       ))}
     </div>
@@ -166,11 +166,11 @@ function ServiceBody() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          background: "color-mix(in oklab, var(--mint-deep) 22%, transparent)",
+          background: "color-mix(in oklab, var(--spv-accent) 22%, transparent)",
         }}
       >
         <Stub w="38%" h={7} />
-        <Stub w={56} h={16} r={8} style={{ background: "color-mix(in oklab, var(--mint-deep) 80%, transparent)" }} />
+        <Stub w={56} h={16} r={8} style={{ background: "color-mix(in oklab, var(--spv-accent) 80%, transparent)" }} />
       </div>
     </div>
   );
@@ -187,7 +187,7 @@ function RestaurantBody() {
               aria-hidden
               style={{
                 flex: 1,
-                borderBottom: "1px dotted color-mix(in oklab, var(--slate-ink) 38%, transparent)",
+                borderBottom: "1px dotted var(--spv-stub)",
                 transform: "translateY(2px)",
               }}
             />
@@ -202,11 +202,11 @@ function RestaurantBody() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          background: "color-mix(in oklab, var(--mint-deep) 22%, transparent)",
+          background: "color-mix(in oklab, var(--spv-accent) 22%, transparent)",
         }}
       >
         <Stub w="32%" h={7} />
-        <Stub w={64} h={16} r={8} style={{ background: "color-mix(in oklab, var(--mint-deep) 80%, transparent)" }} />
+        <Stub w={64} h={16} r={8} style={{ background: "color-mix(in oklab, var(--spv-accent) 80%, transparent)" }} />
       </div>
     </div>
   );
@@ -235,10 +235,10 @@ function SaasBody() {
         display: "grid",
         gridTemplateColumns: "52px 1fr",
         gap: 10,
-        border: "1px solid color-mix(in oklab, var(--neutral) 70%, transparent)",
+        border: "1px solid var(--spv-hairline)",
         borderRadius: 4,
         padding: 10,
-        background: "color-mix(in oklab, var(--mint-soft) 55%, transparent)",
+        background: "var(--spv-card)",
       }}
     >
       <div
@@ -246,11 +246,11 @@ function SaasBody() {
           display: "flex",
           flexDirection: "column",
           gap: 8,
-          borderRight: "1px solid color-mix(in oklab, var(--neutral) 60%, transparent)",
+          borderRight: "1px solid var(--spv-hairline)",
           paddingRight: 10,
         }}
       >
-        <Stub w={16} h={16} r={4} style={{ background: "color-mix(in oklab, var(--mint-deep) 70%, transparent)" }} />
+        <Stub w={16} h={16} r={4} style={{ background: "color-mix(in oklab, var(--spv-accent) 70%, transparent)" }} />
         {[0, 1, 2, 3].map((i) => (
           <Stub key={i} w={28} h={5} />
         ))}
@@ -261,7 +261,7 @@ function SaasBody() {
             <div
               key={i}
               style={{
-                border: "1px solid color-mix(in oklab, var(--neutral) 60%, transparent)",
+                border: "1px solid var(--spv-hairline)",
                 borderRadius: 3,
                 padding: 8,
                 display: "flex",
@@ -276,7 +276,7 @@ function SaasBody() {
         </div>
         <div style={{ display: "flex", alignItems: "flex-end", gap: 5, height: 52, padding: "0 4px" }}>
           {[34, 58, 42, 70, 50, 82, 64, 90, 72, 56, 78, 88].map((h, i) => (
-            <Stub key={i} grow h={`${h}%`} r={2} style={{ background: "color-mix(in oklab, var(--mint-deep) 45%, transparent)" }} />
+            <Stub key={i} grow h={`${h}%`} r={2} style={{ background: "color-mix(in oklab, var(--spv-accent) 45%, transparent)" }} />
           ))}
         </div>
       </div>
@@ -333,7 +333,7 @@ export function BookingSection() {
           display: "grid",
           gridTemplateColumns: "repeat(7, 1fr)",
           gap: 5,
-          border: "1px solid color-mix(in oklab, var(--neutral) 70%, transparent)",
+          border: "1px solid var(--spv-hairline)",
           borderRadius: 4,
           padding: 9,
         }}
@@ -347,8 +347,8 @@ export function BookingSection() {
               borderRadius: 2,
               background:
                 i === 9
-                  ? "var(--mint-deep)"
-                  : "color-mix(in oklab, var(--slate-ink) 16%, transparent)",
+                  ? "var(--spv-accent)"
+                  : "color-mix(in oklab, var(--spv-stub) 55%, transparent)",
             }}
           />
         ))}
@@ -367,7 +367,7 @@ export function AnalyticsSection() {
           alignItems: "flex-end",
           gap: 8,
           height: 46,
-          border: "1px solid color-mix(in oklab, var(--neutral) 70%, transparent)",
+          border: "1px solid var(--spv-hairline)",
           borderRadius: 4,
           padding: "8px 10px",
         }}
@@ -380,7 +380,7 @@ export function AnalyticsSection() {
             style={{
               flex: 1,
               borderRadius: 2,
-              background: "color-mix(in oklab, var(--mint-deep) 55%, transparent)",
+              background: "color-mix(in oklab, var(--spv-accent) 55%, transparent)",
               height: `${h}%`,
               animationDelay: `${i * 80}ms`,
             }}

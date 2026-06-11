@@ -7,18 +7,32 @@
 */
 
 import {
+  BRANDING_ID,
+  BRANDING_LABEL,
+  BRANDING_PRICE,
   COMPONENT_GROUPS,
+  PALETTES,
+  THEME_OPTIONS,
   formatPrice,
   type PreviewZone,
+  type ThemeChoice,
   type ZoneChoices,
 } from "./catalog";
 
 export function ZoneOptions({
   choices,
   onChange,
+  theme,
+  onThemeChange,
+  paletteId,
+  onPaletteChange,
 }: {
   choices: ZoneChoices;
   onChange: (zone: PreviewZone, variantId: string) => void;
+  theme: ThemeChoice;
+  onThemeChange: (theme: ThemeChoice) => void;
+  paletteId: string;
+  onPaletteChange: (paletteId: string) => void;
 }) {
   return (
     <div className="flex flex-col gap-(--space-8)">
@@ -117,6 +131,212 @@ export function ZoneOptions({
           </div>
         </div>
       ))}
+
+      {/* Theme */}
+      <div>
+        <span
+          className="font-mono block"
+          style={{
+            fontSize: "var(--type-xs)",
+            letterSpacing: "var(--tracking-eyebrow)",
+            textTransform: "uppercase",
+            color: "var(--slate-ink)",
+            marginBottom: "var(--space-3)",
+          }}
+        >
+          Theme
+        </span>
+        <div role="radiogroup" aria-label="Theme" className="grid grid-cols-3 gap-2">
+          {THEME_OPTIONS.map((option) => {
+            const on = theme === option.id;
+            return (
+              <button
+                key={option.id}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                data-cursor="view"
+                onClick={() => onThemeChange(option.id)}
+                className="flex flex-col gap-1 text-left"
+                style={{
+                  padding: "var(--space-3) var(--space-3)",
+                  border: "1px solid",
+                  borderColor: on ? "var(--mint-deep)" : "var(--neutral)",
+                  background: on
+                    ? "color-mix(in oklab, var(--mint-deep) 10%, transparent)"
+                    : "transparent",
+                  cursor: "pointer",
+                  transition:
+                    "border-color var(--dur-quick) var(--ease-out-quint), background var(--dur-quick) var(--ease-out-quint)",
+                }}
+              >
+                <span className="flex items-center gap-2" style={{ width: "100%" }}>
+                  {/* theme swatch: dark disc / light disc / half-half */}
+                  <span
+                    aria-hidden
+                    style={{
+                      width: 12,
+                      height: 12,
+                      flex: "0 0 auto",
+                      borderRadius: 999,
+                      border: "1px solid var(--neutral)",
+                      background:
+                        option.id === "dark"
+                          ? "#14161d"
+                          : option.id === "light"
+                            ? "#eef0ec"
+                            : "linear-gradient(90deg, #14161d 50%, #eef0ec 50%)",
+                    }}
+                  />
+                  <span
+                    className="font-mono"
+                    style={{
+                      fontSize: "var(--type-xs)",
+                      letterSpacing: "0.06em",
+                      textTransform: "uppercase",
+                      color: on ? "var(--mint-deep)" : "var(--ink)",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {option.label}
+                  </span>
+                </span>
+                <span
+                  className="font-mono"
+                  style={{
+                    fontSize: "var(--type-xs)",
+                    color: on ? "var(--mint-deep)" : "var(--slate-ink)",
+                  }}
+                >
+                  {option.price === 0 ? "Incl." : `+ ${formatPrice(option.price)}`}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Palette */}
+      <div>
+        <span
+          className="font-mono block"
+          style={{
+            fontSize: "var(--type-xs)",
+            letterSpacing: "var(--tracking-eyebrow)",
+            textTransform: "uppercase",
+            color: "var(--slate-ink)",
+            marginBottom: "var(--space-3)",
+          }}
+        >
+          Palette
+        </span>
+        <div
+          role="radiogroup"
+          aria-label="Accent palette"
+          className="flex flex-wrap items-center gap-3"
+        >
+          {PALETTES.map((palette) => {
+            const on = paletteId === palette.id;
+            return (
+              <button
+                key={palette.id}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                aria-label={palette.label}
+                title={palette.label}
+                data-cursor="view"
+                onClick={() => onPaletteChange(palette.id)}
+                style={{
+                  width: 26,
+                  height: 26,
+                  borderRadius: 999,
+                  background: palette.color,
+                  border: "2px solid",
+                  borderColor: on ? "var(--ink)" : "transparent",
+                  outline: on ? "1px solid var(--neutral)" : "1px solid transparent",
+                  outlineOffset: 2,
+                  cursor: "pointer",
+                  transition:
+                    "border-color var(--dur-quick) var(--ease-out-quint), transform var(--dur-quick) var(--ease-out-quint)",
+                  transform: on ? "scale(1.12)" : "scale(1)",
+                }}
+              />
+            );
+          })}
+
+          {/* No colors yet? We design the identity. */}
+          {(() => {
+            const on = paletteId === BRANDING_ID;
+            return (
+              <button
+                type="button"
+                role="radio"
+                aria-checked={on}
+                data-cursor="view"
+                onClick={() => onPaletteChange(BRANDING_ID)}
+                className="inline-flex items-center gap-2"
+                style={{
+                  padding: "5px 12px",
+                  borderRadius: 999,
+                  border: "1px solid",
+                  borderColor: on ? "var(--mint-deep)" : "var(--neutral)",
+                  background: on
+                    ? "color-mix(in oklab, var(--mint-deep) 10%, transparent)"
+                    : "transparent",
+                  cursor: "pointer",
+                  transition:
+                    "border-color var(--dur-quick) var(--ease-out-quint), background var(--dur-quick) var(--ease-out-quint)",
+                }}
+              >
+                <span
+                  aria-hidden
+                  style={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: 999,
+                    background:
+                      "conic-gradient(#1f8fe0, #7c5cff, #2dd4bf, #e8a33d, #e25c7a, #1f8fe0)",
+                  }}
+                />
+                <span
+                  className="font-mono"
+                  style={{
+                    fontSize: "var(--type-xs)",
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                    color: on ? "var(--mint-deep)" : "var(--ink)",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {BRANDING_LABEL}
+                </span>
+                <span
+                  className="font-mono"
+                  style={{
+                    fontSize: "var(--type-xs)",
+                    color: on ? "var(--mint-deep)" : "var(--slate-ink)",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  + {formatPrice(BRANDING_PRICE)}
+                </span>
+              </button>
+            );
+          })()}
+        </div>
+        <p
+          style={{
+            fontSize: "var(--type-xs)",
+            color: "var(--slate-ink)",
+            marginTop: "var(--space-3)",
+            lineHeight: 1.5,
+          }}
+        >
+          Pick an accent for free — or choose branding and we design your
+          palette, logo direction and identity with you.
+        </p>
+      </div>
     </div>
   );
 }

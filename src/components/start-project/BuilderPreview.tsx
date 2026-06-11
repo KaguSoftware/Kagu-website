@@ -19,6 +19,7 @@ import type { ReactNode } from "react";
 import {
   featuresForType,
   getWebsiteType,
+  type ThemeChoice,
   type ZoneChoices,
   type WebsiteTypeId,
 } from "./catalog";
@@ -33,7 +34,7 @@ import {
 } from "./previewSections";
 
 const CHROME_FG = "var(--slate-ink)";
-const HAIRLINE = "color-mix(in oklab, var(--neutral) 70%, transparent)";
+const HAIRLINE = "var(--spv-hairline)";
 
 /** One zone of the preview page. Gradient state swaps fill + stub color. */
 function Zone({
@@ -58,10 +59,9 @@ function Zone({
             ? "linear-gradient(120deg, #1f8fe0, #7c5cff, #2dd4bf)"
             : undefined
           : undefined,
-        // Stubs inside gradient zones lighten to read on the color.
-        ["--spv-stub" as string]: gradient
-          ? "rgba(238, 241, 245, 0.55)"
-          : "color-mix(in oklab, var(--slate-ink) 26%, transparent)",
+        // Stubs inside gradient zones lighten to read on the color;
+        // otherwise the theme wrapper's --spv-stub flows through.
+        ["--spv-stub" as string]: gradient ? "rgba(238, 241, 245, 0.55)" : undefined,
         ...style,
       }}
     >
@@ -122,7 +122,7 @@ function NavLogo() {
       w={20}
       h={20}
       r={5}
-      style={{ background: "color-mix(in oklab, var(--mint-deep) 75%, transparent)" }}
+      style={{ background: "color-mix(in oklab, var(--spv-accent) 75%, transparent)" }}
     />
   );
 }
@@ -135,7 +135,7 @@ function IconSlot({ icons, light }: { icons: string[]; light: boolean }) {
         display: "flex",
         alignItems: "center",
         gap: 9,
-        color: light ? "var(--ink)" : "var(--slate-ink)",
+        color: light ? "var(--ink)" : "var(--spv-muted)",
       }}
     >
       <AnimatePresence>
@@ -176,7 +176,7 @@ function NavbarBody({
               padding: "7px 18px",
               borderRadius: 999,
               border: `1px solid ${HAIRLINE}`,
-              background: "color-mix(in oklab, var(--mint-soft) 70%, transparent)",
+              background: "var(--spv-card)",
             }}
           >
             <Stub w={28} h={5} />
@@ -199,7 +199,7 @@ function NavbarBody({
             padding: "8px 16px",
             borderRadius: 999,
             border: `1px solid ${HAIRLINE}`,
-            background: "color-mix(in oklab, var(--mint-soft) 85%, transparent)",
+            background: "var(--spv-card)",
             boxShadow: "0 8px 20px -10px rgba(0, 0, 0, 0.55)",
           }}
         >
@@ -236,7 +236,7 @@ function HeroBody({ variant, gradient }: { variant: string; gradient: boolean })
         marginTop: 8,
         background: gradient
           ? "rgba(238, 241, 245, 0.9)"
-          : "color-mix(in oklab, var(--mint-deep) 80%, transparent)",
+          : "color-mix(in oklab, var(--spv-accent) 80%, transparent)",
       }}
     />
   );
@@ -314,7 +314,7 @@ function FooterBody({ variant }: { variant: string }) {
           w={16}
           h={16}
           r={4}
-          style={{ background: "color-mix(in oklab, var(--mint-deep) 70%, transparent)" }}
+          style={{ background: "color-mix(in oklab, var(--spv-accent) 70%, transparent)" }}
         />
         <span style={{ flex: 1 }} />
         <Stub w={28} h={4} />
@@ -342,7 +342,7 @@ function FooterBody({ variant }: { variant: string }) {
             w={70}
             h={22}
             r={3}
-            style={{ background: "color-mix(in oklab, var(--mint-deep) 80%, transparent)" }}
+            style={{ background: "color-mix(in oklab, var(--spv-accent) 80%, transparent)" }}
           />
         </div>
         <div
@@ -382,6 +382,159 @@ function FooterBody({ variant }: { variant: string }) {
 }
 
 /* ------------------------------------------------------------------ */
+/* The page wireframe — rendered once normally, twice for the          */
+/* half-and-half "both themes" split.                                  */
+/* ------------------------------------------------------------------ */
+
+function PreviewPage({
+  typeId,
+  zoneChoices,
+  navIcons,
+  sections,
+  chatStyles,
+  reduced,
+}: {
+  typeId: WebsiteTypeId;
+  zoneChoices: ZoneChoices;
+  navIcons: string[];
+  sections: ReadonlySet<string>;
+  chatStyles: string[];
+  reduced: boolean;
+}) {
+  const navGradient = zoneChoices.navbar === "custom";
+  const heroGradient = zoneChoices.hero === "custom";
+  const footGradient = zoneChoices.footer === "custom";
+
+  return (
+    <div
+      style={{
+        position: "relative",
+        display: "flex",
+        flexDirection: "column",
+        minHeight: "100%",
+        background: "var(--spv-page)",
+      }}
+    >
+      {/* Navbar zone */}
+      <Zone
+        gradient={navGradient}
+        reduced={reduced}
+        style={{
+          borderBottom:
+            zoneChoices.navbar === "floating" ? "none" : `1px solid ${HAIRLINE}`,
+        }}
+      >
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div key={zoneChoices.navbar} {...variantFade}>
+            <NavbarBody
+              variant={zoneChoices.navbar}
+              icons={navIcons}
+              gradient={navGradient}
+            />
+          </motion.div>
+        </AnimatePresence>
+      </Zone>
+
+      {/* Hero zone */}
+      <Zone gradient={heroGradient} reduced={reduced}>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div key={zoneChoices.hero} {...variantFade}>
+            <HeroBody variant={zoneChoices.hero} gradient={heroGradient} />
+          </motion.div>
+        </AnimatePresence>
+      </Zone>
+
+      {/* Per-type content + conditional sections */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 14, padding: "14px 16px" }}>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={typeId}
+            className="spv-floaty"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <TypeBody typeId={typeId} />
+          </motion.div>
+        </AnimatePresence>
+
+        <AnimatePresence initial={false}>
+          {sections.has("blog") && (
+            <motion.div key="blog" {...sectionIn} style={{ overflow: "hidden" }}>
+              <BlogSection />
+            </motion.div>
+          )}
+          {sections.has("booking") && (
+            <motion.div key="booking" {...sectionIn} style={{ overflow: "hidden" }}>
+              <BookingSection />
+            </motion.div>
+          )}
+          {sections.has("analytics") && (
+            <motion.div key="analytics" {...sectionIn} style={{ overflow: "hidden" }}>
+              <AnalyticsSection />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Footer zone */}
+      <Zone
+        gradient={footGradient}
+        reduced={reduced}
+        style={{
+          borderTop: `1px solid ${HAIRLINE}`,
+          marginTop: "auto",
+        }}
+      >
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div key={zoneChoices.footer} {...variantFade}>
+            <FooterBody variant={zoneChoices.footer} />
+          </motion.div>
+        </AnimatePresence>
+      </Zone>
+
+      {/* Chat bubbles — sticky bottom-right; WhatsApp stacks above the AI one */}
+      <AnimatePresence>
+        {chatStyles.map((style, i) => (
+          <motion.div
+            key={style}
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0 }}
+            transition={
+              reduced
+                ? { duration: 0 }
+                : { type: "spring", stiffness: 380, damping: 22 }
+            }
+            className={!reduced && i === 0 ? "spv-pulse" : undefined}
+            style={{
+              position: "absolute",
+              right: 14,
+              bottom: 14 + i * 48,
+              width: 40,
+              height: 40,
+              borderRadius: 999,
+              background: style === "whatsapp" ? "#1faa55" : "var(--spv-accent)",
+              color: "#eef1f5",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow:
+                style === "whatsapp"
+                  ? "0 6px 18px -6px rgba(31, 170, 85, 0.7)"
+                  : "0 6px 18px -6px color-mix(in oklab, var(--spv-accent) 70%, transparent)",
+            }}
+          >
+            <ChatGlyph />
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* Frame                                                               */
 /* ------------------------------------------------------------------ */
 
@@ -389,10 +542,14 @@ export function BuilderPreview({
   typeId,
   selected,
   zoneChoices,
+  theme,
+  accent,
 }: {
   typeId: WebsiteTypeId;
   selected: ReadonlySet<string>;
   zoneChoices: ZoneChoices;
+  theme: ThemeChoice;
+  accent: string;
 }) {
   const reduced = useReducedMotion() ?? false;
   const type = getWebsiteType(typeId);
@@ -401,24 +558,23 @@ export function BuilderPreview({
   const navIcons: string[] = [];
   const badges: string[] = [];
   const sections = new Set<string>();
-  let chat = false;
+  const chatStyles: string[] = [];
   let cms = false;
   let ambient = false;
 
   for (const f of active) {
     const e = f.effect;
     if (e.kind === "nav-icon") navIcons.push(e.icon);
-    else if (e.kind === "chat-bubble") chat = true;
+    else if (e.kind === "chat-bubble") chatStyles.push(e.style);
     else if (e.kind === "section") sections.add(e.section);
     else if (e.kind === "chrome-badge") badges.push(e.label);
     else if (e.kind === "cms-outline") cms = true;
     else if (e.kind === "ambient-motion") ambient = true;
   }
   if (typeId === "ecommerce") navIcons.push("cart"); // store always has a cart
+  if (theme === "both") navIcons.push("theme"); // the toggle visitors will get
 
-  const navGradient = zoneChoices.navbar === "custom";
-  const heroGradient = zoneChoices.hero === "custom";
-  const footGradient = zoneChoices.footer === "custom";
+  const pageProps = { typeId, zoneChoices, navIcons, sections, chatStyles, reduced };
 
   return (
     <div
@@ -434,6 +590,7 @@ export function BuilderPreview({
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
+        ["--spv-accent" as string]: accent,
       }}
       aria-label="Live preview of your package"
     >
@@ -505,11 +662,11 @@ export function BuilderPreview({
                   gap: 5,
                   padding: "3px 8px",
                   borderRadius: 999,
-                  border: "1px solid var(--mint-deep)",
+                  border: "1px solid var(--spv-accent)",
                   fontFamily: "var(--font-mono)",
                   fontSize: 10,
                   letterSpacing: "0.1em",
-                  color: "var(--mint-deep)",
+                  color: "var(--spv-accent)",
                   whiteSpace: "nowrap",
                 }}
               >
@@ -519,7 +676,7 @@ export function BuilderPreview({
                     width: 5,
                     height: 5,
                     borderRadius: 3,
-                    background: "var(--mint-deep)",
+                    background: "var(--spv-accent)",
                   }}
                 />
                 {label}
@@ -529,131 +686,42 @@ export function BuilderPreview({
         </div>
       </div>
 
-      {/* Page viewport */}
-      <div
-        style={{
-          position: "relative",
-          display: "flex",
-          flexDirection: "column",
-          ["--spv-stub" as string]:
-            "color-mix(in oklab, var(--slate-ink) 26%, transparent)",
-        }}
-      >
-        {/* Navbar zone */}
-        <Zone
-          gradient={navGradient}
-          reduced={reduced}
-          style={{
-            borderBottom:
-              zoneChoices.navbar === "floating" ? "none" : `1px solid ${HAIRLINE}`,
-          }}
-        >
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div key={zoneChoices.navbar} {...variantFade}>
-              <NavbarBody
-                variant={zoneChoices.navbar}
-                icons={navIcons}
-                gradient={navGradient}
-              />
-            </motion.div>
-          </AnimatePresence>
-        </Zone>
-
-        {/* Hero zone */}
-        <Zone gradient={heroGradient} reduced={reduced}>
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div key={zoneChoices.hero} {...variantFade}>
-              <HeroBody variant={zoneChoices.hero} gradient={heroGradient} />
-            </motion.div>
-          </AnimatePresence>
-        </Zone>
-
-        {/* Per-type content + conditional sections */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 14, padding: "14px 16px" }}>
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={typeId}
-              className="spv-floaty"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <TypeBody typeId={typeId} />
-            </motion.div>
-          </AnimatePresence>
-
-          <AnimatePresence initial={false}>
-            {sections.has("blog") && (
-              <motion.div key="blog" {...sectionIn} style={{ overflow: "hidden" }}>
-                <BlogSection />
-              </motion.div>
-            )}
-            {sections.has("booking") && (
-              <motion.div key="booking" {...sectionIn} style={{ overflow: "hidden" }}>
-                <BookingSection />
-              </motion.div>
-            )}
-            {sections.has("analytics") && (
-              <motion.div key="analytics" {...sectionIn} style={{ overflow: "hidden" }}>
-                <AnalyticsSection />
-              </motion.div>
-            )}
-          </AnimatePresence>
+      {/* Page viewport — themed; "both" overlays a light copy on the right half */}
+      <div style={{ position: "relative" }}>
+        <div className={theme === "light" ? "spv-theme-light" : "spv-theme-dark"}>
+          <PreviewPage {...pageProps} />
         </div>
-
-        {/* Footer zone */}
-        <Zone
-          gradient={footGradient}
-          reduced={reduced}
-          style={{
-            borderTop: `1px solid ${HAIRLINE}`,
-            marginTop: "auto",
-          }}
-        >
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div key={zoneChoices.footer} {...variantFade}>
-              <FooterBody variant={zoneChoices.footer} />
-            </motion.div>
-          </AnimatePresence>
-        </Zone>
-
-        {/* Chatbot bubble — sticky bottom-right of the viewport */}
-        <AnimatePresence>
-          {chat && (
-            <motion.div
-              key="chat"
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0 }}
-              transition={
-                reduced
-                  ? { duration: 0 }
-                  : { type: "spring", stiffness: 380, damping: 22 }
-              }
-              className={reduced ? undefined : "spv-pulse"}
-              style={{
-                position: "absolute",
-                right: 14,
-                bottom: 14,
-                width: 40,
-                height: 40,
-                borderRadius: 999,
-                background: "var(--mint-deep)",
-                color: "var(--ink)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 6px 18px -6px color-mix(in oklab, var(--mint-deep) 70%, transparent)",
-              }}
-            >
-              <ChatGlyph />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {theme === "both" && (
+          <div
+            aria-hidden
+            className="spv-theme-light"
+            style={{
+              position: "absolute",
+              inset: 0,
+              clipPath: "inset(0 0 0 50%)",
+              borderLeft: "1px solid var(--neutral)",
+            }}
+          >
+            <PreviewPage {...pageProps} />
+          </div>
+        )}
       </div>
 
       <style>{`
+        .spv-theme-dark {
+          --spv-page: transparent;
+          --spv-stub: color-mix(in oklab, var(--slate-ink) 26%, transparent);
+          --spv-hairline: color-mix(in oklab, var(--neutral) 70%, transparent);
+          --spv-card: color-mix(in oklab, var(--mint-soft) 60%, transparent);
+          --spv-muted: var(--slate-ink);
+        }
+        .spv-theme-light {
+          --spv-page: #eef0ec;
+          --spv-stub: rgba(24, 28, 36, 0.22);
+          --spv-hairline: rgba(24, 28, 36, 0.14);
+          --spv-card: rgba(255, 255, 255, 0.8);
+          --spv-muted: rgba(24, 28, 36, 0.6);
+        }
         .spv-gradient {
           background: linear-gradient(120deg, #1f8fe0, #7c5cff, #2dd4bf, #1f8fe0);
           background-size: 300% 300%;
@@ -664,7 +732,7 @@ export function BuilderPreview({
           100% { background-position: 300% 50%; }
         }
         .spv-cms .spv-cms-target {
-          outline: 1px dashed var(--mint-deep);
+          outline: 1px dashed var(--spv-accent);
           outline-offset: 3px;
           border-radius: 4px;
         }
@@ -688,7 +756,7 @@ export function BuilderPreview({
           position: absolute;
           inset: -3px;
           border-radius: 999px;
-          border: 1px solid var(--mint-deep);
+          border: 1px solid var(--spv-accent);
           animation: spv-pulse 3s ease-out infinite;
         }
         @keyframes spv-pulse {
