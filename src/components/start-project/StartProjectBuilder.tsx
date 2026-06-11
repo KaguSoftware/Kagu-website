@@ -14,9 +14,12 @@ import {
   computeTotals,
   featuresForType,
   formatPrice,
+  type PreviewZone,
   type WebsiteTypeId,
+  type ZoneChoices,
 } from "./catalog";
 import { TypePicker } from "./TypePicker";
+import { ZoneOptions } from "./ZoneOptions";
 import { FeatureList } from "./FeatureList";
 import { BuilderPreview } from "./BuilderPreview";
 import { InquiryForm } from "./InquiryForm";
@@ -67,22 +70,32 @@ function StepLabel({ number, children }: { number: string; children: React.React
 export function StartProjectBuilder({
   initialTypeId,
   initialFeatureIds,
+  initialZoneChoices,
 }: {
   initialTypeId: WebsiteTypeId;
   initialFeatureIds: string[];
+  initialZoneChoices: ZoneChoices;
 }) {
   const [typeId, setTypeId] = useState<WebsiteTypeId>(initialTypeId);
   const [selected, setSelected] = useState<Set<string>>(
     () => new Set(initialFeatureIds)
   );
+  const [zoneChoices, setZoneChoices] = useState<ZoneChoices>(initialZoneChoices);
 
   // Shareable URL — replaceState only, never a navigation/refetch.
   useEffect(() => {
     const search = new URLSearchParams();
     search.set("type", typeId);
     if (selected.size) search.set("f", [...selected].sort().join(","));
+    search.set("nav", zoneChoices.navbar);
+    search.set("hero", zoneChoices.hero);
+    search.set("foot", zoneChoices.footer);
     window.history.replaceState(null, "", `?${search.toString()}`);
-  }, [typeId, selected]);
+  }, [typeId, selected, zoneChoices]);
+
+  const changeZone = (zone: PreviewZone, variantId: string) => {
+    setZoneChoices((current) => ({ ...current, [zone]: variantId }));
+  };
 
   const changeType = (next: WebsiteTypeId) => {
     setTypeId(next);
@@ -102,7 +115,7 @@ export function StartProjectBuilder({
     });
   };
 
-  const totals = computeTotals(typeId, selected);
+  const totals = computeTotals(typeId, selected, zoneChoices);
 
   return (
     <>
@@ -161,14 +174,23 @@ export function StartProjectBuilder({
               >
                 Live preview
               </span>
-              <BuilderPreview typeId={typeId} selected={selected} />
+              <BuilderPreview
+                typeId={typeId}
+                selected={selected}
+                zoneChoices={zoneChoices}
+              />
             </div>
           </div>
 
-          {/* Step 2 — features, total, contact */}
+          {/* Steps 2-4 — components, features, total, contact */}
           <div className="order-3 lg:order-none lg:col-span-5 lg:col-start-1 flex flex-col gap-(--space-12)">
             <div>
-              <StepLabel number="02">Add components</StepLabel>
+              <StepLabel number="02">Shape the components</StepLabel>
+              <ZoneOptions choices={zoneChoices} onChange={changeZone} />
+            </div>
+
+            <div>
+              <StepLabel number="03">Add features</StepLabel>
               <FeatureList typeId={typeId} selected={selected} onToggle={toggleFeature} />
             </div>
 
@@ -212,10 +234,10 @@ export function StartProjectBuilder({
               </p>
             </div>
 
-            {/* Step 3 — send */}
+            {/* Final step — send */}
             <div>
-              <StepLabel number="03">Send it over</StepLabel>
-              <InquiryForm typeId={typeId} selected={selected} />
+              <StepLabel number="04">Send it over</StepLabel>
+              <InquiryForm typeId={typeId} selected={selected} zoneChoices={zoneChoices} />
             </div>
           </div>
         </div>

@@ -2,9 +2,12 @@ import type { Metadata } from "next";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { StartProjectBuilder } from "@/components/start-project/StartProjectBuilder";
 import {
+  DEFAULT_ZONE_CHOICES,
   FEATURES,
+  getVariant,
   getWebsiteType,
   type WebsiteTypeId,
+  type ZoneChoices,
 } from "@/components/start-project/catalog";
 
 export const metadata: Metadata = {
@@ -16,6 +19,9 @@ export const metadata: Metadata = {
 type StartProjectParams = {
   type?: string;
   f?: string;
+  nav?: string;
+  hero?: string;
+  foot?: string;
 };
 
 export default async function StartProjectPage({
@@ -34,12 +40,24 @@ export default async function StartProjectPage({
     .split(",")
     .map((id) => id.trim())
     .filter((id) => validFeatureIds.has(id));
+  const initialZoneChoices: ZoneChoices = {
+    navbar: getVariant("navbar", params.nav ?? "")
+      ? params.nav!
+      : DEFAULT_ZONE_CHOICES.navbar,
+    hero: getVariant("hero", params.hero ?? "")
+      ? params.hero!
+      : DEFAULT_ZONE_CHOICES.hero,
+    footer: getVariant("footer", params.foot ?? "")
+      ? params.foot!
+      : DEFAULT_ZONE_CHOICES.footer,
+  };
 
   return (
     <>
       <StartProjectBuilder
         initialTypeId={initialTypeId}
         initialFeatureIds={initialFeatureIds}
+        initialZoneChoices={initialZoneChoices}
       />
       <SiteFooter />
     </>

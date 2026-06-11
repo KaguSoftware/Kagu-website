@@ -18,7 +18,9 @@ import {
   computeTotals,
   formatPrice,
   getWebsiteType,
+  zoneTokens,
   type WebsiteTypeId,
+  type ZoneChoices,
 } from "./catalog";
 
 type Stage = "default" | "submitting" | "success";
@@ -26,9 +28,11 @@ type Stage = "default" | "submitting" | "success";
 export function InquiryForm({
   typeId,
   selected,
+  zoneChoices,
 }: {
   typeId: WebsiteTypeId;
   selected: ReadonlySet<string>;
+  zoneChoices: ZoneChoices;
 }) {
   const [stage, setStage] = useState<Stage>("default");
   const [studioEmail, setStudioEmail] = useState("");
@@ -68,14 +72,15 @@ export function InquiryForm({
     }
 
     const type = getWebsiteType(typeId);
-    const totals = computeTotals(typeId, selected);
+    const totals = computeTotals(typeId, selected, zoneChoices);
 
     const supabase = createClient();
     const { error } = await supabase.from("project_inquiries").insert({
       website_type: typeId,
-      features: totals.features.map((f) => f.id),
+      // Component choices ride along as "zone:variant" tokens.
+      features: [...zoneTokens(zoneChoices), ...totals.features.map((f) => f.id)],
       base_price: totals.base,
-      features_price: totals.featuresPrice,
+      features_price: totals.featuresPrice + totals.variantsPrice,
       total_price: totals.total,
       currency: CURRENCY,
       name,
@@ -88,6 +93,14 @@ export function InquiryForm({
       console.warn("project_inquiries insert failed:", error.message);
     }
 
+    const componentLines = totals.variants
+      .map(
+        ({ group, variant }) =>
+          `  · ${group.label} — ${variant.label} ${
+            variant.price > 0 ? `(+ ${formatPrice(variant.price)})` : "(included)"
+          }`
+      )
+      .join("\n");
     const featureLines = totals.features
       .map((f) => `  + ${f.label} — ${formatPrice(f.price)}`)
       .join("\n");
@@ -98,6 +111,7 @@ export function InquiryForm({
       (company ? `Company: ${company}\n` : "") +
       `\n— Package —\n` +
       `Website type: ${type?.label} (${formatPrice(totals.base)})\n` +
+      `Components:\n${componentLines}\n` +
       (featureLines ? `Features:\n${featureLines}\n` : `Features: none\n`) +
       `Estimated total: ${formatPrice(totals.total)} ${CURRENCY}\n` +
       (notes ? `\n— Notes —\n${notes}\n` : "") +
@@ -112,7 +126,7 @@ export function InquiryForm({
 
   if (stage === "success") {
     const type = getWebsiteType(typeId);
-    const totals = computeTotals(typeId, selected);
+    const totals = computeTotals(typeId, selected, zoneChoices);
     return (
       <div
         role="status"

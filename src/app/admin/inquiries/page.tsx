@@ -2,8 +2,11 @@ import { createClient } from "@/lib/supabase/server";
 import { PageHeader, EmptyState } from "../_components/ui";
 import {
   formatPrice,
+  getComponentGroup,
+  getVariant,
   getWebsiteType,
   FEATURES,
+  type PreviewZone,
 } from "@/components/start-project/catalog";
 import type { InquiryStatus } from "@/lib/supabase/database.types";
 
@@ -16,6 +19,16 @@ const STATUS_CLASSES: Record<InquiryStatus, string> = {
 };
 
 const FEATURE_LABELS = new Map(FEATURES.map((f) => [f.id, f.label]));
+
+/* Resolves both feature ids and "zone:variant" component tokens to labels. */
+function labelFor(id: string): string {
+  if (id.includes(":")) {
+    const [zone, variantId] = id.split(":");
+    const variant = getVariant(zone as PreviewZone, variantId);
+    if (variant) return `${getComponentGroup(zone as PreviewZone).label}: ${variant.label}`;
+  }
+  return FEATURE_LABELS.get(id) ?? id;
+}
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -46,9 +59,7 @@ export default async function InquiriesPage() {
         <ul className="divide-y divide-neutral border border-neutral">
           {rows.map((r) => {
             const type = getWebsiteType(r.website_type);
-            const featureLabels = (r.features ?? [])
-              .map((id) => FEATURE_LABELS.get(id) ?? id)
-              .join(", ");
+            const featureLabels = (r.features ?? []).map(labelFor).join(", ");
             return (
               <li key={r.id} className="space-y-2 px-5 py-4">
                 <div className="flex items-center justify-between gap-4">
@@ -60,15 +71,20 @@ export default async function InquiriesPage() {
                       {r.name}
                     </a>
                     <p className="font-mono text-xs text-slate-ink">
-                      {[
-                        type?.label ?? r.website_type,
-                        formatPrice(r.total_price),
-                        `${(r.features ?? []).length} component${(r.features ?? []).length === 1 ? "" : "s"}`,
-                        r.company,
-                        formatDate(r.created_at),
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")}
+                      {(() => {
+                        const addOns = (r.features ?? []).filter(
+                          (id) => !id.includes(":")
+                        ).length;
+                        return [
+                          type?.label ?? r.website_type,
+                          formatPrice(r.total_price),
+                          `${addOns} add-on${addOns === 1 ? "" : "s"}`,
+                          r.company,
+                          formatDate(r.created_at),
+                        ]
+                          .filter(Boolean)
+                          .join(" · ");
+                      })()}
                     </p>
                   </div>
                   <span
