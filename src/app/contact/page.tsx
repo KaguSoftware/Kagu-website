@@ -41,17 +41,38 @@ export default function ContactPage() {
     };
   }, []);
 
-  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (stage !== "default") return;
     setStage("submitting");
-    // Mailto fallback. Swap this whole function for a Resend (or other) call
-    // when API wiring lands; keep the same stage state machine for the UI.
-    const form = e.currentTarget;
-    const data = new FormData(form);
+    // 1. Saves the message into contact_requests (anon key, insert-only RLS —
+    //    never chain .select(), there is no anon read policy).
+    // 2. Opens a prefilled mail draft — even if the insert failed, so no
+    //    message is lost. Same pattern as the /start-project InquiryForm.
+    const data = new FormData(e.currentTarget);
     const name = String(data.get("name") || "").trim();
     const email = String(data.get("email") || "").trim();
     const company = String(data.get("company") || "").trim();
     const message = String(data.get("message") || "").trim();
+    const honeypot = String(data.get("website") || "").trim();
+
+    if (honeypot) {
+      // Bot: pretend success, store nothing, open nothing.
+      setStage("success");
+      return;
+    }
+
+    const supabase = createClient();
+    const { error } = await supabase.from("contact_requests").insert({
+      name,
+      email,
+      company: company || null,
+      message,
+    });
+    if (error) {
+      // The mail draft still goes out below — the message is never lost.
+      console.warn("contact_requests insert failed:", error.message);
+    }
 
     const subject = `Project enquiry: ${name || "new"}`;
     const body =
@@ -174,6 +195,15 @@ export default function ContactPage() {
                   required
                   placeholder=" "
                 />
+
+                {/* Honeypot — hidden from humans, irresistible to bots */}
+                <div
+                  aria-hidden="true"
+                  style={{ position: "absolute", left: "-9999px", width: 1, height: 1, overflow: "hidden" }}
+                >
+                  <label htmlFor="website">Website</label>
+                  <input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" />
+                </div>
 
                 <div style={{ marginTop: "var(--space-8)" }}>
                   <HoverMagnet strength={1} radius={120}>

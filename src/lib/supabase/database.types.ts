@@ -623,6 +623,36 @@ export interface Database {
           },
         ];
       };
+      contact_requests: {
+        Row: {
+          id: string;
+          name: string;
+          email: string;
+          company: string | null;
+          message: string;
+          status: InquiryStatus;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          email: string;
+          company?: string | null;
+          message: string;
+          status?: InquiryStatus;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          email?: string;
+          company?: string | null;
+          message?: string;
+          status?: InquiryStatus;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       project_inquiries: {
         Row: {
           id: string;

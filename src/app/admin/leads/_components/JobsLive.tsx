@@ -8,7 +8,7 @@ import { adminToast } from "../../_components/toast";
 import { EmptyState } from "../../_components/ui";
 import { JobStatusBadge } from "./JobStatusBadge";
 import { ProgressBar } from "./ProgressBar";
-import { useRealtimeRows } from "./use-realtime-rows";
+import { useRealtimeRows } from "../../_components/use-realtime-rows";
 
 type Job = Tables<"scrape_jobs">;
 
