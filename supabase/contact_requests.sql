@@ -59,7 +59,10 @@ begin
     alter publication supabase_realtime add table public.contact_requests;
   end if;
 
-  if not exists (
+  -- project_inquiries is created by project_inquiries.sql — skip (don't fail)
+  -- if that script hasn't been run yet; re-run this file after it to enable
+  -- realtime there too.
+  if to_regclass('public.project_inquiries') is not null and not exists (
     select 1 from pg_publication_tables
     where pubname = 'supabase_realtime'
       and schemaname = 'public' and tablename = 'project_inquiries'
