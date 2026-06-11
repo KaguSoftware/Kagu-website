@@ -14,7 +14,6 @@ export type WebsiteTypeId =
 export type PreviewZone = "navbar" | "hero" | "footer";
 
 export type PreviewEffect =
-  | { kind: "zone-gradient"; zone: PreviewZone }
   | { kind: "nav-icon"; icon: "globe" | "currency" | "card" | "avatar" | "theme" }
   | { kind: "chat-bubble" }
   | { kind: "section"; section: "blog" | "booking" | "analytics" }
@@ -85,28 +84,145 @@ export const WEBSITE_TYPES: WebsiteType[] = [
   },
 ];
 
+/* ------------------------------------------------------------------ */
+/* Component option groups — each zone offers styles; "custom" is the   */
+/* bespoke option and renders as the animated gradient in the preview.  */
+/* ------------------------------------------------------------------ */
+
+export interface ComponentVariant {
+  id: string;
+  label: string;
+  description: string;
+  price: number; // 0 = included in the base
+}
+
+export interface ComponentGroup {
+  zone: PreviewZone;
+  label: string;
+  /** First variant is the included default. */
+  variants: ComponentVariant[];
+}
+
+export const COMPONENT_GROUPS: ComponentGroup[] = [
+  {
+    zone: "navbar",
+    label: "Navbar",
+    variants: [
+      {
+        id: "standard",
+        label: "Classic",
+        description: "Logo left, links right. Clean and familiar.",
+        price: 0,
+      },
+      {
+        id: "pills",
+        label: "Wide pill",
+        description: "Links grouped in a wide rounded pill.",
+        price: 250,
+      },
+      {
+        id: "floating",
+        label: "Floating centered",
+        description: "A rounded bar hovering over the page.",
+        price: 250,
+      },
+      {
+        id: "custom",
+        label: "Custom design",
+        description: "Designed from scratch around your brand.",
+        price: 400,
+      },
+    ],
+  },
+  {
+    zone: "hero",
+    label: "Hero",
+    variants: [
+      {
+        id: "standard",
+        label: "Editorial left",
+        description: "Headline and call-to-action, left aligned.",
+        price: 0,
+      },
+      {
+        id: "centered",
+        label: "Centered statement",
+        description: "One big centered message, nothing else.",
+        price: 300,
+      },
+      {
+        id: "split",
+        label: "Split with visual",
+        description: "Copy on the left, imagery on the right.",
+        price: 350,
+      },
+      {
+        id: "custom",
+        label: "Custom design",
+        description: "A first fold designed around your story.",
+        price: 650,
+      },
+    ],
+  },
+  {
+    zone: "footer",
+    label: "Footer",
+    variants: [
+      {
+        id: "columns",
+        label: "Link columns",
+        description: "Sitemap-style columns. Does the job.",
+        price: 0,
+      },
+      {
+        id: "minimal",
+        label: "Minimal line",
+        description: "One quiet row — logo, links, copyright.",
+        price: 150,
+      },
+      {
+        id: "cta",
+        label: "Big CTA",
+        description: "A closing headline that asks for the call.",
+        price: 250,
+      },
+      {
+        id: "custom",
+        label: "Custom design",
+        description: "Closing section with real character.",
+        price: 300,
+      },
+    ],
+  },
+];
+
+export type ZoneChoices = Record<PreviewZone, string>;
+
+export const DEFAULT_ZONE_CHOICES: ZoneChoices = {
+  navbar: "standard",
+  hero: "standard",
+  footer: "columns",
+};
+
+export function getComponentGroup(zone: PreviewZone): ComponentGroup {
+  return COMPONENT_GROUPS.find((g) => g.zone === zone)!;
+}
+
+export function getVariant(
+  zone: PreviewZone,
+  variantId: string
+): ComponentVariant | undefined {
+  return getComponentGroup(zone).variants.find((v) => v.id === variantId);
+}
+
+/** "navbar:floating" tokens — how zone choices are stored alongside feature ids. */
+export function zoneTokens(choices: ZoneChoices): string[] {
+  return (Object.keys(choices) as PreviewZone[]).map(
+    (zone) => `${zone}:${choices[zone]}`
+  );
+}
+
 export const FEATURES: Feature[] = [
-  {
-    id: "custom_navbar",
-    label: "Custom navbar",
-    description: "Designed navigation, not a template header.",
-    price: 400,
-    effect: { kind: "zone-gradient", zone: "navbar" },
-  },
-  {
-    id: "custom_hero",
-    label: "Custom hero",
-    description: "A first fold designed around your story.",
-    price: 650,
-    effect: { kind: "zone-gradient", zone: "hero" },
-  },
-  {
-    id: "custom_footer",
-    label: "Custom footer",
-    description: "Closing section with sitemap, contact, character.",
-    price: 300,
-    effect: { kind: "zone-gradient", zone: "footer" },
-  },
   {
     id: "cms",
     label: "CMS / admin panel",
@@ -205,10 +321,26 @@ export function featuresForType(typeId: WebsiteTypeId): Feature[] {
   return FEATURES.filter((f) => !f.appliesTo || f.appliesTo.includes(typeId));
 }
 
-export function computeTotals(typeId: WebsiteTypeId, selected: ReadonlySet<string>) {
+export function computeTotals(
+  typeId: WebsiteTypeId,
+  selected: ReadonlySet<string>,
+  zoneChoices: ZoneChoices
+) {
   const type = getWebsiteType(typeId);
   const base = type?.basePrice ?? 0;
   const features = featuresForType(typeId).filter((f) => selected.has(f.id));
   const featuresPrice = features.reduce((sum, f) => sum + f.price, 0);
-  return { base, featuresPrice, total: base + featuresPrice, features };
+  const variants = COMPONENT_GROUPS.map((group) => ({
+    group,
+    variant: getVariant(group.zone, zoneChoices[group.zone]) ?? group.variants[0],
+  }));
+  const variantsPrice = variants.reduce((sum, v) => sum + v.variant.price, 0);
+  return {
+    base,
+    featuresPrice,
+    variants,
+    variantsPrice,
+    total: base + featuresPrice + variantsPrice,
+    features,
+  };
 }

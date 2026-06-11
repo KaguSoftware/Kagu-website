@@ -5,8 +5,8 @@
   the chrome idiom (window dots + URL pill) follows CaseCover.tsx, but the
   body is a live wireframe that reacts to every selection:
 
-  - zone-gradient features repaint their zone (navbar/hero/footer) with an
-    animated gradient; stubs inside lighten via the --spv-stub custom prop.
+  - each zone (navbar/hero/footer) renders the chosen style variant; the
+    "custom" variant repaints the zone with an animated gradient.
   - nav-icon features pop icons into the preview navbar's right slot.
   - chat-bubble mounts a sticky mint circle bottom-right of the viewport.
   - section features append wireframe sections (blog/booking/analytics).
@@ -19,7 +19,7 @@ import type { ReactNode } from "react";
 import {
   featuresForType,
   getWebsiteType,
-  type PreviewZone,
+  type ZoneChoices,
   type WebsiteTypeId,
 } from "./catalog";
 import {
@@ -33,6 +33,7 @@ import {
 } from "./previewSections";
 
 const CHROME_FG = "var(--slate-ink)";
+const HAIRLINE = "color-mix(in oklab, var(--neutral) 70%, transparent)";
 
 /** One zone of the preview page. Gradient state swaps fill + stub color. */
 function Zone({
@@ -94,18 +95,309 @@ const sectionIn = {
   transition: { duration: 0.42, ease: [0.22, 1, 0.36, 1] as const },
 };
 
+const variantFade = {
+  initial: { opacity: 0, y: 5 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -5 },
+  transition: { duration: 0.24, ease: [0.22, 1, 0.36, 1] as const },
+};
+
+/* ------------------------------------------------------------------ */
+/* Navbar styles                                                       */
+/* ------------------------------------------------------------------ */
+
+function NavLinks() {
+  return (
+    <div style={{ display: "flex", gap: 10 }}>
+      <Stub w={30} h={5} />
+      <Stub w={24} h={5} />
+      <Stub w={34} h={5} />
+    </div>
+  );
+}
+
+function NavLogo() {
+  return (
+    <Stub
+      w={20}
+      h={20}
+      r={5}
+      style={{ background: "color-mix(in oklab, var(--mint-deep) 75%, transparent)" }}
+    />
+  );
+}
+
+function IconSlot({ icons, light }: { icons: string[]; light: boolean }) {
+  return (
+    <div
+      style={{
+        marginLeft: "auto",
+        display: "flex",
+        alignItems: "center",
+        gap: 9,
+        color: light ? "var(--ink)" : "var(--slate-ink)",
+      }}
+    >
+      <AnimatePresence>
+        {icons.map((icon) => (
+          <motion.span
+            key={icon}
+            {...popIn}
+            style={{ display: "inline-flex", alignItems: "center" }}
+            title={icon}
+          >
+            <NavGlyph icon={icon} />
+          </motion.span>
+        ))}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function NavbarBody({
+  variant,
+  icons,
+  gradient,
+}: {
+  variant: string;
+  icons: string[];
+  gradient: boolean;
+}) {
+  if (variant === "pills") {
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 16px" }}>
+        <NavLogo />
+        <span style={{ flex: 1, display: "flex", justifyContent: "center" }}>
+          <span
+            style={{
+              display: "flex",
+              gap: 12,
+              alignItems: "center",
+              padding: "7px 18px",
+              borderRadius: 999,
+              border: `1px solid ${HAIRLINE}`,
+              background: "color-mix(in oklab, var(--mint-soft) 70%, transparent)",
+            }}
+          >
+            <Stub w={28} h={5} />
+            <Stub w={22} h={5} />
+            <Stub w={32} h={5} />
+          </span>
+        </span>
+        <IconSlot icons={icons} light={gradient} />
+      </div>
+    );
+  }
+  if (variant === "floating") {
+    return (
+      <div style={{ padding: "8px 14px 6px" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+            padding: "8px 16px",
+            borderRadius: 999,
+            border: `1px solid ${HAIRLINE}`,
+            background: "color-mix(in oklab, var(--mint-soft) 85%, transparent)",
+            boxShadow: "0 8px 20px -10px rgba(0, 0, 0, 0.55)",
+          }}
+        >
+          <NavLogo />
+          <span style={{ flex: 1, display: "flex", justifyContent: "center" }}>
+            <NavLinks />
+          </span>
+          <IconSlot icons={icons} light={gradient} />
+        </div>
+      </div>
+    );
+  }
+  // standard + custom share the classic layout (custom adds the gradient)
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 16px" }}>
+      <NavLogo />
+      <NavLinks />
+      <IconSlot icons={icons} light={gradient} />
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Hero styles                                                         */
+/* ------------------------------------------------------------------ */
+
+function HeroBody({ variant, gradient }: { variant: string; gradient: boolean }) {
+  const cta = (
+    <Stub
+      w={74}
+      h={20}
+      r={3}
+      style={{
+        marginTop: 8,
+        background: gradient
+          ? "rgba(238, 241, 245, 0.9)"
+          : "color-mix(in oklab, var(--mint-deep) 80%, transparent)",
+      }}
+    />
+  );
+
+  if (variant === "centered") {
+    return (
+      <div
+        className="spv-cms-target spv-floaty"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 9,
+          padding: "30px 16px 28px",
+        }}
+      >
+        <Stub w="46%" h={13} />
+        <Stub w="30%" h={13} />
+        <Stub w="52%" h={6} style={{ marginTop: 3 }} />
+        {cta}
+      </div>
+    );
+  }
+  if (variant === "split") {
+    return (
+      <div
+        className="spv-cms-target spv-floaty"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 14,
+          alignItems: "center",
+          padding: "22px 16px",
+        }}
+      >
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 9 }}>
+          <Stub w="86%" h={13} />
+          <Stub w="60%" h={13} />
+          <Stub w="92%" h={6} style={{ marginTop: 3 }} />
+          {cta}
+        </div>
+        <Stub h={88} r={4} style={{ width: "100%" }} />
+      </div>
+    );
+  }
+  // standard + custom: editorial left
+  return (
+    <div
+      className="spv-cms-target spv-floaty"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-start",
+        gap: 9,
+        padding: "26px 16px 24px",
+      }}
+    >
+      <Stub w="58%" h={13} />
+      <Stub w="40%" h={13} />
+      <Stub w="64%" h={6} style={{ marginTop: 3 }} />
+      {cta}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Footer styles                                                       */
+/* ------------------------------------------------------------------ */
+
+function FooterBody({ variant }: { variant: string }) {
+  if (variant === "minimal") {
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px" }}>
+        <Stub
+          w={16}
+          h={16}
+          r={4}
+          style={{ background: "color-mix(in oklab, var(--mint-deep) 70%, transparent)" }}
+        />
+        <span style={{ flex: 1 }} />
+        <Stub w={28} h={4} />
+        <Stub w={34} h={4} />
+        <Stub w={24} h={4} />
+      </div>
+    );
+  }
+  if (variant === "cta") {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "18px 16px 14px" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 14,
+          }}
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: 7, flex: 1 }}>
+            <Stub w="52%" h={11} />
+            <Stub w="34%" h={11} />
+          </div>
+          <Stub
+            w={70}
+            h={22}
+            r={3}
+            style={{ background: "color-mix(in oklab, var(--mint-deep) 80%, transparent)" }}
+          />
+        </div>
+        <div
+          style={{
+            display: "flex",
+            gap: 12,
+            borderTop: `1px solid ${HAIRLINE}`,
+            paddingTop: 10,
+          }}
+        >
+          <Stub w={24} h={4} />
+          <Stub w={30} h={4} />
+          <Stub w={22} h={4} />
+        </div>
+      </div>
+    );
+  }
+  // columns + custom
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(3, 1fr)",
+        gap: 14,
+        padding: "16px 16px 20px",
+      }}
+    >
+      {[0, 1, 2].map((col) => (
+        <div key={col} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <Stub w="42%" h={6} />
+          <Stub w="64%" h={4} />
+          <Stub w="52%" h={4} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Frame                                                               */
+/* ------------------------------------------------------------------ */
+
 export function BuilderPreview({
   typeId,
   selected,
+  zoneChoices,
 }: {
   typeId: WebsiteTypeId;
   selected: ReadonlySet<string>;
+  zoneChoices: ZoneChoices;
 }) {
   const reduced = useReducedMotion() ?? false;
   const type = getWebsiteType(typeId);
   const active = featuresForType(typeId).filter((f) => selected.has(f.id));
 
-  const gradients = new Set<PreviewZone>();
   const navIcons: string[] = [];
   const badges: string[] = [];
   const sections = new Set<string>();
@@ -115,8 +407,7 @@ export function BuilderPreview({
 
   for (const f of active) {
     const e = f.effect;
-    if (e.kind === "zone-gradient") gradients.add(e.zone);
-    else if (e.kind === "nav-icon") navIcons.push(e.icon);
+    if (e.kind === "nav-icon") navIcons.push(e.icon);
     else if (e.kind === "chat-bubble") chat = true;
     else if (e.kind === "section") sections.add(e.section);
     else if (e.kind === "chrome-badge") badges.push(e.label);
@@ -124,6 +415,10 @@ export function BuilderPreview({
     else if (e.kind === "ambient-motion") ambient = true;
   }
   if (typeId === "ecommerce") navIcons.push("cart"); // store always has a cart
+
+  const navGradient = zoneChoices.navbar === "custom";
+  const heroGradient = zoneChoices.hero === "custom";
+  const footGradient = zoneChoices.footer === "custom";
 
   return (
     <div
@@ -246,79 +541,31 @@ export function BuilderPreview({
       >
         {/* Navbar zone */}
         <Zone
-          gradient={gradients.has("navbar")}
+          gradient={navGradient}
           reduced={reduced}
           style={{
-            borderBottom: "1px solid color-mix(in oklab, var(--neutral) 70%, transparent)",
+            borderBottom:
+              zoneChoices.navbar === "floating" ? "none" : `1px solid ${HAIRLINE}`,
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              padding: "11px 16px",
-            }}
-          >
-            <Stub w={20} h={20} r={5} style={{ background: "color-mix(in oklab, var(--mint-deep) 75%, transparent)" }} />
-            <div style={{ display: "flex", gap: 10 }}>
-              <Stub w={30} h={5} />
-              <Stub w={24} h={5} />
-              <Stub w={34} h={5} />
-            </div>
-            {/* Feature icon slot */}
-            <div
-              style={{
-                marginLeft: "auto",
-                display: "flex",
-                alignItems: "center",
-                gap: 9,
-                color: gradients.has("navbar") ? "var(--ink)" : "var(--slate-ink)",
-              }}
-            >
-              <AnimatePresence>
-                {navIcons.map((icon) => (
-                  <motion.span
-                    key={icon}
-                    {...popIn}
-                    style={{ display: "inline-flex", alignItems: "center" }}
-                    title={icon}
-                  >
-                    <NavGlyph icon={icon} />
-                  </motion.span>
-                ))}
-              </AnimatePresence>
-            </div>
-          </div>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div key={zoneChoices.navbar} {...variantFade}>
+              <NavbarBody
+                variant={zoneChoices.navbar}
+                icons={navIcons}
+                gradient={navGradient}
+              />
+            </motion.div>
+          </AnimatePresence>
         </Zone>
 
         {/* Hero zone */}
-        <Zone gradient={gradients.has("hero")} reduced={reduced}>
-          <div
-            className="spv-cms-target spv-floaty"
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "flex-start",
-              gap: 9,
-              padding: "26px 16px 24px",
-            }}
-          >
-            <Stub w="58%" h={13} />
-            <Stub w="40%" h={13} />
-            <Stub w="64%" h={6} style={{ marginTop: 3 }} />
-            <Stub
-              w={74}
-              h={20}
-              r={3}
-              style={{
-                marginTop: 8,
-                background: gradients.has("hero")
-                  ? "rgba(238, 241, 245, 0.9)"
-                  : "color-mix(in oklab, var(--mint-deep) 80%, transparent)",
-              }}
-            />
-          </div>
+        <Zone gradient={heroGradient} reduced={reduced}>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div key={zoneChoices.hero} {...variantFade}>
+              <HeroBody variant={zoneChoices.hero} gradient={heroGradient} />
+            </motion.div>
+          </AnimatePresence>
         </Zone>
 
         {/* Per-type content + conditional sections */}
@@ -357,29 +604,18 @@ export function BuilderPreview({
 
         {/* Footer zone */}
         <Zone
-          gradient={gradients.has("footer")}
+          gradient={footGradient}
           reduced={reduced}
           style={{
-            borderTop: "1px solid color-mix(in oklab, var(--neutral) 70%, transparent)",
+            borderTop: `1px solid ${HAIRLINE}`,
             marginTop: "auto",
           }}
         >
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gap: 14,
-              padding: "16px 16px 20px",
-            }}
-          >
-            {[0, 1, 2].map((col) => (
-              <div key={col} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <Stub w="42%" h={6} />
-                <Stub w="64%" h={4} />
-                <Stub w="52%" h={4} />
-              </div>
-            ))}
-          </div>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div key={zoneChoices.footer} {...variantFade}>
+              <FooterBody variant={zoneChoices.footer} />
+            </motion.div>
+          </AnimatePresence>
         </Zone>
 
         {/* Chatbot bubble — sticky bottom-right of the viewport */}
