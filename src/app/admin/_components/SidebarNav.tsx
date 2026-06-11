@@ -2,6 +2,7 @@
 
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
+import { useNewRequestCount } from "./use-new-request-count";
 
 type NavItem = {
   href: string;
@@ -25,7 +26,7 @@ const NAV: NavItem[] = [
     label: "Tools",
     match: ["/admin/leads", "/admin/learnings"],
   },
-  { href: "/admin/inquiries", label: "Inquiries" },
+  { href: "/admin/requests", label: "Requests", match: ["/admin/inquiries"] },
   { href: "/admin/about", label: "About" },
   { href: "/admin/settings", label: "Settings" },
 ];
@@ -44,8 +45,17 @@ function PendingDot() {
   );
 }
 
-export function SidebarNav() {
+export function SidebarNav({
+  newRequests = 0,
+  notify = false,
+}: {
+  /** Server-counted status='new' rows across both request tables (no zero-flash). */
+  newRequests?: number;
+  /** Toast on new requests — enabled for only one of the two mounted navs. */
+  notify?: boolean;
+}) {
   const pathname = usePathname();
+  const requestCount = useNewRequestCount(newRequests, { notify });
 
   return (
     <nav className="flex flex-col gap-1">
@@ -67,6 +77,14 @@ export function SidebarNav() {
             }`}
           >
             <span>{item.label}</span>
+            {item.href === "/admin/requests" && requestCount > 0 ? (
+              <span
+                aria-label={`${requestCount} new request${requestCount === 1 ? "" : "s"}`}
+                className="inline-flex min-w-5 items-center justify-center rounded-full bg-mint-deep px-1.5 py-0.5 font-mono text-[10px] leading-none text-ink"
+              >
+                {requestCount}
+              </span>
+            ) : null}
             <PendingDot />
           </Link>
         );

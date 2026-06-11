@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getAdminUser } from "@/lib/supabase/auth";
+import { createClient } from "@/lib/supabase/server";
 import { SidebarNav } from "./_components/SidebarNav";
 import { AdminLoader } from "./_components/AdminLoader";
 import { Toaster } from "./_components/toast";
@@ -32,6 +33,22 @@ export default async function AdminLayout({
     );
   }
 
+  // Initial sidebar badge count (status='new' across both request tables) —
+  // server-counted so the badge renders without a zero-flash; the client hook
+  // keeps it live from there.
+  const supabase = await createClient();
+  const [contactCount, inquiryCount] = await Promise.all([
+    supabase
+      .from("contact_requests")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "new"),
+    supabase
+      .from("project_inquiries")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "new"),
+  ]);
+  const newRequests = (contactCount.count ?? 0) + (inquiryCount.count ?? 0);
+
   return (
     <div className="min-h-screen bg-paper text-ink">
       <AdminLoader />
@@ -45,10 +62,10 @@ export default async function AdminLayout({
             <span className="eyebrow ml-2 lg:mt-1 lg:block">Admin</span>
           </div>
           <div className="mt-6 hidden lg:block">
-            <SidebarNav />
+            <SidebarNav newRequests={newRequests} notify />
           </div>
           <div className="mt-6 lg:hidden">
-            <SidebarNav />
+            <SidebarNav newRequests={newRequests} />
           </div>
           <div className="mt-8 border-t border-neutral pt-4">
             <p className="text-xs text-slate-ink">{user.email}</p>
