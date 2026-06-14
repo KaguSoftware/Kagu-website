@@ -17,12 +17,25 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: none;
-  border: 0;
+  /* Frosted chip (mirrors the desktop glass pill) so the white rules stay
+     legible over ANY section — including the light slate-ink / mint-deep
+     bands where a bare white burger would otherwise vanish. */
+  background: color-mix(in oklab, var(--mint-pale) 60%, transparent);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid color-mix(in oklab, var(--ink) 12%, transparent);
+  border-radius: 9999px;
+  box-shadow: 0 16px 40px -18px rgba(0, 0, 0, 0.55);
   cursor: pointer;
   color: var(--ink);
   pointer-events: auto; /* header is pointer-events:none; the burger stays clickable */
   z-index: calc(var(--z-curtain) + 1); /* above the flood field */
+}
+/* No blur support → bump opacity so the chip stays legible over content. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .kagu-blot__burger {
+    background: color-mix(in oklab, var(--mint-pale) 94%, var(--paper));
+  }
 }
 /* Mobile only — the desktop inline nav takes over at md. */
 @media (min-width: 768px) {
@@ -75,6 +88,19 @@
   background-size: 26px 26px;
   mask-image: radial-gradient(circle at calc(100% - 32px) 36px, #000 30%, transparent 80%);
   -webkit-mask-image: radial-gradient(circle at calc(100% - 32px) 36px, #000 30%, transparent 80%);
+}
+
+/* --- brand (home link) --- */
+.kagu-blot__brand {
+  position: relative;
+  z-index: 1;
+  display: flex;
+}
+.kagu-blot__logo {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--type-lg);
+  text-decoration: none;
 }
 
 /* --- nav words --- */

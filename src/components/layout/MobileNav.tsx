@@ -21,6 +21,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
+import { Logo } from "@/components/Logo";
 import { navItems } from "./navItems";
 
 // Refined easing — fast, confident, no bounce.
@@ -127,6 +128,25 @@ export function MobileNav() {
           >
             {/* Faint dot-grid texture so the flooded field isn't a flat fill. */}
             <span aria-hidden className="kagu-blot__grid" />
+
+            {/* Brand — back to home. */}
+            <motion.div
+              className="kagu-blot__brand"
+              initial={reduced ? false : { opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduced ? undefined : { opacity: 0, y: -8 }}
+              transition={{ duration: 0.5, ease: EASE_WORD, delay: reduced ? 0 : 0.28 }}
+            >
+              <Link
+                href="/"
+                onClick={close}
+                className="kagu-blot__logo"
+                aria-label="Kagu, home"
+                aria-current={pathname === "/" ? "page" : undefined}
+              >
+                <Logo size={30} />
+              </Link>
+            </motion.div>
 
             <motion.nav
               className="kagu-blot__nav"

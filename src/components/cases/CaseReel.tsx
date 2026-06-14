@@ -179,6 +179,27 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
 
   const counter = `${String(active + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}`;
 
+  // Aspect of the frame stage (the box every cross-fading layer fills).
+  //   - mobile frames: a portrait-ish box so the phone has room.
+  //   - desktop image frames: the screenshot's natural ratio.
+  //   - the CTA ("View details") has no image of its own, so it inherits the
+  //     nearest preceding screenshot ratio (the cover). That keeps it the SAME
+  //     height as the frame it replaces instead of snapping to a short default
+  //     and cramping the card.
+  const stageAspect = (() => {
+    const f = frames[active];
+    if (!f) return 16 / 10;
+    if (frameDevice(f) === "mobile") return isMobile ? 4 / 5 : 16 / 10;
+    if (ratios[active]) return ratios[active];
+    // CTA / not-yet-loaded: inherit the nearest preceding screenshot ratio, but
+    // never let the card go wider/shorter than 16/10 (smaller number = taller),
+    // so the "View details" card always keeps at least full height.
+    for (let i = active - 1; i >= 0; i--) {
+      if (ratios[i]) return Math.min(ratios[i], 16 / 10);
+    }
+    return 16 / 10;
+  })();
+
   return (
     <div
       ref={containerRef}
@@ -365,10 +386,7 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                 style={{
                   position: "relative",
                   width: "100%",
-                  aspectRatio:
-                    (frames[active] && frameDevice(frames[active]) === "mobile")
-                      ? (isMobile ? 4 / 5 : 16 / 10)
-                      : ratios[active] ?? 16 / 10,
+                  aspectRatio: stageAspect,
                   // On mobile, ONLY phone frames flex-shrink the row (the tall
                   // mockup is height-driven and must scale down to fit). Desktop
                   // frames keep their aspect-ratio height so the landscape

@@ -261,11 +261,15 @@ export default function ContactPage() {
                 className="kagu-text-swap-trigger"
                 style={{
                   fontFamily: "var(--font-display)",
-                  fontSize: "var(--type-3xl)",
+                  // Scale down on phones and allow wrapping so a long address
+                  // doesn't run off the edge.
+                  fontSize: "clamp(1.25rem, 6vw, var(--type-3xl))",
                   color: "var(--ink)",
-                  lineHeight: 1,
+                  lineHeight: 1.1,
                   borderBottom: "1px solid var(--mint-deep)",
                   display: "inline-block",
+                  maxWidth: "100%",
+                  overflowWrap: "anywhere",
                   paddingBottom: 4,
                 }}
               >

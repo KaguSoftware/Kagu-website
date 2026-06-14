@@ -1,7 +1,7 @@
-import { LoadingScreen } from "@/components/hero3d/LoadingScreen";
+import { BootLoaderView } from "@/components/motion/BootLoader";
 
-// Route-level loading UI — the same bird curtain as the first-visit PreloadCurtain,
-// so the streaming fallback and the curtain are one consistent visual (no skeleton flash).
+// Route-level loading UI. Reuses the first-load boot curtain (the 2D kagu mark)
+// so every navigation shows the same screen as the initial load.
 export default function Loading() {
-  return <LoadingScreen greeting />;
+  return <BootLoaderView />;
 }

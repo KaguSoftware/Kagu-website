@@ -48,7 +48,9 @@ export default async function WorkIndexPage() {
                         <h1
                             className="display"
                             style={{
-                                fontSize: "var(--type-7xl)",
+                                // Drop the floor below --type-7xl so the long
+                                // second word doesn't overflow narrow phones.
+                                fontSize: "clamp(2.25rem, 11vw, 9.875rem)",
                                 lineHeight: 0.9,
                                 marginTop: "var(--space-6)",
                                 maxWidth: "12ch",

@@ -56,8 +56,18 @@ export function BootLoader({
   }, [reduced, sessionKey]);
 
   return (
-    <AnimatePresence>
-      {show && (
+    <AnimatePresence>{show && <BootLoaderView tag={tag} />}</AnimatePresence>
+  );
+}
+
+/* The boot animation itself — always visible while mounted. Rendered directly
+   as the route-level loading fallback (src/app/loading.tsx) so navigation shows
+   the same curtain as the first load, and wrapped by <BootLoader> for the
+   session-gated first-visit curtain. */
+export function BootLoaderView({ tag }: { tag?: string }) {
+  const reduced = useReducedMotion() ?? false;
+
+  return (
         <motion.div
           className="kagu-bootloader"
           aria-hidden
@@ -226,7 +236,5 @@ export function BootLoader({
             }
           `}</style>
         </motion.div>
-      )}
-    </AnimatePresence>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import { useFrame, useLoader } from "@react-three/fiber";
+import { useFrame, useLoader, type ThreeEvent } from "@react-three/fiber";
 import { SVGLoader } from "three/examples/jsm/loaders/SVGLoader.js";
 import * as THREE from "three";
 
@@ -17,6 +17,12 @@ export const DEPTH = 130;
 const BEVEL_THICKNESS = 12;
 const BEVEL_SIZE = 10;
 const BEVEL_SEGMENTS = 6;
+
+// Click interaction: a tap injects an extra angular velocity that decays back to
+// the idle drift, so the sculpture lunges into a fast spin then settles. Kicks
+// stack, so rapid taps wind it up further.
+const SPIN_KICK = 14; // rad/s added per click (~2.2 turns/sec at peak)
+const SPIN_DECAY = 2.4; // how fast the kick eases back to idle (1/seconds)
 
 type Part = { geometry: THREE.BufferGeometry; ghost: boolean };
 type Materials = {
@@ -168,16 +174,28 @@ function Bird({
 }) {
   const floatRef = useRef<THREE.Group>(null);
   const spinRef = useRef<THREE.Group>(null);
+  // Click kick: `boostVel` is the decaying extra angular velocity; once spent it
+  // is integrated into `extraAngle`, a persistent offset so the hand-off back to
+  // the idle drift is seamless (no snap).
+  const boostVel = useRef(0);
+  const extraAngle = useRef(0);
 
-  useFrame((state) => {
+  useFrame((state, delta) => {
     if (reducedMotion) return; // posed statically via the JSX defaults below
     const float = floatRef.current;
     const spin = spinRef.current;
     if (!float || !spin) return;
 
+    // Wind down any active click kick and bank its rotation into the offset.
+    if (boostVel.current !== 0) {
+      extraAngle.current += boostVel.current * delta;
+      boostVel.current *= Math.exp(-SPIN_DECAY * delta);
+      if (Math.abs(boostVel.current) < 0.001) boostVel.current = 0;
+    }
+
     const t = state.clock.elapsedTime + config.phase;
-    // Slow, per-bird Y drift + gentle sway — a drift, never a spin.
-    spin.rotation.y = config.yaw + t * config.rotSpeed;
+    // Slow, per-bird Y drift + gentle sway — a drift, never a spin (until clicked).
+    spin.rotation.y = config.yaw + t * config.rotSpeed + extraAngle.current;
     spin.rotation.x = Math.sin(t * 0.22) * 0.06;
     spin.rotation.z = Math.sin(t * 0.16) * 0.025;
     // Float + faint breathing.
@@ -185,8 +203,30 @@ function Bird({
     float.scale.setScalar(config.scale * (1 + Math.sin(t * 0.5 + config.phase) * 0.015));
   });
 
+  // Reset the cursor if the bird unmounts while hovered.
+  useEffect(() => () => void (document.body.style.cursor = ""), []);
+
+  const handleClick = (e: ThreeEvent<MouseEvent>) => {
+    e.stopPropagation(); // only the front-most bird under the pointer spins
+    boostVel.current += SPIN_KICK;
+  };
+  const handleOver = (e: ThreeEvent<PointerEvent>) => {
+    e.stopPropagation();
+    document.body.style.cursor = "pointer";
+  };
+  const handleOut = () => {
+    document.body.style.cursor = "";
+  };
+
   return (
-    <group ref={floatRef} position={config.position} scale={config.scale}>
+    <group
+      ref={floatRef}
+      position={config.position}
+      scale={config.scale}
+      onClick={reducedMotion ? undefined : handleClick}
+      onPointerOver={reducedMotion ? undefined : handleOver}
+      onPointerOut={reducedMotion ? undefined : handleOut}
+    >
       <group ref={spinRef} rotation={[0, config.yaw, 0]}>
         {/* rotation.x = PI flips the SVG's y-down axis upright without mirroring */}
         <group rotation={[Math.PI, 0, 0]} scale={scale}>

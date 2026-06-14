@@ -290,6 +290,10 @@ export function Hero3D({
           flex-direction: column;
           padding-inline: clamp(1.5rem, 6vw, 7rem);
           padding-block: clamp(1.5rem, 4vh, 2.5rem) clamp(2.5rem, 6vh, 4rem);
+          /* Let clicks fall through to the canvas so the sculptures stay
+             clickable (tap one to spin it). The copy is non-interactive; if a
+             real link/CTA is ever added here, give it pointer-events: auto. */
+          pointer-events: none;
         }
         /* full-width top bar: greeting left, availability right.
            Pushed well below the fixed floating header pill (~56px + offset)
