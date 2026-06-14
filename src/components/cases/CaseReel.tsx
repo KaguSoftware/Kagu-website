@@ -303,13 +303,17 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                 const activeDevice = activeFrame ? frameDevice(activeFrame) : "desktop";
                 const showChrome = activeDevice === "desktop";
                 return (
+                  // Query container = full frame width. The chrome is sized in
+                  // cqw so the dots, URL pill and padding scale with the desktop
+                  // frame instead of sitting at a fixed px size on small screens.
+                  <div style={{ containerType: "inline-size" }}>
                   <div
                     aria-hidden={!showChrome}
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: 12,
-                      padding: showChrome ? "10px 14px" : "0 14px",
+                      gap: "1.5cqw",
+                      padding: showChrome ? "1.25cqw 1.75cqw" : "0 1.75cqw",
                       maxHeight: showChrome ? 60 : 0,
                       opacity: showChrome ? 1 : 0,
                       overflow: "hidden",
@@ -317,14 +321,14 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                         "max-height 500ms cubic-bezier(0.22, 1, 0.36, 1), opacity 320ms cubic-bezier(0.22, 1, 0.36, 1), padding 500ms cubic-bezier(0.22, 1, 0.36, 1)",
                     }}
                   >
-                    <div style={{ display: "flex", gap: 6 }}>
+                    <div style={{ display: "flex", gap: "0.75cqw" }}>
                       {[0, 1, 2].map((d) => (
                         <span
                           key={d}
                           style={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: 4,
+                            width: "1cqw",
+                            height: "1cqw",
+                            borderRadius: "0.5cqw",
                             background: "color-mix(in oklab, var(--slate-ink) 32%, transparent)",
                             display: "inline-block",
                           }}
@@ -334,11 +338,11 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                     <div
                       style={{
                         flex: 1,
-                        padding: "4px 10px",
-                        borderRadius: 4,
+                        padding: "0.5cqw 1.25cqw",
+                        borderRadius: "0.5cqw",
                         background: "color-mix(in oklab, var(--slate-ink) 10%, transparent)",
                         fontFamily: "var(--font-mono)",
-                        fontSize: 11,
+                        fontSize: "1.4cqw",
                         letterSpacing: "0.04em",
                         color: "var(--slate-ink)",
                         textAlign: "center",
@@ -351,6 +355,7 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                     >
                       {stripUrl(caseData.url)}
                     </div>
+                  </div>
                   </div>
                 );
               })()}
@@ -440,7 +445,9 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                     >
                       {isCta && thisDevice === "mobile" ? (
                         // Mobile CTA: render inside a phone shell to match the
-                        // image frames; the screen carries the mint card.
+                        // image frames; the screen carries the mint card. Sizing
+                        // wrapper is the query container so the shell scales as
+                        // one unit (everything authored in cqw).
                         <div
                           style={{
                             position: "absolute",
@@ -449,10 +456,19 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                             transform: "translate(-50%, -50%)",
                             height: "92%",
                             aspectRatio: "9 / 19.5",
+                            containerType: "size",
+                          }}
+                        >
+                        <div
+                          style={{
+                            position: "relative",
+                            width: "100%",
+                            height: "100%",
+                            boxSizing: "border-box",
                             // Fixed near-black phone bezel — not theme-tokened.
                             background: "#0e0f13",
-                            borderRadius: "clamp(24px, 3vw, 38px)",
-                            padding: "clamp(6px, 0.7vw, 10px)",
+                            borderRadius: "11cqw",
+                            padding: "2.6cqw",
                             boxShadow:
                               "0 30px 60px -20px rgba(0,0,0,0.55), 0 0 0 1px color-mix(in oklab, var(--ink) 14%, transparent)",
                           }}
@@ -468,7 +484,7 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                               justifyContent: "space-between",
                               width: "100%",
                               height: "100%",
-                              borderRadius: "clamp(18px, 2.4vw, 30px)",
+                              borderRadius: "9cqw",
                               overflow: "hidden",
                               background: CTA_BG[f.ctaBg ?? "mint-soft"],
                               color: CTA_FG[f.ctaBg ?? "mint-soft"],
@@ -567,16 +583,17 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                             aria-hidden
                             style={{
                               position: "absolute",
-                              top: 16,
+                              top: "5cqw",
                               left: "50%",
                               transform: "translateX(-50%)",
                               width: "32%",
-                              height: 18,
-                              borderRadius: 12,
+                              height: "6cqw",
+                              borderRadius: "4cqw",
                               background: "#0e0f13",
                               zIndex: 3,
                             }}
                           />
+                        </div>
                         </div>
                       ) : isCta ? (
                         <Link
@@ -740,6 +757,11 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                         </Link>
                       ) : thisDevice === "mobile" ? (
                         f.image && (
+                          // Sizing wrapper = the query container. The phone is
+                          // authored entirely in cqw (1cqw = 1% of the phone's
+                          // own width) so the bezel, radii, island and image
+                          // inset all scale as ONE unit — only the container
+                          // resizes, the internal ratios never change.
                           <div
                             style={{
                               position: "absolute",
@@ -748,22 +770,30 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                               transform: "translate(-50%, -50%)",
                               height: isMobile ? "94%" : "calc(92% + 20px)",
                               aspectRatio: "9 / 19.5",
-                              // Phone body stays a fixed near-black bezel — not a
-                              // theme token, so it never inverts with the palette.
-                              background: "#0e0f13",
-                              borderRadius: "clamp(24px, 3vw, 38px)",
-                              padding: "clamp(6px, 0.7vw, 10px)",
-                              boxShadow:
-                                "0 30px 60px -20px rgba(0,0,0,0.55), 0 0 0 1px color-mix(in oklab, var(--ink) 14%, transparent)",
+                              containerType: "size",
                             }}
                           >
+                            <div
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                boxSizing: "border-box",
+                                // Phone body stays a fixed near-black bezel — not a
+                                // theme token, so it never inverts with the palette.
+                                background: "#0e0f13",
+                                borderRadius: "11cqw",
+                                padding: "2.6cqw",
+                                boxShadow:
+                                  "0 30px 60px -20px rgba(0,0,0,0.55), 0 0 0 1px color-mix(in oklab, var(--ink) 14%, transparent)",
+                              }}
+                            >
                             {/* Phone screen */}
                             <div
                               style={{
                                 position: "relative",
                                 width: "100%",
                                 height: "100%",
-                                borderRadius: "clamp(18px, 2.4vw, 30px)",
+                                borderRadius: "9cqw",
                                 overflow: "hidden",
                                 background: "var(--mint-pale)",
                               }}
@@ -773,7 +803,7 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                               <div
                                 style={{
                                   position: "absolute",
-                                  top: 31,
+                                  top: "10cqw",
                                   left: 0,
                                   right: 0,
                                   bottom: 0,
@@ -796,16 +826,17 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                                 aria-hidden
                                 style={{
                                   position: "absolute",
-                                  top: 8,
+                                  top: "2.6cqw",
                                   left: "50%",
                                   transform: "translateX(-50%)",
                                   width: "32%",
-                                  height: 18,
-                                  borderRadius: 12,
+                                  height: "6cqw",
+                                  borderRadius: "4cqw",
                                   background: "#0e0f13",
                                   zIndex: 2,
                                 }}
                               />
+                            </div>
                             </div>
                           </div>
                         )
