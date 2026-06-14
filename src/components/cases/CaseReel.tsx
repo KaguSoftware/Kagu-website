@@ -75,6 +75,11 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
   const [copyHeight, setCopyHeight] = useState<number | undefined>(undefined);
   const [isMobile, setIsMobile] = useState(false);
   const reduced = useReducedMotion();
+  // Timestamp until which active-frame updates are suppressed. Set whenever the
+  // mobile browser chrome slides (a height-only viewport resize): that re-maps
+  // scrollYProgress against a new viewport and would otherwise flip the frame
+  // mid-collapse, reading as a stutter. See the resize effect below.
+  const suppressFrameUntilRef = useRef(0);
 
   // The case-page reel pins (locks scroll) while the stage stacks into a
   // single column on mobile: image on top, copy below. At desktop type sizes
@@ -95,6 +100,23 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
     handler();
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  // The mobile browser's address/tool bar shows & hides on scroll, which fires
+  // a resize that only changes the viewport HEIGHT. That alone re-maps the
+  // scroll progress and flips the active frame, so the cross-fade stutters
+  // while the bar animates. Detect a height-only resize (width unchanged) and
+  // freeze frame updates for the length of the bar animation. A real orientation
+  // change moves the width too, so it falls through and re-syncs normally.
+  useEffect(() => {
+    let lastW = window.innerWidth;
+    const onResize = () => {
+      const w = window.innerWidth;
+      if (w === lastW) suppressFrameUntilRef.current = performance.now() + 450;
+      lastW = w;
+    };
+    window.addEventListener("resize", onResize, { passive: true });
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
   // Measure the active copy frame so the column animates to its content
@@ -171,6 +193,8 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
 
   useMotionValueEvent(scrollYProgress, "change", (p) => {
     if (reduced || total === 0) return;
+    // Ignore the scroll-progress jump caused by the browser chrome sliding.
+    if (performance.now() < suppressFrameUntilRef.current) return;
     const idx = Math.min(total - 1, Math.max(0, Math.floor(p * total)));
     setActive((curr) => (curr === idx ? curr : idx));
   });

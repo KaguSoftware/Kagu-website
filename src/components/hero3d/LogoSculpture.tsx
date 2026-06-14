@@ -24,6 +24,13 @@ const BEVEL_SEGMENTS = 6;
 const SPIN_KICK = 14; // rad/s added per click (~2.2 turns/sec at peak)
 const SPIN_DECAY = 2.4; // how fast the kick eases back to idle (1/seconds)
 
+// Drag / scroll interaction: grab a sculpture and swing it horizontally, or
+// horizontal-scroll over it. Both feed the same spin so it all composes.
+const DRAG_SENSITIVITY = 0.012; // radians of yaw per pixel dragged
+const WHEEL_SENSITIVITY = 0.04; // rad/s of spin added per unit of horizontal scroll
+const FLING_MAX = 40; // clamp the release fling so a fast flick can't go absurd
+const DRAG_THRESHOLD = 4; // px of travel before a press counts as a drag (suppresses the click kick)
+
 type Part = { geometry: THREE.BufferGeometry; ghost: boolean };
 type Materials = {
   main: THREE.MeshPhysicalMaterial;
@@ -174,11 +181,20 @@ function Bird({
 }) {
   const floatRef = useRef<THREE.Group>(null);
   const spinRef = useRef<THREE.Group>(null);
-  // Click kick: `boostVel` is the decaying extra angular velocity; once spent it
-  // is integrated into `extraAngle`, a persistent offset so the hand-off back to
-  // the idle drift is seamless (no snap).
+  // Click/scroll kick: `boostVel` is the decaying extra angular velocity; once
+  // spent it is integrated into `extraAngle`, a persistent offset so the hand-off
+  // back to the idle drift is seamless (no snap). Dragging writes `extraAngle`
+  // directly (1:1 with the pointer) and, on release, flings into `boostVel`.
   const boostVel = useRef(0);
   const extraAngle = useRef(0);
+
+  // Drag bookkeeping.
+  const dragging = useRef(false);
+  const lastX = useRef(0); // clientX of the previous move, for per-frame delta
+  const downX = useRef(0); // clientX at press, to measure total travel
+  const lastMoveT = useRef(0); // timestamp of the previous move, for fling velocity
+  const dragVel = useRef(0); // latest drag angular velocity (rad/s) for the fling
+  const moved = useRef(false); // did this press travel far enough to be a drag?
 
   useFrame((state, delta) => {
     if (reducedMotion) return; // posed statically via the JSX defaults below
@@ -186,16 +202,19 @@ function Bird({
     const spin = spinRef.current;
     if (!float || !spin) return;
 
-    // Wind down any active click kick and bank its rotation into the offset.
-    if (boostVel.current !== 0) {
+    // While grabbed the pointer drives the yaw directly; otherwise wind down any
+    // active kick/fling and bank its rotation into the persistent offset.
+    if (!dragging.current && boostVel.current !== 0) {
       extraAngle.current += boostVel.current * delta;
       boostVel.current *= Math.exp(-SPIN_DECAY * delta);
       if (Math.abs(boostVel.current) < 0.001) boostVel.current = 0;
     }
 
     const t = state.clock.elapsedTime + config.phase;
-    // Slow, per-bird Y drift + gentle sway — a drift, never a spin (until clicked).
-    spin.rotation.y = config.yaw + t * config.rotSpeed + extraAngle.current;
+    // Slow, per-bird Y drift + the user-driven offset. The drift freezes while
+    // dragging so the grab feels locked to the pointer.
+    const drift = dragging.current ? 0 : t * config.rotSpeed;
+    spin.rotation.y = config.yaw + drift + extraAngle.current;
     spin.rotation.x = Math.sin(t * 0.22) * 0.06;
     spin.rotation.z = Math.sin(t * 0.16) * 0.025;
     // Float + faint breathing.
@@ -203,19 +222,64 @@ function Bird({
     float.scale.setScalar(config.scale * (1 + Math.sin(t * 0.5 + config.phase) * 0.015));
   });
 
-  // Reset the cursor if the bird unmounts while hovered.
+  // Reset the cursor if the bird unmounts mid-hover/drag.
   useEffect(() => () => void (document.body.style.cursor = ""), []);
 
   const handleClick = (e: ThreeEvent<MouseEvent>) => {
-    e.stopPropagation(); // only the front-most bird under the pointer spins
+    e.stopPropagation(); // only the front-most bird under the pointer reacts
+    if (moved.current) return; // it was a drag, not a tap — the fling already spun it
     boostVel.current += SPIN_KICK;
   };
+
+  const handlePointerDown = (e: ThreeEvent<PointerEvent>) => {
+    e.stopPropagation();
+    (e.target as Element).setPointerCapture(e.pointerId); // keep moves coming if the pointer slips off
+    dragging.current = true;
+    moved.current = false;
+    boostVel.current = 0; // cancel any momentum — you've grabbed it
+    lastX.current = downX.current = e.clientX;
+    lastMoveT.current = performance.now();
+    dragVel.current = 0;
+    document.body.style.cursor = "grabbing";
+  };
+
+  const handlePointerMove = (e: ThreeEvent<PointerEvent>) => {
+    if (!dragging.current) return;
+    e.stopPropagation();
+    const now = performance.now();
+    const dx = e.clientX - lastX.current;
+    const dt = Math.max(1, now - lastMoveT.current) / 1000; // seconds, floored to avoid div-by-0
+    lastX.current = e.clientX;
+    lastMoveT.current = now;
+    const dAngle = dx * DRAG_SENSITIVITY;
+    extraAngle.current += dAngle;
+    dragVel.current = dAngle / dt;
+    if (Math.abs(e.clientX - downX.current) > DRAG_THRESHOLD) moved.current = true;
+  };
+
+  const endDrag = (e: ThreeEvent<PointerEvent>) => {
+    if (!dragging.current) return;
+    e.stopPropagation();
+    (e.target as Element).releasePointerCapture(e.pointerId);
+    dragging.current = false;
+    // Carry the drag's velocity into a decaying fling, clamped so a fast flick
+    // can't spin out of control.
+    boostVel.current = THREE.MathUtils.clamp(dragVel.current, -FLING_MAX, FLING_MAX);
+    document.body.style.cursor = "grab";
+  };
+
+  const handleWheel = (e: ThreeEvent<WheelEvent>) => {
+    e.stopPropagation();
+    // Horizontal scroll spins it; the kick decays like a click.
+    boostVel.current += e.deltaX * WHEEL_SENSITIVITY;
+  };
+
   const handleOver = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
-    document.body.style.cursor = "pointer";
+    document.body.style.cursor = dragging.current ? "grabbing" : "grab";
   };
   const handleOut = () => {
-    document.body.style.cursor = "";
+    if (!dragging.current) document.body.style.cursor = "";
   };
 
   return (
@@ -224,6 +288,11 @@ function Bird({
       position={config.position}
       scale={config.scale}
       onClick={reducedMotion ? undefined : handleClick}
+      onPointerDown={reducedMotion ? undefined : handlePointerDown}
+      onPointerMove={reducedMotion ? undefined : handlePointerMove}
+      onPointerUp={reducedMotion ? undefined : endDrag}
+      onPointerCancel={reducedMotion ? undefined : endDrag}
+      onWheel={reducedMotion ? undefined : handleWheel}
       onPointerOver={reducedMotion ? undefined : handleOver}
       onPointerOut={reducedMotion ? undefined : handleOut}
     >
