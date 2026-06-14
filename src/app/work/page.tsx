@@ -279,8 +279,8 @@ export default async function WorkIndexPage() {
                                                                             left: "50%",
                                                                             transform:
                                                                                 "translateX(-50%)",
-                                                                            width: "32%",
-                                                                            height: "6cqw",
+                                                                            width: "26%",
+                                                                            height: "7.5cqw",
                                                                             borderRadius:
                                                                                 "4cqw",
                                                                             background:

@@ -195,14 +195,12 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
       <div
         ref={stageRef}
         style={{
-          // Full reels stick to the top of the viewport (the scroll-lock) for
-          // the height of the tall container, so they lock to 100vh. Preview
-          // (homepage) does NOT pin — on desktop it fits its content instead of
-          // stretching to 100vh, so the aspect-ratio'd frame (which animates its
-          // own size smoothly) drives the height and the desktop frame isn't
-          // left floating in empty space. Mobile keeps a viewport height so its
-          // flex rows have a height authority to fill.
-          height: isMobile ? "100svh" : preview ? "auto" : "100vh",
+          // Floor at a viewport, then GROW: the stage is at least 100svh (so
+          // the frame fills the screen normally) but height:auto lets it get
+          // taller on short screens — heading + frame + copy + progress all
+          // fit and the page scrolls instead of crushing the frame to nothing.
+          // Preview (homepage) stays content-sized on desktop (no pin).
+          height: preview && !isMobile ? "auto" : undefined,
           minHeight: preview && !isMobile ? 0 : "100svh",
           display: "flex",
           flexDirection: "column",
@@ -216,7 +214,7 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
         }}
         className="px-(--container-x)"
       >
-        <div className="w-full max-w-(--container-max) mx-auto h-full flex flex-col">
+        <div className="w-full max-w-(--container-max) mx-auto flex-1 min-h-0 flex flex-col">
           {/* Top meta row */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-baseline">
             <div className="md:col-span-6">
@@ -379,7 +377,14 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                   ...(isMobile &&
                   frames[active] &&
                   frameDevice(frames[active]) === "mobile"
-                    ? { flex: "1 1 0", minHeight: 0, maxHeight: "100%" }
+                    ? {
+                        // Grow to fill, but never shrink below a legible floor —
+                        // when space is tight the stage grows (height:auto) to
+                        // absorb this instead of the phone collapsing.
+                        flex: "1 1 0",
+                        minHeight: "clamp(300px, 52svh, 480px)",
+                        maxHeight: "100%",
+                      }
                     : {}),
                   overflow: "hidden",
                   background: "transparent",
@@ -586,8 +591,8 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                               top: "5cqw",
                               left: "50%",
                               transform: "translateX(-50%)",
-                              width: "32%",
-                              height: "6cqw",
+                              width: "26%",
+                              height: "7.5cqw",
                               borderRadius: "4cqw",
                               background: "#0e0f13",
                               zIndex: 3,
@@ -829,8 +834,8 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                                   top: "2.6cqw",
                                   left: "50%",
                                   transform: "translateX(-50%)",
-                                  width: "32%",
-                                  height: "6cqw",
+                                  width: "26%",
+                                  height: "7.5cqw",
                                   borderRadius: "4cqw",
                                   background: "#0e0f13",
                                   zIndex: 2,
