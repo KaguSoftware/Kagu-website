@@ -204,18 +204,32 @@ export default async function WorkIndexPage() {
                                                                     height: "84%",
                                                                     aspectRatio:
                                                                         "9 / 19.5",
-                                                                    // Fixed near-black phone bezel — not a theme
-                                                                    // token, so it never inverts with the palette.
-                                                                    background:
-                                                                        "#0e0f13",
-                                                                    borderRadius:
-                                                                        "clamp(24px, 3vw, 38px)",
-                                                                    padding:
-                                                                        "clamp(6px, 0.7vw, 10px)",
-                                                                    boxShadow:
-                                                                        "0 30px 60px -20px rgba(0,0,0,0.55), 0 0 0 1px color-mix(in oklab, var(--ink) 14%, transparent)",
+                                                                    // Query container: the phone is authored in cqw
+                                                                    // so the bezel, radii and island scale as ONE
+                                                                    // unit with the phone's own width — the card
+                                                                    // resizes, internal ratios stay locked.
+                                                                    containerType:
+                                                                        "size",
                                                                 }}
                                                             >
+                                                                <div
+                                                                    style={{
+                                                                        width: "100%",
+                                                                        height: "100%",
+                                                                        boxSizing:
+                                                                            "border-box",
+                                                                        // Fixed near-black phone bezel — not a theme
+                                                                        // token, so it never inverts with the palette.
+                                                                        background:
+                                                                            "#0e0f13",
+                                                                        borderRadius:
+                                                                            "11cqw",
+                                                                        padding:
+                                                                            "2.6cqw",
+                                                                        boxShadow:
+                                                                            "0 30px 60px -20px rgba(0,0,0,0.55), 0 0 0 1px color-mix(in oklab, var(--ink) 14%, transparent)",
+                                                                    }}
+                                                                >
                                                                 <div
                                                                     style={{
                                                                         position:
@@ -223,7 +237,7 @@ export default async function WorkIndexPage() {
                                                                         width: "100%",
                                                                         height: "100%",
                                                                         borderRadius:
-                                                                            "clamp(18px, 2.4vw, 30px)",
+                                                                            "9cqw",
                                                                         overflow:
                                                                             "hidden",
                                                                         background:
@@ -234,7 +248,7 @@ export default async function WorkIndexPage() {
                                                                         style={{
                                                                             position:
                                                                                 "absolute",
-                                                                            top: 31,
+                                                                            top: "10cqw",
                                                                             left: 0,
                                                                             right: 0,
                                                                             bottom: 0,
@@ -261,25 +275,29 @@ export default async function WorkIndexPage() {
                                                                         style={{
                                                                             position:
                                                                                 "absolute",
-                                                                            top: 8,
+                                                                            top: "2.6cqw",
                                                                             left: "50%",
                                                                             transform:
                                                                                 "translateX(-50%)",
                                                                             width: "32%",
-                                                                            height: 18,
-                                                                            borderRadius: 12,
+                                                                            height: "6cqw",
+                                                                            borderRadius:
+                                                                                "4cqw",
                                                                             background:
                                                                                 "#0e0f13",
                                                                             zIndex: 2,
                                                                         }}
                                                                     />
                                                                 </div>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     ) : c.thumbnail ? (
                                                         // Desktop thumbnail in a browser-chrome frame so the
                                                         // screenshot reads as a website, matching the homepage /
-                                                        // case-page reel treatment.
+                                                        // case-page reel treatment. Query container so the chrome
+                                                        // (dots + URL pill) scales in cqw with the frame width
+                                                        // instead of sitting at a fixed px size on small cards.
                                                         <div
                                                             style={{
                                                                 position:
@@ -290,6 +308,8 @@ export default async function WorkIndexPage() {
                                                                 display: "flex",
                                                                 flexDirection:
                                                                     "column",
+                                                                containerType:
+                                                                    "inline-size",
                                                             }}
                                                         >
                                                             {/* Browser chrome row */}
@@ -300,9 +320,9 @@ export default async function WorkIndexPage() {
                                                                         "flex",
                                                                     alignItems:
                                                                         "center",
-                                                                    gap: 10,
+                                                                    gap: "1.3cqw",
                                                                     padding:
-                                                                        "9px 12px",
+                                                                        "1.2cqw 1.6cqw",
                                                                     flex: "0 0 auto",
                                                                 }}
                                                             >
@@ -310,7 +330,7 @@ export default async function WorkIndexPage() {
                                                                     style={{
                                                                         display:
                                                                             "flex",
-                                                                        gap: 5,
+                                                                        gap: "0.65cqw",
                                                                     }}
                                                                 >
                                                                     {[
@@ -322,9 +342,10 @@ export default async function WorkIndexPage() {
                                                                                     d
                                                                                 }
                                                                                 style={{
-                                                                                    width: 7,
-                                                                                    height: 7,
-                                                                                    borderRadius: 4,
+                                                                                    width: "0.9cqw",
+                                                                                    height: "0.9cqw",
+                                                                                    borderRadius:
+                                                                                        "0.5cqw",
                                                                                     background:
                                                                                         "color-mix(in oklab, var(--slate-ink) 32%, transparent)",
                                                                                 }}
@@ -336,13 +357,14 @@ export default async function WorkIndexPage() {
                                                                     style={{
                                                                         flex: 1,
                                                                         padding:
-                                                                            "3px 8px",
-                                                                        borderRadius: 4,
+                                                                            "0.4cqw 1cqw",
+                                                                        borderRadius:
+                                                                            "0.5cqw",
                                                                         background:
                                                                             "color-mix(in oklab, var(--slate-ink) 10%, transparent)",
                                                                         fontFamily:
                                                                             "var(--font-mono)",
-                                                                        fontSize: 10,
+                                                                        fontSize: "1.3cqw",
                                                                         letterSpacing:
                                                                             "0.04em",
                                                                         color: "var(--slate-ink)",
