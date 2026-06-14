@@ -41,7 +41,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${spaceMono.variable} ${publicSans.variable}`}>
-      <body className="min-h-dvh antialiased">
+      <body className="min-h-svh antialiased">
         <a href="#main" className="skip-link">
           Skip to content
         </a>

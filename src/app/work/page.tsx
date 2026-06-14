@@ -36,7 +36,7 @@ export default async function WorkIndexPage() {
     return (
         <div
             style={{ background: "var(--paper)" }}
-            className="px-(--container-x) pt-(--space-32) pb-(--section-y) min-h-dvh"
+            className="px-(--container-x) pt-(--space-32) pb-(--section-y) min-h-svh"
         >
             <div className="w-full max-w-(--container-max) mx-auto">
                 {/* Header */}

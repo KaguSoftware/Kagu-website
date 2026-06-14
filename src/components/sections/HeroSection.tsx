@@ -74,7 +74,7 @@ export function HeroSection({ heroMarquee }: { heroMarquee: MarqueeItem[] }) {
     <section
       aria-label="Introduction"
       style={{
-        minHeight: "100dvh",
+        minHeight: "100svh",
         background: "var(--paper)",
         position: "relative",
         overflow: "hidden",

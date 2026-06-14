@@ -17,7 +17,7 @@ export default async function AboutPage() {
     <>
       <section
         style={{ background: "var(--paper)" }}
-        className="px-(--container-x) pt-(--space-32) pb-(--space-24) min-h-[60dvh] flex items-end"
+        className="px-(--container-x) pt-(--space-32) pb-(--space-24) min-h-[60svh] flex items-end"
       >
         <div className="w-full max-w-(--container-max) mx-auto">
           <span className="eyebrow block" style={{ marginBottom: "var(--space-6)" }}>

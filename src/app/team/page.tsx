@@ -77,7 +77,7 @@ export default async function TeamPage({ searchParams }: TeamPageProps) {
       {/* Hero */}
       <section
         style={{ background: "var(--paper)" }}
-        className="px-(--container-x) pt-(--space-32) pb-(--space-24) min-h-[55dvh] flex items-end"
+        className="px-(--container-x) pt-(--space-32) pb-(--space-24) min-h-[55svh] flex items-end"
       >
         <div className="w-full max-w-(--container-max) mx-auto">
           <span className="eyebrow block" style={{ marginBottom: "var(--space-6)" }}>

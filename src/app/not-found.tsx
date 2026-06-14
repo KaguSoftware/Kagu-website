@@ -9,7 +9,7 @@ export default function NotFound() {
   return (
     <>
       <section
-        style={{ background: "var(--paper)", minHeight: "70dvh" }}
+        style={{ background: "var(--paper)", minHeight: "70svh" }}
         className="px-(--container-x) pt-(--space-32) pb-(--section-y) flex items-end"
       >
         <div className="w-full max-w-(--container-max) mx-auto">

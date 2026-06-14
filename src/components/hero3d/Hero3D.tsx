@@ -253,7 +253,7 @@ export function Hero3D({
         .kagu-hero {
           position: relative;
           width: 100%;
-          min-height: 100dvh;
+          min-height: 100svh;
           overflow: hidden;
           isolation: isolate;
           /* brighter blue field: a lifted blue glow at the top focal point
@@ -285,7 +285,7 @@ export function Hero3D({
         .kagu-hero__content {
           position: relative;
           z-index: 2;
-          min-height: 100dvh;
+          min-height: 100svh;
           display: flex;
           flex-direction: column;
           padding-inline: clamp(1.5rem, 6vw, 7rem);
