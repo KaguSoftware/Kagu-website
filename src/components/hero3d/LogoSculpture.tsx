@@ -172,15 +172,12 @@ function Bird({
   materials,
   config,
   reducedMotion,
-  coarse,
 }: {
   parts: Part[];
   scale: number;
   materials: Materials;
   config: BirdConfig;
   reducedMotion: boolean;
-  /** Touch device: drag is disabled so swipes scroll the page natively. */
-  coarse: boolean;
 }) {
   const floatRef = useRef<THREE.Group>(null);
   const spinRef = useRef<THREE.Group>(null);
@@ -285,27 +282,19 @@ function Bird({
     if (!dragging.current) document.body.style.cursor = "";
   };
 
-  // ALL pointer interaction (tap-to-spin, grab-drag, wheel-spin) is desktop-only.
-  // On touch the canvas fills the hero, so any handler turns a scroll-starting
-  // finger into a gesture fight: a tap fires the spin kick (the bird twitches),
-  // a swipe contends with native scroll (the page stutters). With every handler
-  // off, R3F attaches no pointer listeners and never raycasts — a finger placed
-  // anywhere just scrolls. The flock still drifts on its own.
-  const interactive = !reducedMotion && !coarse;
-
   return (
     <group
       ref={floatRef}
       position={config.position}
       scale={config.scale}
-      onClick={interactive ? handleClick : undefined}
-      onPointerDown={interactive ? handlePointerDown : undefined}
-      onPointerMove={interactive ? handlePointerMove : undefined}
-      onPointerUp={interactive ? endDrag : undefined}
-      onPointerCancel={interactive ? endDrag : undefined}
-      onWheel={interactive ? handleWheel : undefined}
-      onPointerOver={interactive ? handleOver : undefined}
-      onPointerOut={interactive ? handleOut : undefined}
+      onClick={reducedMotion ? undefined : handleClick}
+      onPointerDown={reducedMotion ? undefined : handlePointerDown}
+      onPointerMove={reducedMotion ? undefined : handlePointerMove}
+      onPointerUp={reducedMotion ? undefined : endDrag}
+      onPointerCancel={reducedMotion ? undefined : endDrag}
+      onWheel={reducedMotion ? undefined : handleWheel}
+      onPointerOver={reducedMotion ? undefined : handleOver}
+      onPointerOut={reducedMotion ? undefined : handleOut}
     >
       <group ref={spinRef} rotation={[0, config.yaw, 0]}>
         {/* rotation.x = PI flips the SVG's y-down axis upright without mirroring */}
@@ -336,7 +325,6 @@ export function Flock({
   offsetX = 0,
   count = FLOCK.length,
   scale: groupScale = 1,
-  coarse = false,
 }: {
   url?: string;
   reducedMotion?: boolean;
@@ -344,8 +332,6 @@ export function Flock({
   count?: number;
   /** Uniform shrink for the whole flock — used to fit smaller viewports. */
   scale?: number;
-  /** Touch device: drag off so swipes scroll the page. */
-  coarse?: boolean;
 }) {
   const { parts, scale, materials } = useLogoParts(url);
   const birds = FLOCK.slice(0, count);
@@ -360,7 +346,6 @@ export function Flock({
           materials={materials}
           config={config}
           reducedMotion={reducedMotion}
-          coarse={coarse}
         />
       ))}
     </group>

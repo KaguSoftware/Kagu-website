@@ -127,7 +127,7 @@ function Scene({
       <CameraRig reducedMotion={reducedMotion} targetX={offsetX} coarse={coarse} />
 
       <Suspense fallback={null}>
-        <Flock reducedMotion={reducedMotion} offsetX={offsetX} count={count} scale={flockScale} coarse={coarse} />
+        <Flock reducedMotion={reducedMotion} offsetX={offsetX} count={count} scale={flockScale} />
       </Suspense>
 
       {/* Dark studio for the black glass: a near-black surround so the glass
@@ -207,9 +207,6 @@ export function Hero3D({
             gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
             camera={{ position: [0, 0.2, 6.4], fov: 32, near: 0.1, far: 50 }}
             frameloop={reducedMotion ? "demand" : "always"}
-            // Let vertical swipes scroll the page natively (no gesture tug-of-war
-            // with the 3D layer); horizontal-drag spin is desktop-only anyway.
-            style={{ touchAction: "pan-y" }}
             onCreated={({ gl }) => {
               gl.toneMappingExposure = 1.05;
             }}
