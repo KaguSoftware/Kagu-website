@@ -244,7 +244,10 @@ function Bird({
     (e.target as Element).setPointerCapture(e.pointerId); // keep moves coming if the pointer slips off
     dragging.current = true;
     moved.current = false;
-    boostVel.current = 0; // cancel any momentum — you've grabbed it
+    // Don't reset boostVel here. While dragging it's frozen (not applied), so the
+    // bird still locks to the pointer — and keeping it lets rapid TAPS stack their
+    // kicks, since a tap runs through pointerdown too and zeroing would wipe the
+    // wind-up between taps. A real drag overwrites it with the fling on release.
     lastX.current = downX.current = e.clientX;
     lastMoveT.current = performance.now();
     dragVel.current = 0;
@@ -270,9 +273,12 @@ function Bird({
     e.stopPropagation();
     (e.target as Element).releasePointerCapture(e.pointerId);
     dragging.current = false;
-    // Carry the drag's velocity into a decaying fling, clamped so a fast flick
-    // can't spin out of control.
-    boostVel.current = THREE.MathUtils.clamp(dragVel.current, -FLING_MAX, FLING_MAX);
+    // Only a real drag flings. A tap travels no distance (dragVel ~0), so flinging
+    // it would slam boostVel to 0 and kill the kick fired by the click right after
+    // — leave the momentum alone and let that kick stack onto it.
+    if (moved.current) {
+      boostVel.current = THREE.MathUtils.clamp(dragVel.current, -FLING_MAX, FLING_MAX);
+    }
     document.body.style.cursor = "grab";
   };
 
