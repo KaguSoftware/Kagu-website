@@ -187,6 +187,11 @@ function Bird({
   // directly (1:1 with the pointer) and, on release, flings into `boostVel`.
   const boostVel = useRef(0);
   const extraAngle = useRef(0);
+  // Idle yaw accumulated frame-by-frame (NOT elapsedTime * rotSpeed). Integrating
+  // it means pausing during a grab just holds the last angle, instead of dropping
+  // the whole accrued drift to zero — that drop was the twitch-back on first
+  // contact, and its mirror jump on release was the twitch on tap.
+  const driftAngle = useRef(0);
 
   // Drag bookkeeping.
   const dragging = useRef(false);
@@ -210,11 +215,14 @@ function Bird({
       if (Math.abs(boostVel.current) < 0.001) boostVel.current = 0;
     }
 
+    // Advance the idle drift only when free; while grabbed it holds, so the yaw
+    // stays continuous through press/release (no snap). Clamp delta so returning
+    // to a backgrounded tab can't fast-forward the drift in a single frame.
+    if (!dragging.current) driftAngle.current += config.rotSpeed * Math.min(delta, 0.1);
+
     const t = state.clock.elapsedTime + config.phase;
-    // Slow, per-bird Y drift + the user-driven offset. The drift freezes while
-    // dragging so the grab feels locked to the pointer.
-    const drift = dragging.current ? 0 : t * config.rotSpeed;
-    spin.rotation.y = config.yaw + drift + extraAngle.current;
+    // Idle drift + the user-driven offset (drag/kick), both continuous.
+    spin.rotation.y = config.yaw + driftAngle.current + extraAngle.current;
     spin.rotation.x = Math.sin(t * 0.22) * 0.06;
     spin.rotation.z = Math.sin(t * 0.16) * 0.025;
     // Float + faint breathing.
