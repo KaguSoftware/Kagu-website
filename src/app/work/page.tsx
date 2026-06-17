@@ -222,6 +222,11 @@ export default async function WorkIndexPage() {
                         </article>
                     );
                 })}
+                {/* Trailing runway: extends the sticky container so the last folder
+                    can pin and hold before the whole stack releases together —
+                    without it, the last file dragged the earlier ones up as it
+                    arrived (mobile, where the bodies are tallest). */}
+                <div className="kagu-folders__runway" aria-hidden />
             </div>
 
             <style>{`
@@ -286,6 +291,12 @@ export default async function WorkIndexPage() {
                     isolation: isolate;
                     transition: transform 0.34s var(--ease-out-quint);
                 }
+                /* 50px of breathing room between files while they're laid out in
+                   flow (before they scroll up and stack into the pile) */
+                .kagu-folder + .kagu-folder {
+                    margin-top: calc(var(--tab-h) + 50px);
+                }
+                .kagu-folders__runway { height: 0; }
 
                 .kagu-folder__body {
                     position: relative;
@@ -576,13 +587,12 @@ export default async function WorkIndexPage() {
                    stack the preview above the copy. */
                 @media (max-width: 760px) {
                     /* Tall mobile bodies + one shared sticky container means every
-                       folder un-sticks together the instant the container's bottom
-                       edge is reached — and with no trailing room that moment lands
-                       right as the last folder pins, so earlier folders (02) get
-                       dragged up with the last (04). This runway pushes the shared
-                       release point well past where the last folder settles, so it
-                       lands cleanly in the tab row first. */
-                    .kagu-folders { padding-bottom: clamp(18rem, 55svh, 34rem); }
+                       folder un-sticks together the instant the container's content
+                       box ends — with no trailing room that lands right as the last
+                       folder pins, dragging earlier folders (02) up with it. The
+                       runway extends the container so the last folder pins and holds
+                       before the stack releases. */
+                    .kagu-folders__runway { height: clamp(20rem, 65svh, 40rem); }
                     /* tabs share one level here too — tile them across to fit,
                        labels wrap to two lines */
                     .kagu-folder__tab {

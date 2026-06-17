@@ -27,20 +27,22 @@ export function TabLink({
         if (!el) return;
         e.preventDefault();
 
-        let naturalTop = 0;
-        for (
-            let node: HTMLElement | null = el;
-            node;
-            node = node.offsetParent as HTMLElement | null
-        ) {
-            naturalTop += node.offsetTop;
-        }
+        // Once a sticky folder is stuck, offsetTop / getBoundingClientRect report
+        // its pinned position, not where it actually lives in the flow — so a plain
+        // "scroll to element" barely moves. Briefly drop sticky to read the real
+        // flow position, then scroll there minus the pin offset so this file rises
+        // to the front of the stack.
+        const prevPosition = el.style.position;
+        el.style.position = "static";
+        const naturalTop = el.getBoundingClientRect().top + window.scrollY;
+        el.style.position = prevPosition;
+
         const pin = parseFloat(getComputedStyle(el).scrollMarginTop) || 0;
         const targetY = Math.max(0, naturalTop - pin);
 
         const lenis = window.__kaguLenis;
         if (lenis) {
-            lenis.scrollTo(targetY);
+            lenis.scrollTo(targetY, { duration: 0.9 });
         } else {
             const reduced = window.matchMedia(
                 "(prefers-reduced-motion: reduce)"
