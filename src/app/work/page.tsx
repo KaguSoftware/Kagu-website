@@ -126,16 +126,7 @@ function Thumb({ c }: { c: Case }) {
 }
 
 export default async function WorkIndexPage() {
-    let cases = await getCases();
-    if (process.env.NODE_ENV === "development" && cases.length === 0) {
-        const T = "/cases/genbuzz/ThumbnailGen.png";
-        cases = [
-            { slug: "a", client: "Maison Rivage", project: "Hospitality platform", sector: "Hospitality · Booking", year: "2025", lede: "A boutique hotel group needed one system for rooms, dining, and concierge.", url: "https://example.com", thumbnail: T, cover: { label: "Hospitality" } },
-            { slug: "b", client: "Table", project: "Restaurant OS", sector: "Restaurants · POS", year: "2025", lede: "Front-of-house and kitchen on one fast tablet flow.", url: "https://example.com", thumbnail: T, cover: { label: "Restaurants" } },
-            { slug: "c", client: "Visa Office", project: "Immigration services", sector: "Services · Immigration", year: "2026", lede: "Casework, documents, and client status in a single operator console.", url: "https://example.com", thumbnail: T, device: "mobile", cover: { label: "Services" } },
-            { slug: "d", client: "GenBuzz", project: "Proposal & document builder", sector: "SaaS · Operator tools", year: "2026", lede: "Freelancers needed proposals that look like a studio made them, fast.", url: "https://example.com", thumbnail: T, cover: { label: "SaaS" } },
-        ] as unknown as typeof cases;
-    }
+    const cases = await getCases();
     const n = cases.length;
 
     return (
@@ -584,6 +575,14 @@ export default async function WorkIndexPage() {
                 /* Narrow screens: a row of tabs can't fit, so staircase them and
                    stack the preview above the copy. */
                 @media (max-width: 760px) {
+                    /* Tall mobile bodies + one shared sticky container means every
+                       folder un-sticks together the instant the container's bottom
+                       edge is reached — and with no trailing room that moment lands
+                       right as the last folder pins, so earlier folders (02) get
+                       dragged up with the last (04). This runway pushes the shared
+                       release point well past where the last folder settles, so it
+                       lands cleanly in the tab row first. */
+                    .kagu-folders { padding-bottom: clamp(18rem, 55svh, 34rem); }
                     /* tabs share one level here too — tile them across to fit,
                        labels wrap to two lines */
                     .kagu-folder__tab {
