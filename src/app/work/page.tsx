@@ -1,17 +1,20 @@
 /*
   /work — work index, as a stack of file folders.
   Each case is a physical folder that pins on scroll (pure CSS position: sticky).
-  Every folder slams up to the SAME top, so the tabs line up on one level (a row
-  of file tabs you flip through) rather than staircasing down. The pile runs
-  darkest (top) → lightest (bottom) through the brand sky accent; ink is picked
-  per folder by WCAG contrast. Each folder holds the case copy beside a framed
-  thumbnail (browser window for desktop captures, phone mockup for mobile) and a
-  "View file" link. On narrow screens the row can't fit, so tabs staircase.
+  Tabs pack left→right in rows of three; every third folder wraps back to the
+  far left and its row pins one --reveal lower, so the tabs step down like a
+  staircase. Clicking a tab jumps the page to that folder's pinned level (anchor
+  link + scroll-margin-top). The pile runs darkest (top) → lightest (bottom)
+  through the brand sky accent; ink is picked per folder by WCAG contrast. Each
+  folder holds the case copy beside a framed thumbnail (browser window for
+  desktop captures, phone mockup for mobile) and a "View file" link. On phones
+  the tabs stay three across with two-line labels and the browser frame narrows.
 */
 
 import Link from "next/link";
 import Image from "next/image";
 import { getCases, type Case } from "@/lib/content";
+import { TabLink } from "./TabLink";
 
 export const metadata = {
     title: "Work · Kagu",
@@ -152,14 +155,21 @@ export default async function WorkIndexPage() {
                             : LIGHT_INK;
                     const muted = rgba(ink, 0.78);
                     const no = String(i + 1).padStart(2, "0");
+                    // Tabs flow in rows of three: column sets the left offset,
+                    // row sets how far the folder pins down (the staircase).
+                    const col = i % 3;
+                    const row = Math.floor(i / 3);
                     return (
                         <article
                             key={c.slug}
+                            id={`file-${c.slug}`}
                             className="kagu-folder"
                             style={
                                 {
                                     "--i": String(i),
                                     "--n": String(Math.max(n, 2)),
+                                    "--col": String(col),
+                                    "--row": String(row),
                                     "--fl": bg,
                                     "--ft": ink,
                                     "--fm": muted,
@@ -167,12 +177,16 @@ export default async function WorkIndexPage() {
                                 } as React.CSSProperties
                             }
                         >
-                            <span className="kagu-folder__tab">
+                            <TabLink
+                                targetId={`file-${c.slug}`}
+                                className="kagu-folder__tab"
+                                ariaLabel={`Jump to file ${no}: ${c.client}`}
+                            >
                                 <span className="kagu-folder__tab-no">{no}</span>
                                 <span className="kagu-folder__tab-name">
                                     {c.sector || c.cover.label}
                                 </span>
-                            </span>
+                            </TabLink>
                             <div className="kagu-folder__body">
                                 <span className="kagu-folder__ghost" aria-hidden>
                                     {no}
@@ -262,12 +276,18 @@ export default async function WorkIndexPage() {
                 }
                 .kagu-folder {
                     --stack-top: clamp(7.5rem, 6rem + 3.5vw, 9.5rem);
-                    --reveal: clamp(3rem, 2.6rem + 1.2vw, 3.75rem);
+                    --reveal: clamp(3.25rem, 2.8rem + 1.4vw, 4rem);
                     --tab-h: clamp(3rem, 2.6rem + 1vw, 3.6rem);
+                    --tab-w: clamp(7rem, 4.5rem + 9vw, 11rem);
+                    --tab-step: calc(var(--tab-w) + clamp(0.4rem, 0.2rem + 0.6vw, 0.9rem));
+                    --tab-x: clamp(0.4rem, 1.4vw, 1.75rem);
                     --joint: 16px;
                     position: sticky;
-                    /* every folder pins to the same line, so the tabs share a level */
-                    top: var(--stack-top);
+                    /* tabs pack left→right in threes; every third folder wraps
+                       back to the far left and pins one --reveal lower (staircase) */
+                    top: calc(var(--stack-top) + var(--row) * var(--reveal));
+                    /* land here when a tab anchor is clicked */
+                    scroll-margin-top: calc(var(--stack-top) + var(--row) * var(--reveal));
                     margin-top: var(--tab-h);
                     isolation: isolate;
                     transition: transform 0.34s var(--ease-out-quint);
@@ -304,9 +324,9 @@ export default async function WorkIndexPage() {
                 .kagu-folder__tab {
                     position: absolute;
                     bottom: calc(100% - 1px);
-                    left: calc(3% + (var(--i) * 74%) / (var(--n) - 1));
-                    height: var(--tab-h);
-                    max-width: 11rem;
+                    left: calc(var(--tab-x) + var(--col) * var(--tab-step));
+                    width: var(--tab-w);
+                    min-height: var(--tab-h);
                     display: flex;
                     flex-direction: column;
                     justify-content: center;
@@ -320,6 +340,15 @@ export default async function WorkIndexPage() {
                     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
                     font-family: var(--font-mono);
                     line-height: 1.05;
+                    text-decoration: none;
+                    cursor: pointer;
+                    transition:
+                        transform 0.24s var(--ease-out-quint),
+                        box-shadow 0.24s var(--ease-out-quint);
+                }
+                .kagu-folder__tab:focus-visible {
+                    outline: 2px solid var(--ft);
+                    outline-offset: 2px;
                 }
                 .kagu-folder__tab-no {
                     font-size: var(--type-xs);
@@ -454,7 +483,7 @@ export default async function WorkIndexPage() {
                 /* Browser window sizes to the screenshot's natural aspect ratio. */
                 .kagu-win {
                     width: fit-content;
-                    max-width: min(34rem, 100%);
+                    max-width: min(44rem, 100%);
                     margin: 0;
                     border-radius: clamp(10px, 1vw, 15px);
                     overflow: hidden;
@@ -506,7 +535,7 @@ export default async function WorkIndexPage() {
                     width: auto;
                     height: auto;
                     max-width: 100%;
-                    max-height: clamp(13rem, 24vh, 19rem);
+                    max-height: clamp(16rem, 32vh, 28rem);
                 }
                 /* phone mockup — container on .kagu-phone, cqw styling on __body */
                 .kagu-thumb--phone {
@@ -553,9 +582,22 @@ export default async function WorkIndexPage() {
                    stack the preview above the copy. */
                 @media (max-width: 760px) {
                     .kagu-folder {
-                        top: calc(var(--stack-top) + var(--i) * var(--reveal));
+                        /* taller rows so the two-line tabs still clear each other */
+                        --reveal: clamp(4rem, 3rem + 4vw, 5.25rem);
                     }
-                    .kagu-folder__tab { left: 5%; }
+                    /* three narrow tabs per row, labels wrap to two lines */
+                    .kagu-folder__tab {
+                        width: 31%;
+                        min-width: 0;
+                        left: calc(1.5% + var(--col) * 33.25%);
+                        padding-inline: clamp(0.5rem, 2vw, 0.85rem);
+                    }
+                    .kagu-folder__tab-name {
+                        white-space: normal;
+                        display: -webkit-box;
+                        -webkit-line-clamp: 2;
+                        -webkit-box-orient: vertical;
+                    }
                     .kagu-folder__main {
                         flex-direction: column;
                         align-items: stretch;
@@ -567,7 +609,17 @@ export default async function WorkIndexPage() {
                         order: -1;
                     }
                     .kagu-thumb--browser { justify-content: center; }
-                    .kagu-win { margin-inline: auto; }
+                    /* slimmer browser frame so it doesn't dominate the stack */
+                    .kagu-win {
+                        margin-inline: auto;
+                        max-width: min(20rem, 74%);
+                    }
+                    .kagu-win__screen img { max-height: clamp(11rem, 30vh, 16rem); }
+                }
+
+                /* anchor jumps from the tabs ease into place */
+                @media (prefers-reduced-motion: no-preference) {
+                    html { scroll-behavior: smooth; }
                 }
 
                 /* Hover only on real pointers, so touch can't get stuck in :hover. */
@@ -575,6 +627,12 @@ export default async function WorkIndexPage() {
                     .kagu-folder:hover {
                         transform: translateY(-10px);
                         z-index: 999;
+                    }
+                    .kagu-folder__tab:hover {
+                        transform: translateY(-3px);
+                        box-shadow:
+                            inset 0 1px 0 rgba(255, 255, 255, 0.22),
+                            0 -8px 18px -12px rgba(0, 0, 0, 0.6);
                     }
                     .kagu-folder__view:hover {
                         background: var(--ft);
