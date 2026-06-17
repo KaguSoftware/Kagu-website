@@ -126,7 +126,16 @@ function Thumb({ c }: { c: Case }) {
 }
 
 export default async function WorkIndexPage() {
-    const cases = await getCases();
+    let cases = await getCases();
+    if (process.env.NODE_ENV === "development" && cases.length === 0) {
+        const T = "/cases/genbuzz/ThumbnailGen.png";
+        cases = [
+            { slug: "a", client: "Maison Rivage", project: "Hospitality platform", sector: "Hospitality · Booking", year: "2025", lede: "A boutique hotel group needed one system for rooms, dining, and concierge.", url: "https://example.com", thumbnail: T, cover: { label: "Hospitality" } },
+            { slug: "b", client: "Table", project: "Restaurant OS", sector: "Restaurants · POS", year: "2025", lede: "Front-of-house and kitchen on one fast tablet flow.", url: "https://example.com", thumbnail: T, cover: { label: "Restaurants" } },
+            { slug: "c", client: "Visa Office", project: "Immigration services", sector: "Services · Immigration", year: "2026", lede: "Casework, documents, and client status in a single operator console.", url: "https://example.com", thumbnail: T, device: "mobile", cover: { label: "Services" } },
+            { slug: "d", client: "GenBuzz", project: "Proposal & document builder", sector: "SaaS · Operator tools", year: "2026", lede: "Freelancers needed proposals that look like a studio made them, fast.", url: "https://example.com", thumbnail: T, cover: { label: "SaaS" } },
+        ] as unknown as typeof cases;
+    }
     const n = cases.length;
 
     return (
