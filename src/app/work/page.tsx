@@ -1,10 +1,12 @@
 /*
   /work — work index, as a stack of file folders.
-  Each case is a physical folder that pins on scroll (pure CSS position: sticky)
-  and piles up so every tab stays readable. The pile runs darkest (top) → lightest
-  (bottom) through the brand sky accent; ink is picked per folder by WCAG contrast.
-  Each folder holds the case copy beside a framed thumbnail (browser window for
-  desktop captures, phone mockup for mobile ones) and a "View file" link.
+  Each case is a physical folder that pins on scroll (pure CSS position: sticky).
+  Every folder slams up to the SAME top, so the tabs line up on one level (a row
+  of file tabs you flip through) rather than staircasing down. The pile runs
+  darkest (top) → lightest (bottom) through the brand sky accent; ink is picked
+  per folder by WCAG contrast. Each folder holds the case copy beside a framed
+  thumbnail (browser window for desktop captures, phone mockup for mobile) and a
+  "View file" link. On narrow screens the row can't fit, so tabs staircase.
 */
 
 import Link from "next/link";
@@ -76,15 +78,17 @@ function Thumb({ c }: { c: Case }) {
         return (
             <div className="kagu-thumb kagu-thumb--phone">
                 <div className="kagu-phone">
-                    <span className="kagu-phone__island" aria-hidden />
-                    <div className="kagu-phone__screen">
-                        <Image
-                            src={c.thumbnail}
-                            alt={alt}
-                            fill
-                            sizes="(max-width: 760px) 60vw, 240px"
-                            style={{ objectFit: "cover", objectPosition: "top center" }}
-                        />
+                    <div className="kagu-phone__body">
+                        <span className="kagu-phone__island" aria-hidden />
+                        <div className="kagu-phone__screen">
+                            <Image
+                                src={c.thumbnail}
+                                alt={alt}
+                                fill
+                                sizes="(max-width: 760px) 50vw, 200px"
+                                style={{ objectFit: "cover", objectPosition: "top center" }}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -94,7 +98,7 @@ function Thumb({ c }: { c: Case }) {
     const url = (c.url || "").replace(/^https?:\/\//, "").replace(/\/$/, "");
     return (
         <div className="kagu-thumb kagu-thumb--browser">
-            <div className="kagu-win">
+            <figure className="kagu-win">
                 <div className="kagu-win__bar" aria-hidden>
                     <span className="kagu-win__dots">
                         <i />
@@ -104,15 +108,15 @@ function Thumb({ c }: { c: Case }) {
                     <span className="kagu-win__url">{url || c.client}</span>
                 </div>
                 <div className="kagu-win__screen">
-                    <Image
+                    {/* eslint-disable-next-line @next/next/no-img-element -- frame width must follow the screenshot's natural aspect; next/image fill would force a fixed-ratio crop */}
+                    <img
                         src={c.thumbnail}
                         alt={alt}
-                        fill
-                        sizes="(max-width: 760px) 100vw, 460px"
-                        style={{ objectFit: "cover", objectPosition: "top center" }}
+                        loading="lazy"
+                        decoding="async"
                     />
                 </div>
-            </div>
+            </figure>
         </div>
     );
 }
@@ -148,16 +152,14 @@ export default async function WorkIndexPage() {
                             : LIGHT_INK;
                     const muted = rgba(ink, 0.78);
                     const no = String(i + 1).padStart(2, "0");
-                    const hasThumb = !!c.thumbnail;
                     return (
                         <article
                             key={c.slug}
                             className="kagu-folder"
-                            data-pos={String(i % 4)}
-                            data-thumb={hasThumb ? "1" : "0"}
                             style={
                                 {
                                     "--i": String(i),
+                                    "--n": String(Math.max(n, 2)),
                                     "--fl": bg,
                                     "--ft": ink,
                                     "--fm": muted,
@@ -166,8 +168,10 @@ export default async function WorkIndexPage() {
                             }
                         >
                             <span className="kagu-folder__tab">
-                                <span className="kagu-folder__tab-dot" aria-hidden />
-                                {c.sector || c.cover.label}
+                                <span className="kagu-folder__tab-no">{no}</span>
+                                <span className="kagu-folder__tab-name">
+                                    {c.sector || c.cover.label}
+                                </span>
                             </span>
                             <div className="kagu-folder__body">
                                 <span className="kagu-folder__ghost" aria-hidden>
@@ -257,12 +261,13 @@ export default async function WorkIndexPage() {
                     margin: 0 auto;
                 }
                 .kagu-folder {
-                    --stack-top: clamp(6.5rem, 5.5rem + 3vw, 8.5rem);
+                    --stack-top: clamp(7.5rem, 6rem + 3.5vw, 9.5rem);
                     --reveal: clamp(3rem, 2.6rem + 1.2vw, 3.75rem);
-                    --tab-h: clamp(2.5rem, 2.2rem + 1vw, 3rem);
+                    --tab-h: clamp(3rem, 2.6rem + 1vw, 3.6rem);
                     --joint: 16px;
                     position: sticky;
-                    top: calc(var(--stack-top) + var(--i) * var(--reveal));
+                    /* every folder pins to the same line, so the tabs share a level */
+                    top: var(--stack-top);
                     margin-top: var(--tab-h);
                     isolation: isolate;
                     transition: transform 0.34s var(--ease-out-quint);
@@ -278,13 +283,11 @@ export default async function WorkIndexPage() {
                     padding: clamp(1.75rem, 1rem + 3vw, 3.5rem);
                     display: flex;
                     flex-direction: column;
-                    /* lit top edge + seam shadow up onto the folder behind + ambient */
                     box-shadow:
                         inset 0 1px 0 rgba(255, 255, 255, 0.18),
                         0 -14px 26px -18px rgba(0, 0, 0, 0.55),
                         0 30px 64px -46px rgba(0, 0, 0, 0.7);
                 }
-                /* paper light: white sheen down from the top, grounded shade at base */
                 .kagu-folder__body::before {
                     content: "";
                     position: absolute;
@@ -296,17 +299,19 @@ export default async function WorkIndexPage() {
                         linear-gradient(0deg, rgba(0, 0, 0, 0.16), rgba(0, 0, 0, 0) 26%);
                 }
 
-                /* Folder tab — rises above the body with concave fillet joints. */
+                /* Folder tab — two narrow lines, rising above the body with
+                   concave fillet joints. Distributed across the row by index. */
                 .kagu-folder__tab {
                     position: absolute;
                     bottom: calc(100% - 1px);
-                    left: 5%;
+                    left: calc(3% + (var(--i) * 74%) / (var(--n) - 1));
                     height: var(--tab-h);
-                    max-width: min(62vw, 18rem);
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 0.6em;
-                    padding: 0 clamp(1rem, 0.6rem + 1vw, 1.7rem);
+                    max-width: 11rem;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    gap: 0.1em;
+                    padding: 0.35em clamp(0.85rem, 0.5rem + 0.8vw, 1.35rem);
                     background:
                         linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0) 70%),
                         var(--fl);
@@ -314,28 +319,20 @@ export default async function WorkIndexPage() {
                     border-radius: clamp(12px, 1vw, 18px) clamp(12px, 1vw, 18px) 0 0;
                     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
                     font-family: var(--font-mono);
+                    line-height: 1.05;
+                }
+                .kagu-folder__tab-no {
+                    font-size: var(--type-xs);
+                    letter-spacing: var(--tracking-eyebrow);
+                    opacity: 0.62;
+                }
+                .kagu-folder__tab-name {
                     font-size: var(--type-sm);
-                    letter-spacing: 0.06em;
+                    letter-spacing: 0.04em;
                     text-transform: uppercase;
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
-                }
-                /* cycle tab x so adjacent tabs in the pile never line up */
-                .kagu-folder[data-pos="1"] .kagu-folder__tab { left: 30%; }
-                .kagu-folder[data-pos="2"] .kagu-folder__tab { left: 53%; }
-                .kagu-folder[data-pos="3"] .kagu-folder__tab { left: 74%; }
-                @media (max-width: 680px) {
-                    .kagu-folder[data-pos="2"] .kagu-folder__tab { left: 38%; }
-                    .kagu-folder[data-pos="3"] .kagu-folder__tab { left: 50%; }
-                }
-                .kagu-folder__tab-dot {
-                    flex: none;
-                    width: 0.5em;
-                    height: 0.5em;
-                    border-radius: 999px;
-                    background: currentColor;
-                    opacity: 0.55;
                 }
                 .kagu-folder__tab::before,
                 .kagu-folder__tab::after {
@@ -381,7 +378,6 @@ export default async function WorkIndexPage() {
                     text-transform: uppercase;
                     opacity: 0.8;
                 }
-                /* copy beside thumbnail, both pinned to the folder's lower edge */
                 .kagu-folder__main {
                     position: relative;
                     margin-top: auto;
@@ -423,7 +419,7 @@ export default async function WorkIndexPage() {
                     display: inline-flex;
                     align-items: center;
                     gap: 0.6em;
-                    min-height: 2.75rem; /* 44px touch target */
+                    min-height: 2.75rem;
                     margin-top: var(--space-8);
                     padding: 0.6em 1.5em;
                     border: 1px solid color-mix(in oklab, var(--ft) 42%, transparent);
@@ -448,12 +444,19 @@ export default async function WorkIndexPage() {
 
                 /* ---- framed thumbnails ---- */
                 .kagu-thumb {
-                    flex: 0 0 clamp(15rem, 40%, 28rem);
+                    flex: 0 1 auto;
                     min-width: 0;
                 }
+                .kagu-thumb--browser {
+                    display: flex;
+                    justify-content: flex-end;
+                }
+                /* Browser window sizes to the screenshot's natural aspect ratio. */
                 .kagu-win {
-                    container-type: inline-size;
-                    border-radius: clamp(10px, 1vw, 16px);
+                    width: fit-content;
+                    max-width: min(34rem, 100%);
+                    margin: 0;
+                    border-radius: clamp(10px, 1vw, 15px);
                     overflow: hidden;
                     background: #0e1116;
                     box-shadow:
@@ -463,28 +466,30 @@ export default async function WorkIndexPage() {
                 .kagu-win__bar {
                     display: flex;
                     align-items: center;
-                    gap: 1.3cqw;
-                    padding: 1.5cqw 1.9cqw;
+                    gap: 0.55rem;
+                    padding: 0.6rem 0.8rem;
                 }
                 .kagu-win__dots {
                     display: flex;
-                    gap: 0.8cqw;
+                    gap: 0.36rem;
                     flex: none;
                 }
                 .kagu-win__dots i {
-                    width: 1cqw;
-                    height: 1cqw;
+                    width: 0.58rem;
+                    height: 0.58rem;
                     border-radius: 50%;
                     background: rgba(255, 255, 255, 0.24);
                 }
                 .kagu-win__url {
                     flex: 1;
-                    margin-right: 5cqw; /* balance the dots so the url reads centred */
-                    padding: 0.6cqw 1.4cqw;
-                    border-radius: 0.7cqw;
+                    min-width: 0;
+                    max-width: 20ch;
+                    margin-right: 2.2rem;
+                    padding: 0.32rem 0.7rem;
+                    border-radius: 0.4rem;
                     background: rgba(255, 255, 255, 0.07);
                     font-family: var(--font-mono);
-                    font-size: 1.6cqw;
+                    font-size: 0.72rem;
                     letter-spacing: 0.03em;
                     color: rgba(255, 255, 255, 0.55);
                     text-align: center;
@@ -493,21 +498,30 @@ export default async function WorkIndexPage() {
                     text-overflow: ellipsis;
                 }
                 .kagu-win__screen {
-                    position: relative;
-                    aspect-ratio: 16 / 10;
-                    background: #0e1116;
+                    display: block;
+                    line-height: 0;
                 }
-                /* phone mockup */
+                .kagu-win__screen img {
+                    display: block;
+                    width: auto;
+                    height: auto;
+                    max-width: 100%;
+                    max-height: clamp(13rem, 24vh, 19rem);
+                }
+                /* phone mockup — container on .kagu-phone, cqw styling on __body */
                 .kagu-thumb--phone {
                     display: flex;
                     justify-content: center;
                 }
                 .kagu-phone {
                     container-type: inline-size;
+                    width: clamp(8.5rem, 16vw, 11rem);
+                    aspect-ratio: 9 / 19.5;
+                }
+                .kagu-phone__body {
                     position: relative;
                     width: 100%;
-                    max-width: 14rem;
-                    aspect-ratio: 9 / 19.5;
+                    height: 100%;
                     background: #0e0f13;
                     border-radius: 11cqw;
                     padding: 2.6cqw;
@@ -525,17 +539,23 @@ export default async function WorkIndexPage() {
                 }
                 .kagu-phone__island {
                     position: absolute;
-                    top: 4.4cqw;
+                    top: 4.6cqw;
                     left: 50%;
                     transform: translateX(-50%);
                     width: 26%;
-                    height: 7cqw;
+                    height: 6.5cqw;
                     border-radius: 4cqw;
                     background: #0e0f13;
                     z-index: 2;
                 }
 
+                /* Narrow screens: a row of tabs can't fit, so staircase them and
+                   stack the preview above the copy. */
                 @media (max-width: 760px) {
+                    .kagu-folder {
+                        top: calc(var(--stack-top) + var(--i) * var(--reveal));
+                    }
+                    .kagu-folder__tab { left: 5%; }
                     .kagu-folder__main {
                         flex-direction: column;
                         align-items: stretch;
@@ -544,9 +564,10 @@ export default async function WorkIndexPage() {
                         flex: none;
                         width: 100%;
                         margin-top: var(--space-8);
-                        order: -1; /* preview leads on narrow screens */
+                        order: -1;
                     }
-                    .kagu-thumb--phone .kagu-phone { max-width: 12rem; }
+                    .kagu-thumb--browser { justify-content: center; }
+                    .kagu-win { margin-inline: auto; }
                 }
 
                 /* Hover only on real pointers, so touch can't get stuck in :hover. */
