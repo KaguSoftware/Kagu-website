@@ -1,15 +1,15 @@
 /*
   /work — work index, as a stack of file folders.
   Each case is a physical folder that pins on scroll (pure CSS position: sticky).
-  Every folder pins one --reveal lower than the last and its tab shifts one
-  column to the right; every third tab wraps back to the far left, so the tabs
-  descend like a switchback staircase. Clicking a tab jumps the page to that
-  folder's pinned level (anchor link + scroll-margin-top). The pile runs
-  darkest (top) → lightest (bottom)
+  Every folder pins to the SAME top, so all the tabs line up on one horizontal
+  level; they pack left→right (next to each other) by index rather than spreading
+  across the row. Clicking a tab scrolls the page to that folder's natural flow
+  position (not its stuck position) so it rises to the front of the stack. The
+  pile runs darkest (top) → lightest (bottom)
   through the brand sky accent; ink is picked per folder by WCAG contrast. Each
   folder holds the case copy beside a framed thumbnail (browser window for
   desktop captures, phone mockup for mobile) and a "View file" link. On phones
-  the tabs stay three across with two-line labels and the browser frame narrows.
+  the tabs tile across to fit with two-line labels and the browser frame narrows.
 */
 
 import Link from "next/link";
@@ -156,9 +156,6 @@ export default async function WorkIndexPage() {
                             : LIGHT_INK;
                     const muted = rgba(ink, 0.78);
                     const no = String(i + 1).padStart(2, "0");
-                    // Each folder steps one level lower; its tab shifts one
-                    // column right and wraps back to the far left every third.
-                    const col = i % 3;
                     return (
                         <article
                             key={c.slug}
@@ -168,7 +165,6 @@ export default async function WorkIndexPage() {
                                 {
                                     "--i": String(i),
                                     "--n": String(Math.max(n, 2)),
-                                    "--col": String(col),
                                     "--fl": bg,
                                     "--ft": ink,
                                     "--fm": muted,
@@ -275,19 +271,17 @@ export default async function WorkIndexPage() {
                 }
                 .kagu-folder {
                     --stack-top: clamp(7.5rem, 6rem + 3.5vw, 9.5rem);
-                    --reveal: clamp(3.25rem, 2.8rem + 1.4vw, 4rem);
                     --tab-h: clamp(3rem, 2.6rem + 1vw, 3.6rem);
                     --tab-w: clamp(7rem, 4.5rem + 9vw, 11rem);
                     --tab-step: calc(var(--tab-w) + clamp(0.4rem, 0.2rem + 0.6vw, 0.9rem));
                     --tab-x: clamp(0.4rem, 1.4vw, 1.75rem);
                     --joint: 16px;
                     position: sticky;
-                    /* switchback staircase: every folder pins one --reveal lower
-                       than the last, and its tab shifts one column right — every
-                       third tab wraps back to the far left */
-                    top: calc(var(--stack-top) + var(--i) * var(--reveal));
+                    /* every folder pins to the SAME top, so all the tabs line up on
+                       one horizontal level; they pack left→right by index */
+                    top: var(--stack-top);
                     /* land here when a tab anchor is clicked */
-                    scroll-margin-top: calc(var(--stack-top) + var(--i) * var(--reveal));
+                    scroll-margin-top: var(--stack-top);
                     margin-top: var(--tab-h);
                     isolation: isolate;
                     transition: transform 0.34s var(--ease-out-quint);
@@ -324,7 +318,7 @@ export default async function WorkIndexPage() {
                 .kagu-folder__tab {
                     position: absolute;
                     bottom: calc(100% - 1px);
-                    left: calc(var(--tab-x) + var(--col) * var(--tab-step));
+                    left: calc(var(--tab-x) + var(--i) * var(--tab-step));
                     width: var(--tab-w);
                     min-height: var(--tab-h);
                     display: flex;
@@ -581,18 +575,19 @@ export default async function WorkIndexPage() {
                 /* Narrow screens: a row of tabs can't fit, so staircase them and
                    stack the preview above the copy. */
                 @media (max-width: 760px) {
-                    .kagu-folder {
-                        /* a touch more step so the two-line tabs read as stairs */
-                        --reveal: clamp(3.75rem, 3rem + 4vw, 5rem);
-                    }
-                    /* three narrow columns, labels wrap to two lines */
+                    /* tabs share one level here too — tile them across to fit,
+                       labels wrap to two lines */
                     .kagu-folder__tab {
-                        width: 31%;
+                        width: calc(97% / var(--n) - 0.35rem);
                         min-width: 0;
-                        left: calc(1.5% + var(--col) * 33.25%);
-                        padding-inline: clamp(0.5rem, 2vw, 0.85rem);
+                        left: calc(1.5% + var(--i) * (97% / var(--n)));
+                        padding-inline: clamp(0.3rem, 1.4vw, 0.7rem);
+                        gap: 0.05em;
                     }
+                    .kagu-folder__tab-no { font-size: 0.6rem; }
                     .kagu-folder__tab-name {
+                        font-size: clamp(0.58rem, 2.7vw, 0.78rem);
+                        letter-spacing: 0.01em;
                         white-space: normal;
                         display: -webkit-box;
                         -webkit-line-clamp: 2;
