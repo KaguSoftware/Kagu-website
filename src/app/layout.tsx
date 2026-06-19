@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { Public_Sans, Space_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 import { SmoothScrollProvider } from "@/components/providers/SmoothScrollProvider";
@@ -53,6 +54,7 @@ export default function RootLayout({
         <Suspense fallback={null}>
           <NavigationEvents />
         </Suspense>
+        <Analytics />
       </body>
     </html>
   );
