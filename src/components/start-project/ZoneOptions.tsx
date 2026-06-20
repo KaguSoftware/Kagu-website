@@ -286,7 +286,7 @@ function BrandingHero({ on, onToggle }: { on: boolean; onToggle: () => void }) {
       className="brand-hero"
       data-on={on ? "true" : "false"}
     >
-      {/* Animated gradient border layer */}
+      {/* Gradient border layer */}
       <span aria-hidden className="brand-hero__frame" />
       {/* Shimmer sweep */}
       <span aria-hidden className="brand-hero__shimmer" />
@@ -339,26 +339,21 @@ function BrandingHero({ on, onToggle }: { on: boolean; onToggle: () => void }) {
           inset: 0;
           border-radius: 16px;
           padding: 2px;
-          background: conic-gradient(
-            from 0deg,
-            #1f8fe0, #7c5cff, #2dd4bf, #e8a33d, #e25c7a, #1f8fe0
+          background: linear-gradient(
+            100deg,
+            #1f8fe0, #7c5cff, #2dd4bf, #e8a33d, #e25c7a
           );
-          background-size: 200% 200%;
           -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
           -webkit-mask-composite: xor;
           mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
           mask-composite: exclude;
-          animation: brand-spin 6s linear infinite;
-          opacity: 0.9;
+          opacity: 0.85;
           z-index: 1;
+          transition: opacity var(--dur-quick) var(--ease-out-quint), padding var(--dur-quick) var(--ease-out-quint);
         }
         .brand-hero[data-on="true"] .brand-hero__frame {
           padding: 2.5px;
           opacity: 1;
-          animation-duration: 3.5s;
-        }
-        @keyframes brand-spin {
-          to { transform: rotate(360deg); }
         }
 
         .brand-hero__inner {
@@ -413,7 +408,6 @@ function BrandingHero({ on, onToggle }: { on: boolean; onToggle: () => void }) {
           height: 56px;
           border-radius: 999px;
           background: conic-gradient(#1f8fe0, #7c5cff, #2dd4bf, #e8a33d, #e25c7a, #1f8fe0);
-          animation: brand-spin 7s linear infinite reverse;
           box-shadow: 0 0 0 1px color-mix(in oklab, var(--ink) 12%, transparent),
                       0 8px 26px -8px color-mix(in oklab, #7c5cff 70%, transparent);
         }
@@ -424,7 +418,6 @@ function BrandingHero({ on, onToggle }: { on: boolean; onToggle: () => void }) {
           background: color-mix(in oklab, var(--mint-pale) 80%, #000);
           box-shadow: inset 0 0 12px -2px rgba(0,0,0,0.6);
         }
-        .brand-hero[data-on="true"] .brand-hero__orb { animation-duration: 4s; }
 
         .brand-hero__body {
           display: flex;
@@ -501,8 +494,6 @@ function BrandingHero({ on, onToggle }: { on: boolean; onToggle: () => void }) {
         }
 
         @media (prefers-reduced-motion: reduce) {
-          .brand-hero__frame,
-          .brand-hero__orb,
           .brand-hero__shimmer { animation: none; }
           .brand-hero:hover { transform: none; }
         }

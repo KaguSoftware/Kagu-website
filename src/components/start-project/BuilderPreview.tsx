@@ -36,6 +36,61 @@ import {
 const CHROME_FG = "var(--slate-ink)";
 const HAIRLINE = "var(--spv-hairline)";
 
+/* ------------------------------------------------------------------ */
+/* Adaptive page tint — the preview page background is a shade of the  */
+/* primary accent: a very light wash in light mode, a deep shade in    */
+/* dark mode. Colors that are already near-white or near-black get     */
+/* nudged the other way so the page never washes out or goes pure.     */
+/* ------------------------------------------------------------------ */
+
+function hexToRgb(hex: string): [number, number, number] {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex);
+  if (!m) return [31, 143, 224]; // fall back to default sky
+  const n = parseInt(m[1], 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+  const c = (v: number) =>
+    Math.max(0, Math.min(255, Math.round(v)))
+      .toString(16)
+      .padStart(2, "0");
+  return `#${c(r)}${c(g)}${c(b)}`;
+}
+
+/** Perceived lightness, 0 (black) – 1 (white). */
+function luminance([r, g, b]: [number, number, number]): number {
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+}
+
+/** Mix a color toward white (amt>0) or black (amt<0) by a 0–1 fraction. */
+function shade(rgb: [number, number, number], amt: number): string {
+  const target = amt >= 0 ? 255 : 0;
+  const f = Math.abs(amt);
+  return rgbToHex(
+    rgb[0] + (target - rgb[0]) * f,
+    rgb[1] + (target - rgb[1]) * f,
+    rgb[2] + (target - rgb[2]) * f
+  );
+}
+
+/** { light, dark } page backgrounds derived from the primary accent hex. */
+function pageTints(hex: string): { light: string; dark: string } {
+  const rgb = hexToRgb(hex);
+  const l = luminance(rgb);
+
+  // LIGHT MODE: a very light wash of the color.
+  // If the color is already very light, it can't get meaningfully lighter —
+  // pull it slightly *down* toward a soft grey instead so the page reads.
+  const light = l > 0.82 ? shade(rgb, -0.12) : shade(rgb, 0.9);
+
+  // DARK MODE: a deep shade of the color.
+  // If the color is already very dark, lift it a touch so it isn't pure black.
+  const dark = l < 0.16 ? shade(rgb, 0.16) : shade(rgb, -0.86);
+
+  return { light, dark };
+}
+
 /** One zone of the preview page. Gradient state swaps fill + stub color. */
 function Zone({
   gradient,
@@ -565,6 +620,7 @@ export function BuilderPreview({
   const reduced = useReducedMotion() ?? false;
   const type = getWebsiteType(typeId);
   const active = featuresForType(typeId).filter((f) => selected.has(f.id));
+  const tints = pageTints(accent);
 
   const navIcons: string[] = [];
   const badges: string[] = [];
@@ -600,13 +656,15 @@ export function BuilderPreview({
         borderRadius: 8,
         boxShadow:
           "0 1px 0 color-mix(in oklab, var(--spv-accent-2) 22%, transparent), 0 18px 40px -24px color-mix(in oklab, var(--spv-accent) 45%, transparent)",
-        background: "var(--mint-pale)",
+        background: theme === "light" ? tints.light : tints.dark,
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
         ["--spv-accent" as string]: accent,
         ["--spv-accent-2" as string]: accent2,
         ["--spv-accent-3" as string]: accent3,
+        ["--spv-page-light" as string]: tints.light,
+        ["--spv-page-dark" as string]: tints.dark,
       }}
       aria-label="Live preview of your package"
     >
@@ -732,18 +790,21 @@ export function BuilderPreview({
 
       <style>{`
         .spv-theme-dark {
-          --spv-page: transparent;
+          /* Page = a deep shade of the primary accent. */
+          --spv-page: var(--spv-page-dark);
           --spv-stub: color-mix(in oklab, var(--slate-ink) 26%, transparent);
           /* Hairlines & borders pick up the primary brand color. */
           --spv-hairline: color-mix(in oklab, var(--spv-accent) 26%, color-mix(in oklab, var(--neutral) 70%, transparent));
-          --spv-card: color-mix(in oklab, var(--mint-soft) 60%, transparent);
+          /* Cards lift slightly off the tinted page. */
+          --spv-card: color-mix(in oklab, #fff 7%, var(--spv-page-dark));
           --spv-muted: var(--slate-ink);
         }
         .spv-theme-light {
-          --spv-page: #eef0ec;
+          /* Page = a very light wash of the primary accent. */
+          --spv-page: var(--spv-page-light);
           --spv-stub: rgba(24, 28, 36, 0.22);
           --spv-hairline: color-mix(in oklab, var(--spv-accent) 24%, rgba(24, 28, 36, 0.14));
-          --spv-card: rgba(255, 255, 255, 0.8);
+          --spv-card: color-mix(in oklab, #fff 70%, var(--spv-page-light));
           --spv-muted: rgba(24, 28, 36, 0.6);
         }
         .spv-gradient {
