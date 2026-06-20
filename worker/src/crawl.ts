@@ -1,5 +1,6 @@
-import { chromium, type Browser, type Page } from "playwright";
+import { type Page } from "playwright";
 import { config } from "./config.js";
+import { launchStealth } from "./browser.js";
 import type { RawLead } from "./types.js";
 
 /*
@@ -24,15 +25,8 @@ export async function crawlMaps(
 ): Promise<RawLead[]> {
   if (config.mockMode) return mockListings(category, district);
 
-  const browser: Browser = await chromium.launch({ headless: true });
+  const { browser, context } = await launchStealth();
   try {
-    const context = await browser.newContext({
-      locale: "en-US",
-      viewport: { width: 1366, height: 900 },
-      userAgent:
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " +
-        "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-    });
     const page = await context.newPage();
 
     const query = `${category} ${district} Istanbul`;

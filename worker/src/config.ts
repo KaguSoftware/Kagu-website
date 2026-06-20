@@ -23,6 +23,14 @@ export const config = {
   mockMode: process.env.MOCK_MODE === "1",
   runOnce: process.env.RUN_ONCE === "1",
 
+  // --- Anti-bot / stealth (worker/src/browser.ts) ---
+  // Headless is harder to disguise than a real window. HEADFUL=1 runs headed
+  // (the strongest tell-remover) at the cost of a visible browser window.
+  headless: process.env.HEADFUL !== "1",
+  // Which Chromium build to drive. "chrome" uses the real desktop install
+  // (best fingerprint); set BROWSER_CHANNEL="" to force bundled Chromium.
+  browserChannel: process.env.BROWSER_CHANNEL ?? "chrome",
+
   // Optional — drafting is skipped (with a warning) when unset, the panel
   // works fine without drafts.
   groqApiKey: process.env.GROQ_API_KEY ?? "",
