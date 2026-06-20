@@ -264,9 +264,9 @@ export function TeamRoster({
     if (next) selectAndScroll(next);
   };
 
-  // Max 3 members per row — overflow starts a new centered row beneath.
+  // Max 4 members per row — overflow starts a new centered row beneath.
   const rows: RosterMember[][] = [];
-  for (let i = 0; i < members.length; i += 3) rows.push(members.slice(i, i + 3));
+  for (let i = 0; i < members.length; i += 4) rows.push(members.slice(i, i + 4));
 
   return (
     <>
@@ -301,7 +301,7 @@ export function TeamRoster({
           gap: clamp(var(--space-8), 5vw, var(--space-16));
         }
         /*
-          Scattered composition: up to 3 members per row, rows drifting
+          Scattered composition: up to 4 members per row, rows drifting
           left / right alternately, each member dropped to a different
           baseline. The offsets are plain margins (not transforms), so the
           hover-bio still reflows siblings and deep-link scroll still
@@ -334,12 +334,18 @@ export function TeamRoster({
           .kagu-roster-row:nth-child(odd) .kagu-profile:nth-child(3) {
             margin-top: clamp(16px, 3vw, 48px);
           }
+          .kagu-roster-row:nth-child(odd) .kagu-profile:nth-child(4) {
+            margin-top: clamp(48px, 8vw, 120px);
+          }
           /* …mirrored rising diagonal on even rows. */
           .kagu-roster-row:nth-child(even) .kagu-profile:nth-child(1) {
             margin-top: clamp(32px, 6vw, 88px);
           }
           .kagu-roster-row:nth-child(even) .kagu-profile:nth-child(3) {
             margin-top: clamp(48px, 8vw, 120px);
+          }
+          .kagu-roster-row:nth-child(even) .kagu-profile:nth-child(4) {
+            margin-top: clamp(16px, 3vw, 48px);
           }
         }
         .kagu-profile { flex: 0 0 auto; }
