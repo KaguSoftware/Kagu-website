@@ -12,10 +12,17 @@ import { isValidHex, type CustomPalette } from "./catalog";
 
 type SlotKey = keyof CustomPalette;
 
-const SLOTS: { key: SlotKey; label: string }[] = [
-  { key: "primary", label: "Primary" },
-  { key: "accent2", label: "Accent" },
-  { key: "accent3", label: "Accent 2" },
+const SLOTS: { key: SlotKey; label: string; hint: string }[] = [
+  { key: "primary", label: "Primary", hint: "Your main brand color — sets the tone." },
+  { key: "accent2", label: "Accent", hint: "Calls to action — buttons and highlights." },
+  { key: "accent3", label: "Accent 2", hint: "Supporting pops — tags, charts, details." },
+];
+
+/* A few tasteful starting points so a blank picker never feels intimidating. */
+const SUGGESTIONS = [
+  "#1f8fe0", "#7c5cff", "#2dd4bf", "#e8a33d", "#e25c7a",
+  "#34d399", "#f472b6", "#f59e0b", "#60a5fa", "#a78bfa",
+  "#ef4444", "#14b8a6", "#eef1f5", "#94a3b8", "#0f172a",
 ];
 
 /* ---- HSV <-> hex helpers (h: 0-360, s/v: 0-1) ---- */
@@ -158,6 +165,14 @@ export function CustomColorPicker({
     // invalid → drop the draft; render falls back to `current`
   };
 
+  const applyHex = (hexRaw: string) => {
+    const hex = hexRaw.toLowerCase();
+    setEdit({ hex, hsv: hexToHsv(hex) });
+    setEditingHex(false);
+    onChange({ ...value, [slot]: hex });
+  };
+
+  const activeSlot = SLOTS.find((s) => s.key === slot)!;
   const hueHex = hsvToHex(hsv.h, 1, 1);
 
   return (
@@ -169,12 +184,44 @@ export function CustomColorPicker({
       }}
       aria-disabled={disabled}
     >
-      {/* Slot tabs */}
+      {/* Combined palette preview — the three colors as a set */}
+      <div
+        className="flex items-stretch"
+        style={{
+          height: 44,
+          borderRadius: 8,
+          overflow: "hidden",
+          border: "1px solid var(--neutral)",
+          marginBottom: "var(--space-4)",
+        }}
+        aria-hidden
+      >
+        {SLOTS.map(({ key }) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setSlot(key)}
+            tabIndex={-1}
+            style={{
+              flex: key === "primary" ? 1.6 : 1,
+              background: value[key],
+              border: "none",
+              cursor: "pointer",
+              outline:
+                slot === key ? "2px solid var(--ink)" : "2px solid transparent",
+              outlineOffset: -2,
+              transition: "flex var(--dur-quick) var(--ease-out-quint)",
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Slot tabs — pick which color you're editing */}
       <div
         role="radiogroup"
         aria-label="Color slot"
         className="flex flex-wrap items-center gap-2"
-        style={{ marginBottom: "var(--space-4)" }}
+        style={{ marginBottom: "var(--space-3)" }}
       >
         {SLOTS.map(({ key, label }) => {
           const on = slot === key;
@@ -184,15 +231,17 @@ export function CustomColorPicker({
               type="button"
               role="radio"
               aria-checked={on}
+              aria-label={label}
               data-cursor="view"
               onClick={() => setSlot(key)}
               className="inline-flex items-center gap-2"
               style={{
-                padding: "5px 12px",
+                padding: "6px 12px",
+                borderRadius: 999,
                 border: "1px solid",
                 borderColor: on ? "var(--mint-deep)" : "var(--neutral)",
                 background: on
-                  ? "color-mix(in oklab, var(--mint-deep) 10%, transparent)"
+                  ? "color-mix(in oklab, var(--mint-deep) 12%, transparent)"
                   : "transparent",
                 cursor: "pointer",
                 transition:
@@ -202,11 +251,15 @@ export function CustomColorPicker({
               <span
                 aria-hidden
                 style={{
-                  width: 12,
-                  height: 12,
+                  width: 14,
+                  height: 14,
                   borderRadius: 999,
                   background: value[key],
                   border: "1px solid var(--neutral)",
+                  boxShadow: on
+                    ? "0 0 0 2px color-mix(in oklab, var(--mint-deep) 35%, transparent)"
+                    : "none",
+                  transition: "box-shadow var(--dur-quick) var(--ease-out-quint)",
                 }}
               />
               <span
@@ -224,15 +277,27 @@ export function CustomColorPicker({
         })}
       </div>
 
+      {/* Active-slot hint */}
+      <p
+        style={{
+          fontSize: "var(--type-xs)",
+          color: "var(--slate-ink)",
+          marginBottom: "var(--space-4)",
+          lineHeight: 1.5,
+        }}
+      >
+        {activeSlot.hint}
+      </p>
+
       {/* Saturation / value square */}
       <div
         onPointerDown={onSvDown}
         style={{
           position: "relative",
           width: "100%",
-          maxWidth: 280,
-          height: 150,
-          borderRadius: 6,
+          maxWidth: 300,
+          height: 164,
+          borderRadius: 8,
           border: "1px solid var(--neutral)",
           cursor: disabled ? "default" : "crosshair",
           touchAction: "none",
@@ -251,12 +316,12 @@ export function CustomColorPicker({
             position: "absolute",
             left: `${hsv.s * 100}%`,
             top: `${(1 - hsv.v) * 100}%`,
-            width: 14,
-            height: 14,
+            width: 18,
+            height: 18,
             borderRadius: 999,
             transform: "translate(-50%, -50%)",
-            border: "2px solid #fff",
-            boxShadow: "0 0 0 1px rgba(0,0,0,0.4)",
+            border: "3px solid #fff",
+            boxShadow: "0 0 0 1px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.35)",
             background: current,
             pointerEvents: "none",
           }}
@@ -269,8 +334,8 @@ export function CustomColorPicker({
         style={{
           position: "relative",
           width: "100%",
-          maxWidth: 280,
-          height: 14,
+          maxWidth: 300,
+          height: 16,
           marginTop: "var(--space-3)",
           borderRadius: 999,
           border: "1px solid var(--neutral)",
@@ -291,12 +356,12 @@ export function CustomColorPicker({
             position: "absolute",
             left: `${(hsv.h / 360) * 100}%`,
             top: "50%",
-            width: 14,
-            height: 14,
+            width: 20,
+            height: 20,
             borderRadius: 999,
             transform: "translate(-50%, -50%)",
-            border: "2px solid #fff",
-            boxShadow: "0 0 0 1px rgba(0,0,0,0.4)",
+            border: "3px solid #fff",
+            boxShadow: "0 0 0 1px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.35)",
             background: hueHex,
             pointerEvents: "none",
           }}
@@ -351,6 +416,45 @@ export function CustomColorPicker({
             }}
           />
         </label>
+      </div>
+
+      {/* Quick starting points — one click fills the active slot */}
+      <div style={{ marginTop: "var(--space-4)" }}>
+        <span
+          className="font-mono block"
+          style={{ ...LABEL_STYLE, marginBottom: "var(--space-2)" }}
+        >
+          Or start from
+        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          {SUGGESTIONS.map((hex) => {
+            const on = current.toLowerCase() === hex.toLowerCase();
+            return (
+              <button
+                key={hex}
+                type="button"
+                aria-label={`Use ${hex}`}
+                title={hex}
+                data-cursor="view"
+                onClick={() => applyHex(hex)}
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: 999,
+                  background: hex,
+                  border: "2px solid",
+                  borderColor: on ? "var(--ink)" : "transparent",
+                  outline: "1px solid var(--neutral)",
+                  outlineOffset: 1,
+                  cursor: "pointer",
+                  transform: on ? "scale(1.14)" : "scale(1)",
+                  transition:
+                    "transform var(--dur-quick) var(--ease-out-quint), border-color var(--dur-quick) var(--ease-out-quint)",
+                }}
+              />
+            );
+          })}
+        </div>
       </div>
     </div>
   );

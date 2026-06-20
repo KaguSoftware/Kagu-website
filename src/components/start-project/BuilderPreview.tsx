@@ -122,7 +122,10 @@ function NavLogo() {
       w={20}
       h={20}
       r={5}
-      style={{ background: "color-mix(in oklab, var(--spv-accent) 75%, transparent)" }}
+      style={{
+        background:
+          "linear-gradient(135deg, var(--spv-accent), var(--spv-accent-2))",
+      }}
     />
   );
 }
@@ -236,7 +239,7 @@ function HeroBody({ variant, gradient }: { variant: string; gradient: boolean })
         marginTop: 8,
         background: gradient
           ? "rgba(238, 241, 245, 0.9)"
-          : "color-mix(in oklab, var(--spv-accent) 80%, transparent)",
+          : "color-mix(in oklab, var(--spv-accent-2) 85%, transparent)",
       }}
     />
   );
@@ -342,7 +345,7 @@ function FooterBody({ variant }: { variant: string }) {
             w={70}
             h={22}
             r={3}
-            style={{ background: "color-mix(in oklab, var(--spv-accent) 80%, transparent)" }}
+            style={{ background: "color-mix(in oklab, var(--spv-accent-2) 85%, transparent)" }}
           />
         </div>
         <div

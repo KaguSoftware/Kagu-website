@@ -138,7 +138,7 @@ function EcommerceBody() {
           <Stub h={44} r={3} style={{ width: "100%" }} />
           <Stub w="80%" h={6} />
           <Stub w="45%" h={6} />
-          <Stub w="30%" h={7} style={{ background: "color-mix(in oklab, var(--spv-accent) 65%, transparent)" }} />
+          <Stub w="30%" h={7} style={{ background: "color-mix(in oklab, var(--spv-accent-3) 75%, transparent)" }} />
         </Card>
       ))}
     </div>
@@ -170,7 +170,7 @@ function ServiceBody() {
         }}
       >
         <Stub w="38%" h={7} />
-        <Stub w={56} h={16} r={8} style={{ background: "color-mix(in oklab, var(--spv-accent) 80%, transparent)" }} />
+        <Stub w={56} h={16} r={8} style={{ background: "color-mix(in oklab, var(--spv-accent-2) 85%, transparent)" }} />
       </div>
     </div>
   );
@@ -206,7 +206,7 @@ function RestaurantBody() {
         }}
       >
         <Stub w="32%" h={7} />
-        <Stub w={64} h={16} r={8} style={{ background: "color-mix(in oklab, var(--spv-accent) 80%, transparent)" }} />
+        <Stub w={64} h={16} r={8} style={{ background: "color-mix(in oklab, var(--spv-accent-2) 85%, transparent)" }} />
       </div>
     </div>
   );
@@ -250,7 +250,7 @@ function SaasBody() {
           paddingRight: 10,
         }}
       >
-        <Stub w={16} h={16} r={4} style={{ background: "color-mix(in oklab, var(--spv-accent) 70%, transparent)" }} />
+        <Stub w={16} h={16} r={4} style={{ background: "linear-gradient(135deg, var(--spv-accent), var(--spv-accent-2))" }} />
         {[0, 1, 2, 3].map((i) => (
           <Stub key={i} w={28} h={5} />
         ))}
@@ -276,7 +276,7 @@ function SaasBody() {
         </div>
         <div style={{ display: "flex", alignItems: "flex-end", gap: 5, height: 52, padding: "0 4px" }}>
           {[34, 58, 42, 70, 50, 82, 64, 90, 72, 56, 78, 88].map((h, i) => (
-            <Stub key={i} grow h={`${h}%`} r={2} style={{ background: "color-mix(in oklab, var(--spv-accent) 45%, transparent)" }} />
+            <Stub key={i} grow h={`${h}%`} r={2} style={{ background: `color-mix(in oklab, var(--spv-accent${i % 2 ? "-3" : ""}) 55%, transparent)` }} />
           ))}
         </div>
       </div>
@@ -347,8 +347,10 @@ export function BookingSection() {
               borderRadius: 2,
               background:
                 i === 9
-                  ? "var(--spv-accent)"
-                  : "color-mix(in oklab, var(--spv-stub) 55%, transparent)",
+                  ? "var(--spv-accent-2)"
+                  : i === 4
+                    ? "color-mix(in oklab, var(--spv-accent-3) 45%, transparent)"
+                    : "color-mix(in oklab, var(--spv-stub) 55%, transparent)",
             }}
           />
         ))}
@@ -380,7 +382,7 @@ export function AnalyticsSection() {
             style={{
               flex: 1,
               borderRadius: 2,
-              background: "color-mix(in oklab, var(--spv-accent) 55%, transparent)",
+              background: `color-mix(in oklab, var(--spv-accent${i % 2 ? "-3" : ""}) 60%, transparent)`,
               height: `${h}%`,
               animationDelay: `${i * 80}ms`,
             }}
