@@ -166,7 +166,9 @@ function ServiceBody() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          background: "color-mix(in oklab, var(--spv-accent) 22%, transparent)",
+          background:
+            "linear-gradient(90deg, color-mix(in oklab, var(--spv-accent) 24%, transparent), color-mix(in oklab, var(--spv-accent-3) 20%, transparent))",
+          borderLeft: "3px solid color-mix(in oklab, var(--spv-accent-2) 70%, transparent)",
         }}
       >
         <Stub w="38%" h={7} />
@@ -187,7 +189,8 @@ function RestaurantBody() {
               aria-hidden
               style={{
                 flex: 1,
-                borderBottom: "1px dotted var(--spv-stub)",
+                borderBottom:
+                  "1px dotted color-mix(in oklab, var(--spv-accent-3) 50%, var(--spv-stub))",
                 transform: "translateY(2px)",
               }}
             />
@@ -202,7 +205,9 @@ function RestaurantBody() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          background: "color-mix(in oklab, var(--spv-accent) 22%, transparent)",
+          background:
+            "linear-gradient(90deg, color-mix(in oklab, var(--spv-accent) 24%, transparent), color-mix(in oklab, var(--spv-accent-3) 20%, transparent))",
+          borderLeft: "3px solid color-mix(in oklab, var(--spv-accent-2) 70%, transparent)",
         }}
       >
         <Stub w="32%" h={7} />

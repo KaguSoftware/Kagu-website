@@ -203,7 +203,8 @@ function NavbarBody({
             borderRadius: 999,
             border: `1px solid ${HAIRLINE}`,
             background: "var(--spv-card)",
-            boxShadow: "0 8px 20px -10px rgba(0, 0, 0, 0.55)",
+            boxShadow:
+              "0 8px 22px -10px color-mix(in oklab, var(--spv-accent) 55%, rgba(0,0,0,0.55))",
           }}
         >
           <NavLogo />
@@ -317,7 +318,10 @@ function FooterBody({ variant }: { variant: string }) {
           w={16}
           h={16}
           r={4}
-          style={{ background: "color-mix(in oklab, var(--spv-accent) 70%, transparent)" }}
+          style={{
+            background:
+              "linear-gradient(135deg, var(--spv-accent), var(--spv-accent-2))",
+          }}
         />
         <span style={{ flex: 1 }} />
         <Stub w={28} h={4} />
@@ -591,8 +595,11 @@ export function BuilderPreview({
         ambient && !reduced ? "spv-ambient" : "",
       ].join(" ")}
       style={{
-        border: "1px solid var(--neutral)",
+        border:
+          "1px solid color-mix(in oklab, var(--spv-accent) 30%, var(--neutral))",
         borderRadius: 8,
+        boxShadow:
+          "0 1px 0 color-mix(in oklab, var(--spv-accent-2) 22%, transparent), 0 18px 40px -24px color-mix(in oklab, var(--spv-accent) 45%, transparent)",
         background: "var(--mint-pale)",
         overflow: "hidden",
         display: "flex",
@@ -614,18 +621,20 @@ export function BuilderPreview({
         }}
       >
         <div style={{ display: "flex", gap: 6 }}>
-          {[0, 1, 2].map((i) => (
-            <span
-              key={i}
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: 4,
-                background: `color-mix(in oklab, ${CHROME_FG} 35%, transparent)`,
-                display: "inline-block",
-              }}
-            />
-          ))}
+          {["var(--spv-accent)", "var(--spv-accent-2)", "var(--spv-accent-3)"].map(
+            (c, i) => (
+              <span
+                key={i}
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  background: `color-mix(in oklab, ${c} 80%, ${CHROME_FG})`,
+                  display: "inline-block",
+                }}
+              />
+            )
+          )}
         </div>
         <div
           style={{
@@ -648,6 +657,8 @@ export function BuilderPreview({
                 padding: "5px 14px",
                 borderRadius: 4,
                 background: `color-mix(in oklab, ${CHROME_FG} 12%, transparent)`,
+                border:
+                  "1px solid color-mix(in oklab, var(--spv-accent) 30%, transparent)",
                 fontFamily: "var(--font-mono)",
                 fontSize: 12,
                 letterSpacing: "0.04em",
@@ -672,6 +683,8 @@ export function BuilderPreview({
                   padding: "3px 8px",
                   borderRadius: 999,
                   border: "1px solid var(--spv-accent-3)",
+                  background:
+                    "color-mix(in oklab, var(--spv-accent-3) 14%, transparent)",
                   fontFamily: "var(--font-mono)",
                   fontSize: 10,
                   letterSpacing: "0.1em",
@@ -708,7 +721,8 @@ export function BuilderPreview({
               position: "absolute",
               inset: 0,
               clipPath: "inset(0 0 0 50%)",
-              borderLeft: "1px solid var(--neutral)",
+              borderLeft:
+                "1px solid color-mix(in oklab, var(--spv-accent-2) 55%, var(--neutral))",
             }}
           >
             <PreviewPage {...pageProps} />
@@ -720,19 +734,20 @@ export function BuilderPreview({
         .spv-theme-dark {
           --spv-page: transparent;
           --spv-stub: color-mix(in oklab, var(--slate-ink) 26%, transparent);
-          --spv-hairline: color-mix(in oklab, var(--neutral) 70%, transparent);
+          /* Hairlines & borders pick up the primary brand color. */
+          --spv-hairline: color-mix(in oklab, var(--spv-accent) 26%, color-mix(in oklab, var(--neutral) 70%, transparent));
           --spv-card: color-mix(in oklab, var(--mint-soft) 60%, transparent);
           --spv-muted: var(--slate-ink);
         }
         .spv-theme-light {
           --spv-page: #eef0ec;
           --spv-stub: rgba(24, 28, 36, 0.22);
-          --spv-hairline: rgba(24, 28, 36, 0.14);
+          --spv-hairline: color-mix(in oklab, var(--spv-accent) 24%, rgba(24, 28, 36, 0.14));
           --spv-card: rgba(255, 255, 255, 0.8);
           --spv-muted: rgba(24, 28, 36, 0.6);
         }
         .spv-gradient {
-          background: linear-gradient(120deg, #1f8fe0, #7c5cff, #2dd4bf, #1f8fe0);
+          background: linear-gradient(120deg, var(--spv-accent), var(--spv-accent-2), var(--spv-accent-3), var(--spv-accent));
           background-size: 300% 300%;
           animation: spv-gradient-pan 9s linear infinite;
         }
@@ -741,7 +756,7 @@ export function BuilderPreview({
           100% { background-position: 300% 50%; }
         }
         .spv-cms .spv-cms-target {
-          outline: 1px dashed var(--spv-accent);
+          outline: 1px dashed var(--spv-accent-2);
           outline-offset: 3px;
           border-radius: 4px;
         }
@@ -765,7 +780,7 @@ export function BuilderPreview({
           position: absolute;
           inset: -3px;
           border-radius: 999px;
-          border: 1px solid var(--spv-accent);
+          border: 1px solid var(--spv-accent-2);
           animation: spv-pulse 3s ease-out infinite;
         }
         @keyframes spv-pulse {
