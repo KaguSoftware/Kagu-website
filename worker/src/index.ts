@@ -11,6 +11,7 @@ import { crawlMaps } from "./crawl.js";
 import { closeEnrichBrowser, enrichLead } from "./enrich.js";
 import { scoreLead } from "./score.js";
 import { draftMessages } from "./draft.js";
+import { researchKeywords } from "./seo.js";
 import {
   claimNextJob,
   completeJob,
@@ -19,12 +20,25 @@ import {
   markCancelled,
   updateJobProgress,
 } from "./jobs.js";
-import type { ScrapeJobRow } from "./types.js";
+import {
+  claimNextSeoJob,
+  completeSeoJob,
+  failSeoJob,
+  isSeoCancelRequested,
+  markSeoCancelled,
+  requeueOrphanedSeoJobs,
+  updateSeoJobProgress,
+} from "./seo-jobs.js";
+import type { ScrapeJobRow, SeoJobRow, SeoKeywordInsert } from "./types.js";
 
 const CANCEL_CHECK_EVERY = 3; // leads between cancellation checks
 // Progress is phase-weighted: visiting place pages (crawl) and processing
 // leads (enrich/screenshot/draft) take roughly as long per item.
 const CRAWL_SHARE = 50; // % of the bar the crawl phase owns
+// SEO jobs crawl only ~topN pages — the page-crawl loop owns the middle 80%
+// of the bar, with the SERP scrape and Groq pass as the bookends.
+const SEO_CRAWL_LO = 10;
+const SEO_CRAWL_HI = 90;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -133,6 +147,93 @@ async function processJob(job: ScrapeJobRow): Promise<void> {
 }
 
 /*
+  SEO research job: scrape the top organic results for the seed, crawl them,
+  rank keywords, and write seo_keywords back. Cooperative cancellation runs
+  through the same JobCancelled-from-progress-callback path as the Maps crawl.
+*/
+async function processSeoJob(job: SeoJobRow): Promise<void> {
+  console.log(
+    `[seo-job ${job.id}] "${job.seed}" (${job.region}/${job.language}) — researching…`
+  );
+
+  let report;
+  try {
+    report = await researchKeywords(job.seed, {
+      region: job.region,
+      language: job.language,
+      onProgress: async (done, total) => {
+        if (await isSeoCancelRequested(job.id)) throw new JobCancelled();
+        await updateSeoJobProgress(
+          job.id,
+          SEO_CRAWL_LO + (done / total) * (SEO_CRAWL_HI - SEO_CRAWL_LO)
+        );
+      },
+    });
+  } catch (err) {
+    if (err instanceof JobCancelled) {
+      console.log(`[seo-job ${job.id}] cancellation requested — stopping`);
+      await markSeoCancelled(job.id);
+      return;
+    }
+    throw err;
+  }
+
+  // Idempotent retry: clear any keywords from a previous run first, so a
+  // re-processed job replaces its results instead of stacking duplicates.
+  const { error: delError } = await db.from("seo_keywords").delete().eq("job_id", job.id);
+  if (delError) throw new Error(delError.message);
+
+  // Two row sets, mirroring the CLI report: Groq's curated recommendations
+  // (refined, carrying intent/rationale) then the raw on-page-signal ranking.
+  const rows: SeoKeywordInsert[] = [];
+  (report.refined ?? []).forEach((k, i) =>
+    rows.push({
+      job_id: job.id,
+      keyword: k.keyword,
+      score: 0,
+      frequency: null,
+      pages: null,
+      title_hits: null,
+      heading_hits: null,
+      meta_hits: null,
+      refined: true,
+      intent: k.intent,
+      rationale: k.rationale || null,
+      rank: i,
+    })
+  );
+  report.candidates.forEach((c, i) =>
+    rows.push({
+      job_id: job.id,
+      keyword: c.keyword,
+      score: c.score,
+      frequency: c.frequency,
+      pages: c.pages,
+      title_hits: c.titleHits,
+      heading_hits: c.headingHits,
+      meta_hits: c.metaHits,
+      refined: false,
+      intent: null,
+      rationale: null,
+      rank: i,
+    })
+  );
+
+  if (rows.length > 0) {
+    const { error } = await db.from("seo_keywords").insert(rows);
+    if (error) throw new Error(error.message);
+  }
+
+  await completeSeoJob(job.id, {
+    keywordsFound: (report.refined ?? report.candidates).length,
+    adsSkipped: report.adsSkipped,
+    pagesCrawled: report.pagesCrawled,
+    organic: report.organic,
+  });
+  console.log(`[seo-job ${job.id}] done — ${rows.length} keyword rows written`);
+}
+
+/*
   Re-queue jobs orphaned in "running" by a previous worker process dying
   mid-job (deploy restart, crash, reboot). Safe with a single worker —
   re-processing is idempotent (leads upsert on place_id, drafting skips
@@ -156,27 +257,49 @@ async function main(): Promise<void> {
     `Kagu leads worker starting (mock=${config.mockMode}, once=${config.runOnce}, poll=${config.pollIntervalMs}ms)`
   );
   await requeueOrphanedJobs();
+  await requeueOrphanedSeoJobs();
 
   for (;;) {
-    let job: ScrapeJobRow | null = null;
+    // Lead scrapes take priority; SEO research jobs drain when the lead queue
+    // is idle. One worker, two queues — same poll cadence.
+    let scrapeJob: ScrapeJobRow | null = null;
     try {
-      job = await claimNextJob();
+      scrapeJob = await claimNextJob();
     } catch (err) {
-      console.error("Failed to poll for jobs:", err);
+      console.error("Failed to poll for scrape jobs:", err);
     }
 
-    if (job) {
+    if (scrapeJob) {
       try {
-        await processJob(job);
+        await processJob(scrapeJob);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        console.error(`[job ${job.id}] failed:`, message);
-        await failJob(job.id, message);
+        console.error(`[job ${scrapeJob.id}] failed:`, message);
+        await failJob(scrapeJob.id, message);
       } finally {
         await closeEnrichBrowser(); // don't keep Chromium alive between jobs
       }
       if (config.runOnce) break;
       continue; // look for the next job immediately
+    }
+
+    let seoJob: SeoJobRow | null = null;
+    try {
+      seoJob = await claimNextSeoJob();
+    } catch (err) {
+      console.error("Failed to poll for SEO jobs:", err);
+    }
+
+    if (seoJob) {
+      try {
+        await processSeoJob(seoJob);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error(`[seo-job ${seoJob.id}] failed:`, message);
+        await failSeoJob(seoJob.id, message);
+      }
+      if (config.runOnce) break;
+      continue;
     }
 
     if (config.runOnce) {

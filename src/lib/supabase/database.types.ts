@@ -65,6 +65,21 @@ export type AuditFlag =
   | "slow_site"
   | "active_ig_no_website";
 
+// SEO keyword research module (supabase/seo_module.sql)
+export type SeoKeywordIntent =
+  | "informational"
+  | "commercial"
+  | "transactional"
+  | "navigational";
+
+/** One organic result the SEO worker learned from (seo_jobs.organic jsonb). */
+export type SeoOrganicResult = {
+  rank: number;
+  title: string;
+  url: string;
+  domain: string;
+};
+
 export interface Database {
   public: {
     Tables: {
@@ -619,6 +634,119 @@ export interface Database {
             columns: ["lead_id"];
             isOneToOne: false;
             referencedRelation: "leads";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      seo_jobs: {
+        Row: {
+          id: string;
+          seed: string;
+          region: string;
+          language: string;
+          status: JobStatus;
+          progress: number;
+          keywords_found: number;
+          ads_skipped: number;
+          pages_crawled: number;
+          organic: SeoOrganicResult[];
+          error: string | null;
+          requested_by: string | null;
+          started_at: string | null;
+          finished_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          seed: string;
+          region?: string;
+          language?: string;
+          status?: JobStatus;
+          progress?: number;
+          keywords_found?: number;
+          ads_skipped?: number;
+          pages_crawled?: number;
+          organic?: SeoOrganicResult[];
+          error?: string | null;
+          requested_by?: string | null;
+          started_at?: string | null;
+          finished_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          seed?: string;
+          region?: string;
+          language?: string;
+          status?: JobStatus;
+          progress?: number;
+          keywords_found?: number;
+          ads_skipped?: number;
+          pages_crawled?: number;
+          organic?: SeoOrganicResult[];
+          error?: string | null;
+          requested_by?: string | null;
+          started_at?: string | null;
+          finished_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      seo_keywords: {
+        Row: {
+          id: string;
+          job_id: string;
+          keyword: string;
+          score: number;
+          frequency: number | null;
+          pages: number | null;
+          title_hits: number | null;
+          heading_hits: number | null;
+          meta_hits: number | null;
+          refined: boolean;
+          intent: string | null;
+          rationale: string | null;
+          rank: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          job_id: string;
+          keyword: string;
+          score?: number;
+          frequency?: number | null;
+          pages?: number | null;
+          title_hits?: number | null;
+          heading_hits?: number | null;
+          meta_hits?: number | null;
+          refined?: boolean;
+          intent?: string | null;
+          rationale?: string | null;
+          rank?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          job_id?: string;
+          keyword?: string;
+          score?: number;
+          frequency?: number | null;
+          pages?: number | null;
+          title_hits?: number | null;
+          heading_hits?: number | null;
+          meta_hits?: number | null;
+          refined?: boolean;
+          intent?: string | null;
+          rationale?: string | null;
+          rank?: number;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "seo_keywords_job_id_fkey";
+            columns: ["job_id"];
+            isOneToOne: false;
+            referencedRelation: "seo_jobs";
             referencedColumns: ["id"];
           },
         ];

@@ -144,3 +144,46 @@ export const PIPELINE_STATUSES = Object.keys(
 ) as PipelineStatus[];
 
 export const LEADS_PAGE_SIZE = 50;
+
+/* ------------------------------------------------------------------------ */
+/* SEO keyword research                                                      */
+/* ------------------------------------------------------------------------ */
+
+/* Seed suggestions for the "New research" query <datalist> — free text ok. */
+export const SEO_SEED_SUGGESTIONS = [
+  "dentist istanbul",
+  "saç ekimi istanbul",
+  "diş kliniği kadıköy",
+  "web tasarım ajansı",
+  "hair transplant turkey",
+  "pilates studio istanbul",
+  "wedding photographer istanbul",
+  "real estate istanbul",
+] as const;
+
+/* Google `gl` region bias — country code → label. */
+export const SEO_REGION_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "tr", label: "Turkey (tr)" },
+  { value: "us", label: "United States (us)" },
+  { value: "gb", label: "United Kingdom (gb)" },
+  { value: "de", label: "Germany (de)" },
+  { value: "ae", label: "UAE (ae)" },
+  { value: "sa", label: "Saudi Arabia (sa)" },
+];
+
+/* Google `hl` interface language — code → label. */
+export const SEO_LANGUAGE_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "en", label: "English (en)" },
+  { value: "tr", label: "Turkish (tr)" },
+  { value: "ar", label: "Arabic (ar)" },
+  { value: "de", label: "German (de)" },
+];
+
+/* Search-intent badge styling (Groq labels keywords with these). Unknown /
+   free-text intents fall back to the neutral style. */
+export const SEO_INTENT_CLASSES: Record<string, string> = {
+  informational: "border-neutral text-slate-ink",
+  commercial: "border-mint-deep text-mint-deep",
+  transactional: "border-[#3fb27f] text-[#3fb27f]",
+  navigational: "border-[#d9a13b] text-[#d9a13b]",
+};

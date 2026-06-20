@@ -6,6 +6,9 @@ business's web presence, scores it, and writes `leads` + drafted
 `lead_messages` back to Supabase. The admin panel (`/admin/leads`) is the
 control room; **the database is the only contract between the two**.
 
+The same process also runs the **SEO keyword tool** (see below): it polls
+`seo_jobs` and writes ranked `seo_keywords`. One worker, two queues.
+
 What this is **NOT**:
 
 - Not part of the Next.js app. It is never built, bundled, or deployed with
@@ -36,6 +39,10 @@ cp .env.example .env   # then fill in the values
 | `POLL_INTERVAL_MS` | no | `15000` | Idle delay between polls for pending jobs |
 | `MOCK_MODE` | no | `0` | `1` = deterministic fake leads, no crawling/LLM |
 | `RUN_ONCE` | no | `0` | `1` = process at most one job, then exit |
+| `SEO_TOP_N` | no | `10` | SEO tool: organic results crawled per query |
+| `SEO_MAX_KEYWORDS` | no | `30` | SEO tool: keywords kept in the report |
+| `SEO_REGION` | no | `tr` | SEO tool: Google `gl` region bias (country code) |
+| `SEO_LANGUAGE` | no | `en` | SEO tool: Google `hl` interface language |
 
 Note: `tsx` does **not** load `.env` by itself — export the vars in your
 shell, use `env $(cat .env | xargs) npm start`, or point a process manager at
@@ -49,6 +56,48 @@ npm run once     # process one job and exit (cron-friendly)
 npm run mock     # MOCK_MODE + RUN_ONCE: end-to-end test without crawling
 npm run typecheck
 ```
+
+## SEO keyword tool
+
+Given a seed query it finds the keywords that got the current top-ranking
+pages to the top. It runs two ways:
+
+- **DB-driven** (like the leads pipeline): the worker also polls `seo_jobs` —
+  queued from the admin panel's **SEO** tab (`/admin/leads/seo`) — and writes
+  ranked rows to `seo_keywords`. Lead scrapes take priority; SEO jobs drain
+  when the lead queue is idle. Cancel/Retry behave exactly like scrape jobs.
+  Run `supabase/seo_module.sql` once to create the tables.
+- **CLI** (ad-hoc, writes nothing to the DB):
+
+  ```sh
+  npm run seo -- "dentist istanbul"
+  npm run seo -- --json "saç ekimi"      # machine-readable
+  npm run seo:mock -- "dentist"          # offline, deterministic, no Google/Groq
+  ```
+
+How it works (`src/seo.ts`):
+
+1. Scrapes the Google results page for the top **organic** results, **skipping
+   sponsored/ad blocks** (`#tads` / `#tadsb` / `[data-text-ad]` / "Sponsored"
+   labels) — those rank by spend, not SEO, so counting them would poison the
+   signal. The skipped count is reported.
+2. Fetches each top page (plain `fetch`, no browser) and pulls its on-page
+   text split by SEO signal: `<title>`, meta description/keywords, h1–h3
+   headings, and visible body.
+3. Ranks candidate 1–3 word keyword phrases by how the *winning* pages use
+   them: raw frequency, plus weight for appearing in titles (×5), headings
+   (×3), meta (×2), and across multiple top pages (cross-page coverage). An
+   English+Turkish stopword list trims phrase edges so results read like real
+   search queries.
+4. With `GROQ_API_KEY` set, hands the top candidates to Groq to dedupe
+   synonyms, drop navigational/brand noise, and label search intent
+   (informational / commercial / transactional / navigational). No key (or a
+   bad response) just falls back to the heuristic ranking — same graceful
+   degradation as outreach drafts.
+
+Like the Maps crawl it uses one headless Chromium with human pacing and
+**aborts on CAPTCHA** (Google's results page is heavily anti-bot; space out
+runs). Requires `npx playwright install chromium`.
 
 ### systemd unit (VPS)
 

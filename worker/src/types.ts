@@ -82,3 +82,41 @@ export interface DraftMessage {
   body: string;
   variant_label: string;
 }
+
+/* ------------------------------------------------------------------------ */
+/* SEO keyword research module (supabase/seo_module.sql)                     */
+/* ------------------------------------------------------------------------ */
+
+export interface SeoJobRow {
+  id: string;
+  seed: string;
+  region: string;
+  language: string;
+  status: JobStatus; // same lifecycle as scrape_jobs
+  progress: number;
+  keywords_found: number;
+  ads_skipped: number;
+  pages_crawled: number;
+  organic: unknown; // OrganicResult[] (jsonb)
+  error: string | null;
+  requested_by: string | null;
+  started_at: string | null;
+  finished_at: string | null;
+  created_at: string;
+}
+
+/* One row the worker inserts into seo_keywords (id/created_at are defaulted). */
+export interface SeoKeywordInsert {
+  job_id: string;
+  keyword: string;
+  score: number;
+  frequency: number | null;
+  pages: number | null;
+  title_hits: number | null;
+  heading_hits: number | null;
+  meta_hits: number | null;
+  refined: boolean;
+  intent: string | null;
+  rationale: string | null;
+  rank: number;
+}

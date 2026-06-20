@@ -8,6 +8,8 @@
     "start": "tsx src/index.ts",
     "once": "RUN_ONCE=1 tsx src/index.ts",
     "mock": "MOCK_MODE=1 RUN_ONCE=1 tsx src/index.ts",
+    "seo": "tsx src/seo-cli.ts",
+    "seo:mock": "MOCK_MODE=1 tsx src/seo-cli.ts",
     "typecheck": "tsc --noEmit",
     "deploy:mac": "rsync -a --delete --exclude worker.log ./ ~/kagu-worker/ && launchctl kickstart -k gui/$(id -u)/com.kagu.leads-worker && echo 'worker resynced + restarted'"
   },
