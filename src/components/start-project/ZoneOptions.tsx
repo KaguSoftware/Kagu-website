@@ -312,8 +312,37 @@ function BrandingHero({ on, onToggle }: { on: boolean; onToggle: () => void }) {
           {formatPrice(BRANDING_PRICE)}
         </span>
 
-        <span aria-hidden className="brand-hero__check font-mono">
-          {on ? "✓ Added" : "Add"}
+        <span
+          aria-hidden
+          className="brand-hero__check font-mono"
+          data-on={on ? "true" : "false"}
+        >
+          {/* Confetti burst on add */}
+          <span className="brand-hero__burst">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <span key={i} style={{ ["--i" as string]: i }} />
+            ))}
+          </span>
+          {/* Both labels share the same box so width/height never change */}
+          <span className="brand-hero__check-label brand-hero__check-add">
+            Add
+          </span>
+          <span className="brand-hero__check-label brand-hero__check-added">
+            <svg
+              className="brand-hero__tick"
+              viewBox="0 0 16 16"
+              width="13"
+              height="13"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M3 8.5 6.5 12 13 4.5" />
+            </svg>
+            Added
+          </span>
         </span>
       </span>
 
@@ -469,24 +498,94 @@ function BrandingHero({ on, onToggle }: { on: boolean; onToggle: () => void }) {
         }
 
         .brand-hero__check {
+          position: relative;
           flex-shrink: 0;
+          /* Fixed box — reserved for the wider "Added" label so the height
+             and width never change when the text swaps. */
+          display: inline-grid;
+          place-items: center;
+          min-width: 92px;
+          height: 34px;
           font-size: var(--type-xs);
           letter-spacing: 0.08em;
           text-transform: uppercase;
-          padding: 8px 16px;
           border-radius: 999px;
           color: var(--paper);
           background: var(--mint-deep);
           box-shadow: 0 6px 18px -6px color-mix(in oklab, var(--mint-deep) 80%, transparent);
-          transition: background var(--dur-quick) var(--ease-out-quint),
+          transition: background var(--dur-base) var(--ease-out-quint),
+                      box-shadow var(--dur-base) var(--ease-out-quint),
                       transform var(--dur-quick) var(--ease-out-quint);
         }
-        .brand-hero[data-on="true"] .brand-hero__check {
+        .brand-hero__check[data-on="true"] {
           background: #2dd4bf;
           color: #08110f;
-          box-shadow: 0 6px 18px -6px color-mix(in oklab, #2dd4bf 80%, transparent);
+          box-shadow: 0 8px 22px -6px color-mix(in oklab, #2dd4bf 85%, transparent);
+          animation: brand-pop 460ms var(--ease-out-quint);
+        }
+        @keyframes brand-pop {
+          0%   { transform: scale(1); }
+          35%  { transform: scale(1.14); }
+          60%  { transform: scale(0.97); }
+          100% { transform: scale(1); }
         }
         .brand-hero:hover .brand-hero__check { transform: scale(1.05); }
+
+        /* Both labels stacked in the same grid cell — cross-fade between them */
+        .brand-hero__check-label {
+          grid-area: 1 / 1;
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          white-space: nowrap;
+          transition: opacity 200ms var(--ease-out-quint),
+                      transform 280ms var(--ease-out-quint);
+        }
+        .brand-hero__check-add        { opacity: 1; transform: translateY(0); }
+        .brand-hero__check-added      { opacity: 0; transform: translateY(60%); }
+        .brand-hero__check[data-on="true"] .brand-hero__check-add   { opacity: 0; transform: translateY(-60%); }
+        .brand-hero__check[data-on="true"] .brand-hero__check-added { opacity: 1; transform: translateY(0); }
+
+        /* Checkmark draws itself in */
+        .brand-hero__tick path {
+          stroke-dasharray: 22;
+          stroke-dashoffset: 22;
+        }
+        .brand-hero__check[data-on="true"] .brand-hero__tick path {
+          animation: brand-tick 420ms var(--ease-out-quint) 90ms forwards;
+        }
+        @keyframes brand-tick {
+          to { stroke-dashoffset: 0; }
+        }
+
+        /* Confetti burst — six dots radiating outward, once, on add */
+        .brand-hero__burst {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          z-index: 1;
+        }
+        .brand-hero__burst span {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 5px;
+          height: 5px;
+          border-radius: 999px;
+          opacity: 0;
+        }
+        .brand-hero__burst span:nth-child(odd)  { background: var(--mint-deep); }
+        .brand-hero__burst span:nth-child(even) { background: #7c5cff; }
+        .brand-hero__burst span:nth-child(3n)   { background: #e8a33d; }
+        .brand-hero__check[data-on="true"] .brand-hero__burst span {
+          animation: brand-burst 560ms var(--ease-out-quint) forwards;
+          transform: rotate(calc(var(--i) * 60deg)) translateX(0);
+        }
+        @keyframes brand-burst {
+          0%   { opacity: 0; transform: rotate(calc(var(--i) * 60deg)) translateX(6px) scale(0.4); }
+          40%  { opacity: 1; }
+          100% { opacity: 0; transform: rotate(calc(var(--i) * 60deg)) translateX(34px) scale(1); }
+        }
 
         @media (max-width: 480px) {
           .brand-hero__check { order: 3; }
@@ -494,8 +593,12 @@ function BrandingHero({ on, onToggle }: { on: boolean; onToggle: () => void }) {
         }
 
         @media (prefers-reduced-motion: reduce) {
-          .brand-hero__shimmer { animation: none; }
+          .brand-hero__shimmer,
+          .brand-hero__check,
+          .brand-hero__burst span { animation: none; }
           .brand-hero:hover { transform: none; }
+          .brand-hero__check[data-on="true"] .brand-hero__tick path { stroke-dashoffset: 0; }
+          .brand-hero__burst span { display: none; }
         }
       `}</style>
     </button>

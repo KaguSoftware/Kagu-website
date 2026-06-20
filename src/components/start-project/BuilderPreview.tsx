@@ -39,8 +39,7 @@ const HAIRLINE = "var(--spv-hairline)";
 /* ------------------------------------------------------------------ */
 /* Adaptive page tint — the preview page background is a shade of the  */
 /* primary accent: a very light wash in light mode, a deep shade in    */
-/* dark mode. Colors that are already near-white or near-black get     */
-/* nudged the other way so the page never washes out or goes pure.     */
+/* dark mode.                                                          */
 /* ------------------------------------------------------------------ */
 
 function hexToRgb(hex: string): [number, number, number] {
@@ -58,11 +57,6 @@ function rgbToHex(r: number, g: number, b: number): string {
   return `#${c(r)}${c(g)}${c(b)}`;
 }
 
-/** Perceived lightness, 0 (black) – 1 (white). */
-function luminance([r, g, b]: [number, number, number]): number {
-  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-}
-
 /** Mix a color toward white (amt>0) or black (amt<0) by a 0–1 fraction. */
 function shade(rgb: [number, number, number], amt: number): string {
   const target = amt >= 0 ? 255 : 0;
@@ -77,17 +71,10 @@ function shade(rgb: [number, number, number], amt: number): string {
 /** { light, dark } page backgrounds derived from the primary accent hex. */
 function pageTints(hex: string): { light: string; dark: string } {
   const rgb = hexToRgb(hex);
-  const l = luminance(rgb);
-
   // LIGHT MODE: a very light wash of the color.
-  // If the color is already very light, it can't get meaningfully lighter —
-  // pull it slightly *down* toward a soft grey instead so the page reads.
-  const light = l > 0.82 ? shade(rgb, -0.12) : shade(rgb, 0.9);
-
+  const light = shade(rgb, 0.9);
   // DARK MODE: a deep shade of the color.
-  // If the color is already very dark, lift it a touch so it isn't pure black.
-  const dark = l < 0.16 ? shade(rgb, 0.16) : shade(rgb, -0.86);
-
+  const dark = shade(rgb, -0.86);
   return { light, dark };
 }
 
@@ -259,7 +246,7 @@ function NavbarBody({
             border: `1px solid ${HAIRLINE}`,
             background: "var(--spv-card)",
             boxShadow:
-              "0 8px 22px -10px color-mix(in oklab, var(--spv-accent) 55%, rgba(0,0,0,0.55))",
+              "0 8px 22px -8px color-mix(in oklab, var(--spv-accent) 80%, rgba(0,0,0,0.55))",
           }}
         >
           <NavLogo />
@@ -295,7 +282,7 @@ function HeroBody({ variant, gradient }: { variant: string; gradient: boolean })
         marginTop: 8,
         background: gradient
           ? "rgba(238, 241, 245, 0.9)"
-          : "color-mix(in oklab, var(--spv-accent-2) 85%, transparent)",
+          : "var(--spv-accent-2)",
       }}
     />
   );
@@ -404,7 +391,7 @@ function FooterBody({ variant }: { variant: string }) {
             w={70}
             h={22}
             r={3}
-            style={{ background: "color-mix(in oklab, var(--spv-accent-2) 85%, transparent)" }}
+            style={{ background: "var(--spv-accent-2)" }}
           />
         </div>
         <div
@@ -652,10 +639,10 @@ export function BuilderPreview({
       ].join(" ")}
       style={{
         border:
-          "1px solid color-mix(in oklab, var(--spv-accent) 30%, var(--neutral))",
+          "1px solid color-mix(in oklab, var(--spv-accent) 60%, var(--neutral))",
         borderRadius: 8,
         boxShadow:
-          "0 1px 0 color-mix(in oklab, var(--spv-accent-2) 22%, transparent), 0 18px 40px -24px color-mix(in oklab, var(--spv-accent) 45%, transparent)",
+          "0 0 0 1px color-mix(in oklab, var(--spv-accent) 30%, transparent), 0 2px 0 color-mix(in oklab, var(--spv-accent-2) 45%, transparent), 0 22px 50px -22px color-mix(in oklab, var(--spv-accent) 75%, transparent)",
         background: theme === "light" ? tints.light : tints.dark,
         overflow: "hidden",
         display: "flex",
@@ -716,7 +703,7 @@ export function BuilderPreview({
                 borderRadius: 4,
                 background: `color-mix(in oklab, ${CHROME_FG} 12%, transparent)`,
                 border:
-                  "1px solid color-mix(in oklab, var(--spv-accent) 30%, transparent)",
+                  "1px solid color-mix(in oklab, var(--spv-accent) 55%, transparent)",
                 fontFamily: "var(--font-mono)",
                 fontSize: 12,
                 letterSpacing: "0.04em",
@@ -742,7 +729,7 @@ export function BuilderPreview({
                   borderRadius: 999,
                   border: "1px solid var(--spv-accent-3)",
                   background:
-                    "color-mix(in oklab, var(--spv-accent-3) 14%, transparent)",
+                    "color-mix(in oklab, var(--spv-accent-3) 32%, transparent)",
                   fontFamily: "var(--font-mono)",
                   fontSize: 10,
                   letterSpacing: "0.1em",
@@ -794,7 +781,7 @@ export function BuilderPreview({
           --spv-page: var(--spv-page-dark);
           --spv-stub: color-mix(in oklab, var(--slate-ink) 26%, transparent);
           /* Hairlines & borders pick up the primary brand color. */
-          --spv-hairline: color-mix(in oklab, var(--spv-accent) 26%, color-mix(in oklab, var(--neutral) 70%, transparent));
+          --spv-hairline: color-mix(in oklab, var(--spv-accent) 60%, color-mix(in oklab, var(--neutral) 70%, transparent));
           /* Cards lift slightly off the tinted page. */
           --spv-card: color-mix(in oklab, #fff 7%, var(--spv-page-dark));
           --spv-muted: var(--slate-ink);
@@ -803,7 +790,7 @@ export function BuilderPreview({
           /* Page = a very light wash of the primary accent. */
           --spv-page: var(--spv-page-light);
           --spv-stub: rgba(24, 28, 36, 0.22);
-          --spv-hairline: color-mix(in oklab, var(--spv-accent) 24%, rgba(24, 28, 36, 0.14));
+          --spv-hairline: color-mix(in oklab, var(--spv-accent) 55%, rgba(24, 28, 36, 0.14));
           --spv-card: color-mix(in oklab, #fff 70%, var(--spv-page-light));
           --spv-muted: rgba(24, 28, 36, 0.6);
         }
