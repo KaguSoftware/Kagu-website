@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { StartProjectBuilder } from "@/components/start-project/StartProjectBuilder";
 import {
-  DEFAULT_PALETTE,
+  BRANDING_ID,
+  DEFAULT_CUSTOM_PALETTE,
   DEFAULT_THEME,
   DEFAULT_ZONE_CHOICES,
   FEATURES,
   getThemeOption,
-  isValidPaletteChoice,
+  parsePalette,
   getVariant,
   getWebsiteType,
   type ThemeChoice,
@@ -62,9 +63,10 @@ export default async function StartProjectPage({
   const initialTheme: ThemeChoice = getThemeOption(params.theme ?? "")
     ? (params.theme as ThemeChoice)
     : DEFAULT_THEME;
-  const initialPaletteId = isValidPaletteChoice(params.accent ?? "")
-    ? params.accent!
-    : DEFAULT_PALETTE;
+  const accentParam = params.accent ?? "";
+  const initialBranding = accentParam === BRANDING_ID;
+  const initialPalette =
+    parsePalette(accentParam) ?? DEFAULT_CUSTOM_PALETTE;
 
   return (
     <>
@@ -73,7 +75,8 @@ export default async function StartProjectPage({
         initialFeatureIds={initialFeatureIds}
         initialZoneChoices={initialZoneChoices}
         initialTheme={initialTheme}
-        initialPaletteId={initialPaletteId}
+        initialPalette={initialPalette}
+        initialBranding={initialBranding}
       />
       <SiteFooter />
     </>

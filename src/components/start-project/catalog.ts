@@ -244,33 +244,43 @@ export function getThemeOption(id: string): ThemeOption | undefined {
   return THEME_OPTIONS.find((t) => t.id === id);
 }
 
-export interface Palette {
-  id: string;
-  label: string;
-  color: string;
+/* Three custom color slots — one general/primary plus two accents. */
+export interface CustomPalette {
+  primary: string;
+  accent2: string;
+  accent3: string;
 }
 
-export const PALETTES: Palette[] = [
-  { id: "sky", label: "Sky", color: "#1f8fe0" },
-  { id: "violet", label: "Violet", color: "#7c5cff" },
-  { id: "teal", label: "Teal", color: "#2dd4bf" },
-  { id: "amber", label: "Amber", color: "#e8a33d" },
-  { id: "rose", label: "Rose", color: "#e25c7a" },
-];
+export const DEFAULT_CUSTOM_PALETTE: CustomPalette = {
+  primary: "#1f8fe0",
+  accent2: "#7c5cff",
+  accent3: "#2dd4bf",
+};
 
-export const DEFAULT_PALETTE = "sky";
-
-/* "I want branding" — no preset accent; we design the identity. */
+/* "I want branding" — no chosen colors; we design the identity. */
 export const BRANDING_ID = "branding";
 export const BRANDING_PRICE = 500;
 export const BRANDING_LABEL = "I want branding";
 
-export function getPalette(id: string): Palette | undefined {
-  return PALETTES.find((p) => p.id === id);
+export function isValidHex(s: string): boolean {
+  return /^#([0-9a-f]{6})$/i.test(s);
 }
 
-export function isValidPaletteChoice(id: string): boolean {
-  return id === BRANDING_ID || !!getPalette(id);
+/** "1f8fe0-7c5cff-2dd4bf" — no '#', dash-joined, for shareable URLs. */
+export function serializePalette(p: CustomPalette): string {
+  return [p.primary, p.accent2, p.accent3]
+    .map((c) => c.replace(/^#/, "").toLowerCase())
+    .join("-");
+}
+
+export function parsePalette(s: string): CustomPalette | null {
+  const parts = s.split("-");
+  if (parts.length !== 3) return null;
+  const [primary, accent2, accent3] = parts.map((c) => `#${c}`);
+  if (!isValidHex(primary) || !isValidHex(accent2) || !isValidHex(accent3)) {
+    return null;
+  }
+  return { primary, accent2, accent3 };
 }
 
 export function getComponentGroup(zone: PreviewZone): ComponentGroup {

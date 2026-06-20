@@ -515,7 +515,7 @@ function PreviewPage({
               width: 40,
               height: 40,
               borderRadius: 999,
-              background: style === "whatsapp" ? "#1faa55" : "var(--spv-accent)",
+              background: style === "whatsapp" ? "#1faa55" : "var(--spv-accent-2)",
               color: "#eef1f5",
               display: "flex",
               alignItems: "center",
@@ -523,7 +523,7 @@ function PreviewPage({
               boxShadow:
                 style === "whatsapp"
                   ? "0 6px 18px -6px rgba(31, 170, 85, 0.7)"
-                  : "0 6px 18px -6px color-mix(in oklab, var(--spv-accent) 70%, transparent)",
+                  : "0 6px 18px -6px color-mix(in oklab, var(--spv-accent-2) 70%, transparent)",
             }}
           >
             <ChatGlyph />
@@ -544,12 +544,16 @@ export function BuilderPreview({
   zoneChoices,
   theme,
   accent,
+  accent2,
+  accent3,
 }: {
   typeId: WebsiteTypeId;
   selected: ReadonlySet<string>;
   zoneChoices: ZoneChoices;
   theme: ThemeChoice;
   accent: string;
+  accent2: string;
+  accent3: string;
 }) {
   const reduced = useReducedMotion() ?? false;
   const type = getWebsiteType(typeId);
@@ -591,6 +595,8 @@ export function BuilderPreview({
         display: "flex",
         flexDirection: "column",
         ["--spv-accent" as string]: accent,
+        ["--spv-accent-2" as string]: accent2,
+        ["--spv-accent-3" as string]: accent3,
       }}
       aria-label="Live preview of your package"
     >
@@ -662,11 +668,11 @@ export function BuilderPreview({
                   gap: 5,
                   padding: "3px 8px",
                   borderRadius: 999,
-                  border: "1px solid var(--spv-accent)",
+                  border: "1px solid var(--spv-accent-3)",
                   fontFamily: "var(--font-mono)",
                   fontSize: 10,
                   letterSpacing: "0.1em",
-                  color: "var(--spv-accent)",
+                  color: "var(--spv-accent-3)",
                   whiteSpace: "nowrap",
                 }}
               >
@@ -676,7 +682,7 @@ export function BuilderPreview({
                     width: 5,
                     height: 5,
                     borderRadius: 3,
-                    background: "var(--spv-accent)",
+                    background: "var(--spv-accent-3)",
                   }}
                 />
                 {label}

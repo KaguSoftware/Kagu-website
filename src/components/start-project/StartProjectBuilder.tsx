@@ -11,11 +11,13 @@ import { animate, useReducedMotion } from "motion/react";
 import { Eyebrow } from "@/components/layout/Eyebrow";
 import { WordMaskReveal } from "@/components/motion/WordMaskReveal";
 import {
-  DEFAULT_PALETTE,
+  BRANDING_ID,
+  DEFAULT_CUSTOM_PALETTE,
   computeTotals,
   featuresForType,
   formatPrice,
-  getPalette,
+  serializePalette,
+  type CustomPalette,
   type PreviewZone,
   type ThemeChoice,
   type WebsiteTypeId,
@@ -204,13 +206,15 @@ export function StartProjectBuilder({
   initialFeatureIds,
   initialZoneChoices,
   initialTheme,
-  initialPaletteId,
+  initialPalette,
+  initialBranding,
 }: {
   initialTypeId: WebsiteTypeId;
   initialFeatureIds: string[];
   initialZoneChoices: ZoneChoices;
   initialTheme: ThemeChoice;
-  initialPaletteId: string;
+  initialPalette: CustomPalette;
+  initialBranding: boolean;
 }) {
   const [typeId, setTypeId] = useState<WebsiteTypeId>(initialTypeId);
   const [selected, setSelected] = useState<Set<string>>(
@@ -218,8 +222,11 @@ export function StartProjectBuilder({
   );
   const [zoneChoices, setZoneChoices] = useState<ZoneChoices>(initialZoneChoices);
   const [theme, setTheme] = useState<ThemeChoice>(initialTheme);
-  const [paletteId, setPaletteId] = useState(initialPaletteId);
+  const [palette, setPalette] = useState<CustomPalette>(initialPalette);
+  const [branding, setBranding] = useState<boolean>(initialBranding);
   const [ideas, setIdeas] = useState<string[]>([]);
+
+  const paletteToken = branding ? BRANDING_ID : serializePalette(palette);
 
   // Shareable URL — replaceState only, never a navigation/refetch.
   useEffect(() => {
@@ -230,9 +237,9 @@ export function StartProjectBuilder({
     search.set("hero", zoneChoices.hero);
     search.set("foot", zoneChoices.footer);
     search.set("theme", theme);
-    search.set("accent", paletteId);
+    search.set("accent", paletteToken);
     window.history.replaceState(null, "", `?${search.toString()}`);
-  }, [typeId, selected, zoneChoices, theme, paletteId]);
+  }, [typeId, selected, zoneChoices, theme, paletteToken]);
 
   const changeZone = (zone: PreviewZone, variantId: string) => {
     setZoneChoices((current) => ({ ...current, [zone]: variantId }));
@@ -256,8 +263,10 @@ export function StartProjectBuilder({
     });
   };
 
-  const totals = computeTotals(typeId, selected, zoneChoices, theme, paletteId);
-  const accent = getPalette(paletteId)?.color ?? getPalette(DEFAULT_PALETTE)!.color;
+  const totals = computeTotals(typeId, selected, zoneChoices, theme, paletteToken);
+  const accent = branding ? DEFAULT_CUSTOM_PALETTE.primary : palette.primary;
+  const accent2 = branding ? DEFAULT_CUSTOM_PALETTE.accent2 : palette.accent2;
+  const accent3 = branding ? DEFAULT_CUSTOM_PALETTE.accent3 : palette.accent3;
 
   return (
     <>
@@ -322,6 +331,8 @@ export function StartProjectBuilder({
                 zoneChoices={zoneChoices}
                 theme={theme}
                 accent={accent}
+                accent2={accent2}
+                accent3={accent3}
               />
             </div>
           </div>
@@ -335,8 +346,10 @@ export function StartProjectBuilder({
                 onChange={changeZone}
                 theme={theme}
                 onThemeChange={setTheme}
-                paletteId={paletteId}
-                onPaletteChange={setPaletteId}
+                palette={palette}
+                onPalette={setPalette}
+                branding={branding}
+                onBrandingChange={setBranding}
               />
             </div>
 
@@ -394,7 +407,8 @@ export function StartProjectBuilder({
                 selected={selected}
                 zoneChoices={zoneChoices}
                 theme={theme}
-                paletteId={paletteId}
+                palette={palette}
+                branding={branding}
                 ideas={ideas}
               />
             </div>

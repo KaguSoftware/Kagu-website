@@ -7,32 +7,36 @@
 */
 
 import {
-  BRANDING_ID,
   BRANDING_LABEL,
   BRANDING_PRICE,
   COMPONENT_GROUPS,
-  PALETTES,
   THEME_OPTIONS,
   formatPrice,
+  type CustomPalette,
   type PreviewZone,
   type ThemeChoice,
   type ZoneChoices,
 } from "./catalog";
+import { CustomColorPicker } from "./CustomColorPicker";
 
 export function ZoneOptions({
   choices,
   onChange,
   theme,
   onThemeChange,
-  paletteId,
-  onPaletteChange,
+  palette,
+  onPalette,
+  branding,
+  onBrandingChange,
 }: {
   choices: ZoneChoices;
   onChange: (zone: PreviewZone, variantId: string) => void;
   theme: ThemeChoice;
   onThemeChange: (theme: ThemeChoice) => void;
-  paletteId: string;
-  onPaletteChange: (paletteId: string) => void;
+  palette: CustomPalette;
+  onPalette: (palette: CustomPalette) => void;
+  branding: boolean;
+  onBrandingChange: (branding: boolean) => void;
 }) {
   return (
     <div className="flex flex-col gap-(--space-8)">
@@ -230,51 +234,23 @@ export function ZoneOptions({
         >
           Palette
         </span>
-        <div
-          role="radiogroup"
-          aria-label="Accent palette"
-          className="flex flex-wrap items-center gap-3"
-        >
-          {PALETTES.map((palette) => {
-            const on = paletteId === palette.id;
-            return (
-              <button
-                key={palette.id}
-                type="button"
-                role="radio"
-                aria-checked={on}
-                aria-label={palette.label}
-                title={palette.label}
-                data-cursor="view"
-                onClick={() => onPaletteChange(palette.id)}
-                style={{
-                  width: 26,
-                  height: 26,
-                  borderRadius: 999,
-                  background: palette.color,
-                  border: "2px solid",
-                  borderColor: on ? "var(--ink)" : "transparent",
-                  outline: on ? "1px solid var(--neutral)" : "1px solid transparent",
-                  outlineOffset: 2,
-                  cursor: "pointer",
-                  transition:
-                    "border-color var(--dur-quick) var(--ease-out-quint), transform var(--dur-quick) var(--ease-out-quint)",
-                  transform: on ? "scale(1.12)" : "scale(1)",
-                }}
-              />
-            );
-          })}
+        <CustomColorPicker
+          value={palette}
+          onChange={onPalette}
+          disabled={branding}
+        />
 
-          {/* No colors yet? We design the identity. */}
+        {/* No colors yet? We design the identity. */}
+        <div style={{ marginTop: "var(--space-4)" }}>
           {(() => {
-            const on = paletteId === BRANDING_ID;
+            const on = branding;
             return (
               <button
                 type="button"
-                role="radio"
+                role="switch"
                 aria-checked={on}
                 data-cursor="view"
-                onClick={() => onPaletteChange(BRANDING_ID)}
+                onClick={() => onBrandingChange(!on)}
                 className="inline-flex items-center gap-2"
                 style={{
                   padding: "5px 12px",
@@ -333,8 +309,8 @@ export function ZoneOptions({
             lineHeight: 1.5,
           }}
         >
-          Pick an accent for free — or choose branding and we design your
-          palette, logo direction and identity with you.
+          Dial in your three colors for free — or choose branding and we design
+          your palette, logo direction and identity with you.
         </p>
       </div>
     </div>

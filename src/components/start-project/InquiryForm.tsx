@@ -19,9 +19,10 @@ import {
   CURRENCY,
   computeTotals,
   formatPrice,
-  getPalette,
+  serializePalette,
   getWebsiteType,
   zoneTokens,
+  type CustomPalette,
   type ThemeChoice,
   type WebsiteTypeId,
   type ZoneChoices,
@@ -34,16 +35,19 @@ export function InquiryForm({
   selected,
   zoneChoices,
   theme,
-  paletteId,
+  palette,
+  branding,
   ideas,
 }: {
   typeId: WebsiteTypeId;
   selected: ReadonlySet<string>;
   zoneChoices: ZoneChoices;
   theme: ThemeChoice;
-  paletteId: string;
+  palette: CustomPalette;
+  branding: boolean;
   ideas: string[];
 }) {
+  const paletteToken = branding ? BRANDING_ID : serializePalette(palette);
   const [stage, setStage] = useState<Stage>("default");
   const [studioEmail, setStudioEmail] = useState("");
 
@@ -82,7 +86,7 @@ export function InquiryForm({
     }
 
     const type = getWebsiteType(typeId);
-    const totals = computeTotals(typeId, selected, zoneChoices, theme, paletteId);
+    const totals = computeTotals(typeId, selected, zoneChoices, theme, paletteToken);
 
     const supabase = createClient();
     const { error } = await supabase.from("project_inquiries").insert({
@@ -92,7 +96,7 @@ export function InquiryForm({
       features: [
         ...zoneTokens(zoneChoices),
         `theme:${theme}`,
-        `palette:${paletteId}`,
+        `palette:${paletteToken}`,
         ...totals.features.map((f) => f.id),
         ...ideas.map((idea) => `idea:${idea}`),
       ],
@@ -122,9 +126,9 @@ export function InquiryForm({
           ? `(+ ${formatPrice(totals.themeOption.price)})`
           : "(included)"
       }`,
-      paletteId === BRANDING_ID
+      branding
         ? `  · Branding — palette, logo direction & identity (+ ${formatPrice(BRANDING_PRICE)})`
-        : `  · Palette — ${getPalette(paletteId)?.label ?? paletteId}`,
+        : `  · Palette — Primary ${palette.primary}, Accent ${palette.accent2}, Accent ${palette.accent3}`,
     ].join("\n");
     const featureLines = totals.features
       .map((f) => `  + ${f.label} — ${formatPrice(f.price)}`)
@@ -153,7 +157,7 @@ export function InquiryForm({
 
   if (stage === "success") {
     const type = getWebsiteType(typeId);
-    const totals = computeTotals(typeId, selected, zoneChoices, theme, paletteId);
+    const totals = computeTotals(typeId, selected, zoneChoices, theme, paletteToken);
     return (
       <div
         role="status"
