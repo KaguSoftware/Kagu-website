@@ -40,6 +40,17 @@ export async function launchStealth(): Promise<{
     extraHTTPHeaders: { "Accept-Language": "en-US,en;q=0.9" },
   });
 
+  // tsx transpiles every page.evaluate / init-script callback through esbuild,
+  // whose `keepNames` wraps named functions in a `__name(...)` helper. Playwright
+  // serializes the callback and runs it in the browser, where that helper is
+  // undefined → "ReferenceError: __name is not defined". Define it as identity
+  // first so the stealth script below *and* the crawlers' page.evaluate callbacks
+  // (e.g. seo.ts) run. Passed as a string so esbuild leaves it untouched — a
+  // function arg would get the same __name treatment and reintroduce the bug.
+  await context.addInitScript(
+    "globalThis.__name = globalThis.__name || ((fn) => fn);"
+  );
+
   // Runs in every page before its own scripts — patches the headless tells.
   // `g` casts to the browser's globals (the worker's tsconfig is Node-only,
   // so DOM types aren't in scope — same cast convention as the crawlers'

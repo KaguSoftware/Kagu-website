@@ -1,14 +1,13 @@
-import { type Page } from "playwright";
 import { config } from "./config.js";
-import { launchStealth } from "./browser.js";
 
 /*
   seo.ts — "what keywords got the top results to the top?"
 
   Given a seed query, this:
-    1. scrapes the Google results page for the top ORGANIC results, skipping
-       sponsored/ad blocks (those rank by spend, not by SEO — counting them
-       would poison the keyword signal);
+    1. fetches the top ORGANIC results from DuckDuckGo's HTML endpoint (Bing
+       index) — ads-free, no key/CAPTCHA, just a plain fetch. The Google HTML
+       SERP was abandoned: it CAPTCHAs every request, even real headed Chrome on
+       a fresh IP, and Google's Custom Search API is closed to new projects;
     2. fetches each of those top pages and pulls their on-page text
        (title / meta / headings / body);
     3. ranks candidate keyword phrases by how the *winning* pages use them —
@@ -18,11 +17,10 @@ import { launchStealth } from "./browser.js";
     4. (optional) hands the top candidates to Groq to dedupe synonyms, drop
        navigational/brand noise, and label search intent.
 
-  Mirrors crawl.ts's ethos: one headless Chromium, human pacing, abort on
-  CAPTCHA, every selector best-effort. Like draft.ts, the Groq pass degrades
-  gracefully — no key or a bad response just falls back to the heuristic
-  ranking. MOCK_MODE returns a deterministic report so the pipeline can be
-  exercised offline.
+  Page fetches (step 2) use plain fetch with human pacing, every selector
+  best-effort. Like draft.ts, the Groq pass degrades gracefully — no key or a
+  bad response just falls back to the heuristic ranking. MOCK_MODE returns a
+  deterministic report so the pipeline can be exercised offline.
 
   This is a standalone tool (run via `npm run seo`), not part of the
   scrape_jobs loop — it writes nothing to the DB.
@@ -142,118 +140,69 @@ async function scrapeOrganicResults(
   region: string,
   language: string
 ): Promise<{ results: OrganicResult[]; adsSkipped: number }> {
-  const { browser, context } = await launchStealth();
-  try {
-    const page = await context.newPage();
+  // DuckDuckGo's HTML endpoint: no key, no account, no JS, no CAPTCHA — just
+  // server-rendered links we parse with a plain fetch. Results come from Bing's
+  // index, which is plenty for keyword research. (Google's own HTML SERP
+  // CAPTCHAs every scrape, even real headed Chrome on a fresh IP, and its
+  // Custom Search API is closed to new projects.) `kl` biases by region the way
+  // Google's `gl` did; DDG returns organic results only, so adsSkipped is 0.
+  const kl = region ? `${region.toLowerCase()}-${region.toLowerCase()}` : "";
+  const url =
+    "https://html.duckduckgo.com/html/" +
+    `?q=${encodeURIComponent(query)}` +
+    (kl ? `&kl=${encodeURIComponent(kl)}` : "");
 
-    // num=20 over-fetches so we still have ≥topN organic results after ads
-    // and junk links are dropped.
-    const url =
-      `https://www.google.com/search?q=${encodeURIComponent(query)}` +
-      `&hl=${encodeURIComponent(language)}` +
-      `&gl=${encodeURIComponent(region)}&num=20`;
-    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
-
-    await dismissConsent(page);
-    await assertNoCaptcha(page);
-    await page.waitForSelector("#search, #rso, #main", { timeout: 20000 }).catch(() => {});
-
-    const { results, adsSkipped } = await extractSerp(page);
-
-    if (results.length === 0) {
-      throw new Error(
-        `0 organic results for "${query}" — page title was "${await page.title()}". ` +
-          "Google may have served an interstitial or changed its markup; retry later."
-      );
-    }
-    return { results, adsSkipped };
-  } finally {
-    await browser.close();
-  }
-}
-
-/*
-  Pull organic results out of the SERP DOM. Organic results live under #rso;
-  sponsored blocks (#tads top, #tadsb/#bottomads bottom, anything marked
-  [data-text-ad] or labelled "Sponsored"/"Ad"/"Reklam") live outside it — so
-  scoping to #rso skips ads by construction, and we still count them for the
-  report. Google's markup is volatile: this is best-effort with fallbacks.
-*/
-async function extractSerp(
-  page: Page
-): Promise<{ results: OrganicResult[]; adsSkipped: number }> {
-  // Runs in the browser; DOM types aren't in the worker's tsconfig lib, so
-  // reach globals via globalThis and type nodes as `any` (same workaround
-  // crawl.ts uses with its `unknown` casts).
-  return page.evaluate(() => {
-    /* eslint-disable @typescript-eslint/no-explicit-any */
-    const doc: any = (globalThis as any).document;
-    const loc: any = (globalThis as any).location;
-
-    const isAdAncestor = (el: any): boolean => {
-      for (let node: any = el; node; node = node.parentElement) {
-        const id = node.id || "";
-        if (/^(tads|tadsb|bottomads|tvcap)$/i.test(id)) return true;
-        if (node.hasAttribute?.("data-text-ad")) return true;
-        if (node.getAttribute?.("aria-label") === "Ads") return true;
-      }
-      return false;
-    };
-
-    // Count ad result links so the report can say "N sponsored skipped".
-    let adsSkipped = 0;
-    doc
-      .querySelectorAll("#tads h3, #tadsb h3, #bottomads h3, [data-text-ad] h3")
-      .forEach(() => {
-        adsSkipped++;
-      });
-
-    const root: any =
-      doc.querySelector("#rso") ||
-      doc.querySelector("#search") ||
-      doc.querySelector("#main") ||
-      doc.body;
-
-    const seen = new Set<string>();
-    const results: { rank: number; title: string; url: string; domain: string }[] = [];
-
-    root.querySelectorAll("h3").forEach((h3: any) => {
-      const anchor: any = h3.closest("a[href]");
-      if (!anchor) return;
-      if (isAdAncestor(anchor)) return;
-
-      let href: string = anchor.href;
-      // Older results wrap the target in /url?q=… ; unwrap it.
-      if (href.startsWith("/url?") || href.includes("/url?q=")) {
-        try {
-          const u = new URL(href, loc.origin);
-          href = u.searchParams.get("q") || u.searchParams.get("url") || href;
-        } catch {
-          /* keep href */
-        }
-      }
-      if (!/^https?:\/\//i.test(href)) return;
-
-      let domain = "";
-      try {
-        domain = new URL(href).hostname.replace(/^www\./, "");
-      } catch {
-        return;
-      }
-      // Drop Google's own surfaces and cache/translate links.
-      if (/(^|\.)google\.[a-z.]+$/i.test(domain)) return;
-      if (/(webcache|translate)\.google/i.test(href)) return;
-      const dedup = domain + "|" + href;
-      if (seen.has(dedup)) return;
-      seen.add(dedup);
-
-      const title = (h3.textContent || "").trim();
-      if (!title) return;
-      results.push({ rank: results.length + 1, title, url: href, domain });
-    });
-
-    return { results, adsSkipped };
+  const res = await fetch(url, {
+    headers: {
+      // DDG serves a blank page to header-less bots; a normal browser UA is
+      // enough to get the real results.
+      "User-Agent":
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " +
+        "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      "Accept-Language": `${language},en;q=0.9`,
+    },
   });
+  if (!res.ok) throw new Error(`DuckDuckGo HTML ${res.status} for "${query}".`);
+  const html = await res.text();
+
+  const results: OrganicResult[] = [];
+  const seen = new Set<string>();
+  // Each organic result is <a class="result__a" href="…">Title</a>.
+  const re = /<a[^>]+class="[^"]*result__a[^"]*"[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null && results.length < config.seoTopN) {
+    let href = decodeEntities(m[1]);
+    // DDG wraps targets in /l/?uddg=<encoded real url> — unwrap it.
+    const uddg = href.match(/[?&]uddg=([^&]+)/);
+    if (uddg) {
+      try {
+        href = decodeURIComponent(uddg[1]);
+      } catch {
+        /* keep the wrapped href */
+      }
+    }
+    if (!/^https?:\/\//i.test(href)) continue;
+
+    let domain = "";
+    try {
+      domain = new URL(href).hostname.replace(/^www\./, "");
+    } catch {
+      continue;
+    }
+    if (seen.has(href)) continue;
+    seen.add(href);
+
+    const title = stripTags(m[2]);
+    if (!title) continue;
+    results.push({ rank: results.length + 1, title, url: href, domain });
+  }
+
+  if (results.length === 0) {
+    throw new Error(
+      `0 results for "${query}" from DuckDuckGo — it may have rate-limited; retry later.`
+    );
+  }
+  return { results, adsSkipped: 0 };
 }
 
 /* ------------------------------------------------------------------------ */
@@ -470,9 +419,13 @@ Respond with STRICT JSON, nothing else:
 
 const MAX_NGRAM = 3;
 
-/* Lowercase unicode word tokens; keeps Turkish/Arabic letters via \p{L}. */
+/* Lowercase unicode *letter* tokens; keeps Turkish/Arabic via \p{L}. Digits
+   are excluded on purpose: real keywords are words, and allowing \p{N} let
+   JSON/unicode-escape junk like "u0131" survive as a token. */
 function tokenize(text: string): string[] {
-  return (text.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []).filter(
+  // Drop the combining dot (U+0307) that lowercasing Turkish "İ" inserts —
+  // else "İstanbul" → "i"+◌̇+"stanbul" tokenises to a bogus "stanbul".
+  return (text.toLowerCase().replace(/\u0307/g, "").match(/\p{L}+/gu) ?? []).filter(
     (t) => t.length >= 2 && t.length <= 30
   );
 }
@@ -547,14 +500,25 @@ function metaContent(html: string, name: string): string {
   return b ? decodeEntities(b[1]) : "";
 }
 
-/* Strip script/style/markup, leaving readable text. */
+/* Strip script/style/markup, leaving readable prose. */
 function visibleText(html: string): string {
+  // Scope to <body> so <head> JSON-LD/meta/preload noise never enters the
+  // text. If there's no <body> (rare), fall back to the whole document.
+  const body = html.match(/<body[\s\S]*$/i)?.[0] ?? html;
   return stripTags(
-    html
+    body
+      // Paired non-prose regions first.
       .replace(/<script[\s\S]*?<\/script>/gi, " ")
       .replace(/<style[\s\S]*?<\/style>/gi, " ")
       .replace(/<noscript[\s\S]*?<\/noscript>/gi, " ")
+      .replace(/<template[\s\S]*?<\/template>/gi, " ")
+      .replace(/<svg[\s\S]*?<\/svg>/gi, " ")
       .replace(/<!--[\s\S]*?-->/g, " ")
+      // …then any *dangling* <script>/<style> whose closing tag fell outside
+      // our byte cap (a truncated __NEXT_DATA__ blob is what leaked JSON keys
+      // like "extraData"/"key" and ı escapes). Drop it to end-of-string.
+      .replace(/<script[\s\S]*$/i, " ")
+      .replace(/<style[\s\S]*$/i, " ")
   );
 }
 
@@ -571,29 +535,6 @@ function decodeEntities(s: string): string {
     .replace(/&#39;|&apos;/g, "'")
     .replace(/&nbsp;/g, " ")
     .replace(/&#(\d+);/g, (_, d) => String.fromCharCode(Number(d)));
-}
-
-/* ------------------------------------------------------------------------ */
-/* SERP scrape helpers (mirrors crawl.ts)                                    */
-/* ------------------------------------------------------------------------ */
-
-async function dismissConsent(page: Page): Promise<void> {
-  try {
-    const accept = page.getByRole("button", { name: /accept all|reject all|i agree/i }).first();
-    if (await accept.count()) {
-      await accept.click({ timeout: 5000 });
-      await page.waitForLoadState("domcontentloaded");
-      await sleep(rand(700, 1400));
-    }
-  } catch {
-    /* no consent screen — fine */
-  }
-}
-
-async function assertNoCaptcha(page: Page): Promise<void> {
-  if (page.url().includes("/sorry/") || (await page.locator("iframe[src*='recaptcha']").count()) > 0) {
-    throw new Error("Google CAPTCHA encountered — aborting. Wait before retrying.");
-  }
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));

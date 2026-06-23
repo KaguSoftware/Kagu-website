@@ -45,8 +45,7 @@ export const config = {
   seoTopN: Number(process.env.SEO_TOP_N) || 10,
   // Cap on keywords returned in the final report.
   seoMaxKeywords: Number(process.env.SEO_MAX_KEYWORDS) || 30,
-  // Google `gl` region bias (country code) and `hl` interface language.
-  // hl is kept to a value with predictable DOM labels (default `en`).
+  // Region bias (DuckDuckGo `kl`, derived from this) and interface language.
   seoRegion: process.env.SEO_REGION ?? "tr",
   seoLanguage: process.env.SEO_LANGUAGE ?? "en",
 };

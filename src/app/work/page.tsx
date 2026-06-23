@@ -16,6 +16,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getCases, type Case } from "@/lib/content";
 import { TabLink } from "./TabLink";
+import { WorkStackFit } from "./WorkStackFit";
 
 export const metadata = {
     title: "Work · Kagu",
@@ -222,19 +223,26 @@ export default async function WorkIndexPage() {
                         </article>
                     );
                 })}
-                {/* Trailing runway: extends the sticky container so the last folder
-                    can pin and hold before the whole stack releases together —
-                    without it, the last file dragged the earlier ones up as it
-                    arrived (mobile, where the bodies are tallest). */}
+                {/* Trailing runway: WorkStackFit sizes this at runtime so the
+                    page's last scroll position lands exactly on the final
+                    folder's pin point. With no scroll left past that, the stack
+                    never releases and the aligned pile locks in place. */}
                 <div className="kagu-folders__runway" aria-hidden />
             </div>
+
+            {/* Pins the document's max scroll to the moment the pile aligns. */}
+            <WorkStackFit />
 
             <style>{`
                 .kagu-work {
                     position: relative;
                     background: var(--paper);
                     padding-top: var(--space-32);
-                    padding-bottom: var(--section-y);
+                    /* No bottom padding: it would sit *after* the sticky container
+                       and steal room below the pin line, which both blocks the
+                       final folder from aligning and lets the pile release. The
+                       runway (sized by WorkStackFit) provides the tail instead. */
+                    padding-bottom: 0;
                     min-height: 100svh;
                 }
                 /* faint accent glow behind the masthead for atmosphere */
@@ -291,10 +299,10 @@ export default async function WorkIndexPage() {
                     isolation: isolate;
                     transition: transform 0.34s var(--ease-out-quint);
                 }
-                /* 50px of breathing room between files while they're laid out in
+                /* 100px of breathing room between files while they're laid out in
                    flow (before they scroll up and stack into the pile) */
                 .kagu-folder + .kagu-folder {
-                    margin-top: calc(var(--tab-h) + 50px);
+                    margin-top: calc(var(--tab-h) + 100px);
                 }
                 .kagu-folders__runway { height: 0; }
 
@@ -304,8 +312,16 @@ export default async function WorkIndexPage() {
                     background: var(--fl);
                     color: var(--ft);
                     border-radius: clamp(16px, 1.4vw, 26px) clamp(16px, 1.4vw, 26px) 0 0;
-                    min-height: clamp(26rem, 18rem + 32vh, 44rem);
-                    padding: clamp(1.75rem, 1rem + 3vw, 3.5rem);
+                    /* Fit each card within the viewport below its pin line, so the
+                       whole case shows on any screen instead of running off the
+                       bottom. Floor keeps it generous on tall screens; the cap
+                       (--fit-h) clamps it on short ones. --stack-top is inherited
+                       from .kagu-folder. */
+                    --fit-gap: clamp(0.75rem, 0.4rem + 1.4vw, 1.75rem);
+                    --fit-h: calc(100svh - var(--stack-top) - var(--fit-gap));
+                    min-height: min(clamp(20rem, 14rem + 26vh, 40rem), var(--fit-h));
+                    max-height: var(--fit-h);
+                    padding: clamp(1.5rem, 0.9rem + 2.6vw, 3.5rem);
                     display: flex;
                     flex-direction: column;
                     box-shadow:
@@ -415,6 +431,7 @@ export default async function WorkIndexPage() {
                 .kagu-folder__main {
                     position: relative;
                     margin-top: auto;
+                    min-height: 0; /* allow the row to shrink inside a capped body */
                     display: flex;
                     gap: clamp(1.5rem, 4vw, 3.25rem);
                     align-items: flex-end;
@@ -549,8 +566,12 @@ export default async function WorkIndexPage() {
                 }
                 .kagu-phone {
                     container-type: inline-size;
-                    width: clamp(8.5rem, 16vw, 11rem);
+                    /* Height-driven so the tall portrait mockup shrinks to fit a
+                       capped card on short screens; width follows the aspect. */
+                    height: clamp(11rem, 34svh, 22rem);
                     aspect-ratio: 9 / 19.5;
+                    width: auto;
+                    flex: 0 0 auto;
                 }
                 .kagu-phone__body {
                     position: relative;
@@ -586,12 +607,11 @@ export default async function WorkIndexPage() {
                 /* Narrow screens: a row of tabs can't fit, so staircase them and
                    stack the preview above the copy. */
                 @media (max-width: 760px) {
-                    /* Tall mobile bodies + one shared sticky container means every
-                       folder un-sticks together the instant the container's content
-                       box ends — with no trailing room that lands right as the last
-                       folder pins, dragging earlier folders (02) up with it. The
-                       runway extends the container so the last folder pins and holds
-                       before the stack releases. */
+                    /* Pre-hydration / no-JS fallback only — once WorkStackFit runs
+                       it sets the runway inline so the page's max scroll lands
+                       exactly on the last folder's pin and the stack can't release.
+                       Tall mobile bodies make that release especially violent, so
+                       this keeps a reasonable tail before the script takes over. */
                     .kagu-folders__runway { height: clamp(20rem, 65svh, 40rem); }
                     /* tabs share one level here too — tile them across to fit,
                        labels wrap to two lines */
@@ -628,6 +648,49 @@ export default async function WorkIndexPage() {
                         max-width: min(20rem, 74%);
                     }
                     .kagu-win__screen img { max-height: clamp(11rem, 30vh, 16rem); }
+                }
+
+                /* Short viewports: trim the card's vertical content so the whole
+                   case still fits between the pin line and the bottom of screen
+                   (the body is already capped to the viewport via --fit-h). */
+                @media (max-height: 760px) {
+                    .kagu-folder__lede {
+                        -webkit-line-clamp: 2;
+                        margin-top: var(--space-2);
+                    }
+                    .kagu-folder__view { margin-top: var(--space-4); }
+                    .kagu-win__screen img { max-height: clamp(9rem, 24vh, 14rem); }
+                    .kagu-phone { height: clamp(9rem, 26svh, 14rem); }
+                    .kagu-thumb { margin-top: var(--space-4); }
+                }
+                @media (max-height: 600px) {
+                    .kagu-folder__lede { display: none; }
+                    .kagu-folder__sub {
+                        margin-top: var(--space-2);
+                        font-size: var(--type-base);
+                    }
+                    .kagu-folder__title {
+                        font-size: clamp(1.6rem, 1rem + 3.5vw, 3rem);
+                    }
+                    .kagu-folder__view { margin-top: var(--space-2); }
+                    .kagu-win__screen img { max-height: clamp(6rem, 32svh, 11rem); }
+                    .kagu-phone { height: clamp(6rem, 40svh, 11rem); }
+                    /* Short screens are almost always landscape: keep copy and
+                       thumbnail side-by-side (the stacked phone layout would push
+                       the title and link off the bottom of such a shallow card). */
+                    .kagu-folder__main {
+                        flex-direction: row;
+                        align-items: flex-end;
+                        gap: clamp(1rem, 3vw, 2.5rem);
+                    }
+                    .kagu-thumb {
+                        order: 0;
+                        width: auto;
+                        margin-top: 0;
+                        flex: 0 1 auto;
+                    }
+                    .kagu-thumb--browser { justify-content: flex-end; }
+                    .kagu-win { margin-inline: 0; max-width: min(28rem, 50%); }
                 }
 
                 /* anchor jumps from the tabs ease into place */
