@@ -287,7 +287,6 @@ export default async function WorkIndexPage() {
                     --tab-h: clamp(3rem, 2.6rem + 1vw, 3.6rem);
                     --tab-w: clamp(7rem, 4.5rem + 9vw, 11rem);
                     --tab-step: calc(var(--tab-w) + clamp(0.4rem, 0.2rem + 0.6vw, 0.9rem));
-                    --tab-x: clamp(0.4rem, 1.4vw, 1.75rem);
                     --joint: 16px;
                     position: sticky;
                     /* every folder pins to the SAME top, so all the tabs line up on
@@ -346,7 +345,10 @@ export default async function WorkIndexPage() {
                 .kagu-folder__tab {
                     position: absolute;
                     bottom: calc(100% - 1px);
-                    left: calc(var(--tab-x) + var(--i) * var(--tab-step));
+                    /* Pack left→right from the folder's left edge, so the first
+                       tab sits flush in the top-left corner (no inset, no left
+                       cove) and anchors the start of the row. */
+                    left: calc(var(--i) * var(--tab-step));
                     width: var(--tab-w);
                     min-height: var(--tab-h);
                     display: flex;
@@ -385,13 +387,17 @@ export default async function WorkIndexPage() {
                     overflow: hidden;
                     text-overflow: ellipsis;
                 }
+                /* Concave fillets flaring each tab's sides into the body. They
+                   overlap the tab by 1px on the inner edge and the body by 1px
+                   below, so there's no sub-pixel seam between the rectangle and
+                   its curves. */
                 .kagu-folder__tab::before,
                 .kagu-folder__tab::after {
                     content: "";
                     position: absolute;
-                    bottom: 0;
-                    width: var(--joint);
-                    height: var(--joint);
+                    bottom: -1px;
+                    width: calc(var(--joint) + 1px);
+                    height: calc(var(--joint) + 1px);
                     background: var(--fl);
                 }
                 .kagu-folder__tab::before {
@@ -403,6 +409,17 @@ export default async function WorkIndexPage() {
                     right: calc(-1 * var(--joint));
                     -webkit-mask: radial-gradient(circle var(--joint) at top right, #0000 99%, #000 100%);
                             mask: radial-gradient(circle var(--joint) at top right, #0000 99%, #000 100%);
+                }
+                /* Position-aware coves: the leftmost tab anchors the folder's
+                   left edge, so it gets no left cove (it would hook out over the
+                   paper and clash with the body's corner). The rightmost tab
+                   gets no right cove, so its curve can't overflow past the folder
+                   on the right. Middle tabs keep both. */
+                .kagu-folder:first-of-type .kagu-folder__tab::before {
+                    content: none;
+                }
+                .kagu-folder:last-of-type .kagu-folder__tab::after {
+                    content: none;
                 }
 
                 .kagu-folder__ghost {
