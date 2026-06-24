@@ -312,14 +312,15 @@ export default async function WorkIndexPage() {
                     background: var(--fl);
                     color: var(--ft);
                     border-radius: clamp(16px, 1.4vw, 26px) clamp(16px, 1.4vw, 26px) 0 0;
-                    /* Fit each card within the viewport below its pin line, so the
-                       whole case shows on any screen instead of running off the
-                       bottom. Floor keeps it generous on tall screens; the cap
-                       (--fit-h) clamps it on short ones. --stack-top is inherited
-                       from .kagu-folder. */
+                    /* --fit-h caps every card to the viewport below its pin line,
+                       so the whole case shows on any screen. WorkStackFit then
+                       equalises all cards to the tallest one (min-height set
+                       inline) and sizes the runway; the min-height below is just
+                       the pre-hydration / reduced-motion fallback. --stack-top is
+                       inherited from .kagu-folder. */
                     --fit-gap: clamp(0.75rem, 0.4rem + 1.4vw, 1.75rem);
                     --fit-h: calc(100svh - var(--stack-top) - var(--fit-gap));
-                    min-height: min(clamp(20rem, 14rem + 26vh, 40rem), var(--fit-h));
+                    min-height: min(clamp(22rem, 16rem + 26vh, 40rem), var(--fit-h));
                     max-height: var(--fit-h);
                     padding: clamp(1.5rem, 0.9rem + 2.6vw, 3.5rem);
                     display: flex;
@@ -728,6 +729,9 @@ export default async function WorkIndexPage() {
                     }
                     .kagu-folder:hover { transform: none; }
                     .kagu-folder__arrow { transition: none; }
+                    /* Static flow: drop the viewport cap so nothing is clipped
+                       (cards aren't pinned, so they can be their natural height). */
+                    .kagu-folder__body { max-height: none; }
                 }
             `}</style>
         </div>

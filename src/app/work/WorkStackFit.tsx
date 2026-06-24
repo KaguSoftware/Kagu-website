@@ -3,20 +3,23 @@
 import { useEffect } from "react";
 
 /*
-  Locks the folder pile so it can't be over-scrolled.
+  Two jobs, both run together so they stay consistent:
 
-  Every .kagu-folder is position:sticky and they all share ONE containing block
-  (.kagu-folders), so they un-stick *together* the instant you scroll past that
-  block's content box — which yanks the whole aligned pile upward ("breaking").
-  A hardcoded runway can't prevent it because the release point moves with the
-  viewport and the folders' content heights.
+  1. Equal-height cards. Every case body is sized to the *tallest* case, so the
+     pile reads as one uniform stack instead of folders of mixed heights. A
+     larger floor on desktop keeps the cards generous there; mobile (the
+     priority) just fits its content. The per-card cap (--fit-h, set in CSS)
+     guarantees a card never exceeds the screen, so the whole case is always
+     visible when it pins.
 
-  Instead we size the trailing runway so the document's *last* scroll position
-  coincides exactly with the moment the final folder pins. At that point every
-  tab is aligned on one level and there's simply no scroll left for the stack to
-  release into — the pile locks in place. Recomputed on resize, font load, and
-  any content-height change (lazy thumbnails). Disabled under reduced-motion,
-  where the folders fall back to static flow and need their full height.
+  2. Scroll lock. The folders are position:sticky sharing one containing block,
+     so they'd un-stick *together* the instant you scroll past it ("breaking").
+     We size the trailing runway so the document's last scroll position lands
+     exactly when the final (now equal-height) card pins — leaving no scroll for
+     the stack to release into.
+
+  Recomputed on resize, font load, and thumbnail load. Disabled under
+  reduced-motion, where the cards fall back to natural static flow.
 */
 export function WorkStackFit() {
     useEffect(() => {
@@ -28,45 +31,73 @@ export function WorkStackFit() {
         );
         if (!work || !folders || !runway) return;
 
-        let applied = NaN;
+        const rootFont =
+            parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+        let raf = 0;
 
-        const fit = () => {
+        const apply = () => {
+            raf = 0;
+            const bodies = Array.from(
+                folders.querySelectorAll<HTMLElement>(".kagu-folder__body")
+            );
+            const firstFolder =
+                folders.querySelector<HTMLElement>(".kagu-folder");
+            if (!bodies.length || !firstFolder) return;
+
             if (reduce.matches) {
+                bodies.forEach((b) => (b.style.minHeight = ""));
                 runway.style.height = "0px";
                 runway.style.marginBottom = "0px";
-                applied = NaN;
                 return;
             }
 
-            const list = folders.querySelectorAll<HTMLElement>(".kagu-folder");
-            const last = list[list.length - 1];
-            if (!last) return;
-
-            const stackTop = parseFloat(getComputedStyle(last).top) || 0;
+            const stackTop = parseFloat(getComputedStyle(firstFolder).top) || 0;
             const pad = parseFloat(getComputedStyle(work).paddingBottom) || 0;
+            // --fit-h resolves to px here, so reading max-height gives the cap.
+            const fitH =
+                parseFloat(getComputedStyle(bodies[0]).maxHeight) ||
+                Number.POSITIVE_INFINITY;
 
-            // Tail length that drops the document's max scroll exactly onto the
-            // last folder's pin point. Goes negative (pulls the page bottom up)
-            // when the final folder is taller than the room below the pin.
-            const tail = window.innerHeight - stackTop - last.offsetHeight - pad;
+            // Collapsing the cards to measure shrinks the document for an instant;
+            // if this runs while scrolled down (e.g. a thumbnail finishing load)
+            // the browser would clamp the scroll position. Restore it afterwards.
+            const prevY = window.scrollY;
 
-            if (Math.abs(tail - applied) < 0.5) return; // no-op: skip a relayout
-            applied = tail;
+            // 1) Drop the floor, measure each card's natural height, take the max.
+            bodies.forEach((b) => (b.style.minHeight = "0px"));
+            let maxH = 0;
+            for (const b of bodies) if (b.offsetHeight > maxH) maxH = b.offsetHeight;
+
+            // 2) Equalize every card to the tallest, with a bigger floor on
+            //    desktop and the viewport cap as the ceiling.
+            const floor = (window.innerWidth >= 1024 ? 38 : 22) * rootFont;
+            const cardH = Math.min(Math.max(maxH, floor), fitH);
+            bodies.forEach((b) => (b.style.minHeight = `${cardH}px`));
+
+            // 3) Lock scroll so it ends exactly when the last card pins.
+            const tail = window.innerHeight - stackTop - cardH - pad;
             runway.style.height = `${Math.max(0, tail)}px`;
             runway.style.marginBottom = `${Math.min(0, tail)}px`;
+
+            if (Math.abs(window.scrollY - prevY) > 1) window.scrollTo(0, prevY);
         };
 
-        fit();
+        const schedule = () => {
+            if (!raf) raf = requestAnimationFrame(apply);
+        };
 
-        // Catches lazy thumbnail loads / font swaps that change folder heights.
-        const ro = new ResizeObserver(fit);
-        ro.observe(folders);
-        window.addEventListener("resize", fit);
-        document.fonts?.ready.then(fit).catch(() => {});
+        schedule();
+        window.addEventListener("resize", schedule);
+        document.fonts?.ready.then(schedule).catch(() => {});
+        const imgs = Array.from(folders.querySelectorAll("img"));
+        imgs.forEach((img) => {
+            if (!img.complete) img.addEventListener("load", schedule);
+        });
 
         return () => {
-            ro.disconnect();
-            window.removeEventListener("resize", fit);
+            if (raf) cancelAnimationFrame(raf);
+            window.removeEventListener("resize", schedule);
+            imgs.forEach((img) => img.removeEventListener("load", schedule));
         };
     }, []);
 
