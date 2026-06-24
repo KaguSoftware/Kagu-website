@@ -283,25 +283,40 @@ export default async function WorkIndexPage() {
                     margin: 0 auto;
                 }
                 .kagu-folder {
-                    --stack-top: clamp(7.5rem, 6rem + 3.5vw, 9.5rem);
+                    /* Tabs lay out in a grid: --per-row across, then wrap to a new
+                       row that stacks *upward* (the first --per-row tabs form the
+                       bottom row that sits on the body; later tabs pile on top).
+                       Each tab is one slot wide — 1/per-row of the folder — so a
+                       full row spans the width and the tabs keep a constant size
+                       however many cases there are, instead of shrinking to fit. */
+                    --per-row: 7;
                     --tab-h: clamp(3rem, 2.6rem + 1vw, 3.6rem);
-                    --tab-w: clamp(7rem, 4.5rem + 9vw, 11rem);
-                    --tab-step: calc(var(--tab-w) + clamp(0.4rem, 0.2rem + 0.6vw, 0.9rem));
+                    --tab-gap: clamp(0.4rem, 0.2rem + 0.6vw, 0.9rem);
+                    --tab-step: calc(100% / var(--per-row));
+                    --tab-w: calc(var(--tab-step) - var(--tab-gap));
+                    --col: mod(var(--i), var(--per-row));
+                    --row: round(down, calc(var(--i) / var(--per-row)), 1);
+                    --rows: round(up, calc(var(--n) / var(--per-row)), 1);
                     --joint: 16px;
+                    /* every folder pins to the SAME top so all the tabs line up;
+                       leave extra headroom above the pin for each wrapped row. */
+                    --stack-top: calc(
+                        clamp(7.5rem, 6rem + 3.5vw, 9.5rem)
+                        + (var(--rows) - 1) * var(--tab-h)
+                    );
                     position: sticky;
-                    /* every folder pins to the SAME top, so all the tabs line up on
-                       one horizontal level; they pack left→right by index */
                     top: var(--stack-top);
                     /* land here when a tab anchor is clicked */
                     scroll-margin-top: var(--stack-top);
-                    margin-top: var(--tab-h);
+                    /* reserve room above each folder for its own tab row in flow */
+                    margin-top: calc((var(--row) + 1) * var(--tab-h));
                     isolation: isolate;
                     transition: transform 0.34s var(--ease-out-quint);
                 }
                 /* 100px of breathing room between files while they're laid out in
                    flow (before they scroll up and stack into the pile) */
                 .kagu-folder + .kagu-folder {
-                    margin-top: calc(var(--tab-h) + 100px);
+                    margin-top: calc((var(--row) + 1) * var(--tab-h) + 100px);
                 }
                 .kagu-folders__runway { height: 0; }
 
@@ -344,11 +359,11 @@ export default async function WorkIndexPage() {
                    concave fillet joints. Distributed across the row by index. */
                 .kagu-folder__tab {
                     position: absolute;
-                    bottom: calc(100% - 1px);
-                    /* Pack left→right from the folder's left edge, so the first
-                       tab sits flush in the top-left corner (no inset, no left
-                       cove) and anchors the start of the row. */
-                    left: calc(var(--i) * var(--tab-step));
+                    /* placed by grid cell: column across, row stacked upward from
+                       the body (row 0 sits on it). Column 0 is flush to the
+                       folder's left edge and anchors the start of each row. */
+                    left: calc(var(--col) * var(--tab-step));
+                    bottom: calc(100% - 1px + var(--row) * var(--tab-h));
                     width: var(--tab-w);
                     min-height: var(--tab-h);
                     display: flex;
@@ -388,38 +403,41 @@ export default async function WorkIndexPage() {
                     text-overflow: ellipsis;
                 }
                 /* Concave fillets flaring each tab's sides into the body. They
-                   overlap the tab by 1px on the inner edge and the body by 1px
-                   below, so there's no sub-pixel seam between the rectangle and
-                   its curves. */
+                   overlap the tab and body by 1px to avoid a seam, and only show
+                   on the bottom row (the one touching the body) — wrapped rows are
+                   plain tabs resting on the row below. A per-edge factor (--cf)
+                   collapses a fillet to nothing where it isn't wanted: column 0
+                   has no left fillet (flush to the edge), and the last tab of a
+                   row / the final tab has no right fillet, so nothing hooks past
+                   the side. */
                 .kagu-folder__tab::before,
                 .kagu-folder__tab::after {
                     content: "";
                     position: absolute;
                     bottom: -1px;
-                    width: calc(var(--joint) + 1px);
-                    height: calc(var(--joint) + 1px);
                     background: var(--fl);
+                    /* 1 on the bottom row, 0 on any wrapped row above it */
+                    --on-body-row: calc(1 - min(var(--row), 1));
                 }
                 .kagu-folder__tab::before {
+                    --cf: calc(min(var(--col), 1) * var(--on-body-row));
                     left: calc(-1 * var(--joint));
+                    width: calc((var(--joint) + 1px) * var(--cf));
+                    height: calc((var(--joint) + 1px) * var(--cf));
                     -webkit-mask: radial-gradient(circle var(--joint) at top left, #0000 99%, #000 100%);
                             mask: radial-gradient(circle var(--joint) at top left, #0000 99%, #000 100%);
                 }
                 .kagu-folder__tab::after {
+                    --cf: calc(
+                        min(calc(var(--per-row) - 1 - var(--col)), 1)
+                        * min(calc(var(--n) - 1 - var(--i)), 1)
+                        * var(--on-body-row)
+                    );
                     right: calc(-1 * var(--joint));
+                    width: calc((var(--joint) + 1px) * var(--cf));
+                    height: calc((var(--joint) + 1px) * var(--cf));
                     -webkit-mask: radial-gradient(circle var(--joint) at top right, #0000 99%, #000 100%);
                             mask: radial-gradient(circle var(--joint) at top right, #0000 99%, #000 100%);
-                }
-                /* Position-aware coves: the leftmost tab anchors the folder's
-                   left edge, so it gets no left cove (it would hook out over the
-                   paper and clash with the body's corner). The rightmost tab
-                   gets no right cove, so its curve can't overflow past the folder
-                   on the right. Middle tabs keep both. */
-                .kagu-folder:first-of-type .kagu-folder__tab::before {
-                    content: none;
-                }
-                .kagu-folder:last-of-type .kagu-folder__tab::after {
-                    content: none;
                 }
 
                 .kagu-folder__ghost {
@@ -631,12 +649,11 @@ export default async function WorkIndexPage() {
                        Tall mobile bodies make that release especially violent, so
                        this keeps a reasonable tail before the script takes over. */
                     .kagu-folders__runway { height: clamp(20rem, 65svh, 40rem); }
-                    /* tabs share one level here too — tile them across to fit,
-                       labels wrap to two lines */
+                    /* phones wrap tighter: four tabs per row (the grid math from
+                       the base rules recomputes off --per-row). */
+                    .kagu-folder { --per-row: 4; }
                     .kagu-folder__tab {
-                        width: calc(97% / var(--n) - 0.35rem);
                         min-width: 0;
-                        left: calc(1.5% + var(--i) * (97% / var(--n)));
                         padding-inline: clamp(0.3rem, 1.4vw, 0.7rem);
                         gap: 0.05em;
                     }
@@ -743,6 +760,11 @@ export default async function WorkIndexPage() {
                         position: relative;
                         top: auto;
                         transition: none;
+                        /* static flow shows one folder at a time, so drop the grid:
+                           a single left-anchored tab per folder, no wrapped rows. */
+                        --col: 0;
+                        --row: 0;
+                        --rows: 1;
                     }
                     .kagu-folder:hover { transform: none; }
                     .kagu-folder__arrow { transition: none; }

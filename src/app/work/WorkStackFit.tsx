@@ -18,8 +18,17 @@ import { useEffect } from "react";
      exactly when the final (now equal-height) card pins — leaving no scroll for
      the stack to release into.
 
-  Recomputed on resize, font load, and thumbnail load. Disabled under
-  reduced-motion, where the cards fall back to natural static flow.
+  Viewport height here is read as a stable 100svh (the *small*, toolbar-expanded
+  height the CSS already sizes off), NOT window.innerHeight. innerHeight grows
+  and shrinks as the mobile URL bar collapses/expands on scroll; sizing the
+  runway off it made the lock drift right at the bottom of the page, so the
+  stack would start to release and the page would fight the scroll ("jumpy").
+  svh is constant through those toolbar moves, so the lock holds steady.
+
+  Recomputed on resize, font load, and thumbnail load. A toolbar-only viewport
+  change (width + svh unchanged) is skipped so scrolling never thrashes the
+  remeasure. Disabled under reduced-motion, where the cards fall back to natural
+  static flow.
 */
 export function WorkStackFit() {
     useEffect(() => {
@@ -33,10 +42,31 @@ export function WorkStackFit() {
 
         const rootFont =
             parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+
+        // Measure 100svh in px — the *small* (toolbar-expanded) viewport height.
+        // Unlike window.innerHeight this stays put while the mobile URL bar
+        // expands/collapses on scroll, so the runway maths never shift under the
+        // user near the bottom of the page.
+        const probe = document.createElement("div");
+        probe.style.cssText =
+            "position:fixed;left:0;top:0;width:0;height:100svh;visibility:hidden;pointer-events:none;";
+        const readSvh = () => {
+            document.body.appendChild(probe);
+            const h = probe.getBoundingClientRect().height;
+            probe.remove();
+            return h || window.innerHeight;
+        };
+
         let raf = 0;
+        let pendingForce = false;
+        let lastW = -1;
+        let lastSvh = -1;
 
         const apply = () => {
             raf = 0;
+            const force = pendingForce;
+            pendingForce = false;
+
             const bodies = Array.from(
                 folders.querySelectorAll<HTMLElement>(".kagu-folder__body")
             );
@@ -50,6 +80,22 @@ export function WorkStackFit() {
                 runway.style.marginBottom = "0px";
                 return;
             }
+
+            const svh = readSvh();
+            // A forced pass (initial / font / image load) changes card *content*
+            // height, so it must always remeasure. A bare resize that left both
+            // the width and svh untouched is just the toolbar moving — nothing
+            // the lock depends on changed, so skip the (scroll-disturbing)
+            // remeasure entirely and let scrolling stay smooth.
+            if (
+                !force &&
+                window.innerWidth === lastW &&
+                Math.abs(svh - lastSvh) < 1
+            ) {
+                return;
+            }
+            lastW = window.innerWidth;
+            lastSvh = svh;
 
             const stackTop = parseFloat(getComputedStyle(firstFolder).top) || 0;
             const pad = parseFloat(getComputedStyle(work).paddingBottom) || 0;
@@ -74,30 +120,37 @@ export function WorkStackFit() {
             const cardH = Math.min(Math.max(maxH, floor), fitH);
             bodies.forEach((b) => (b.style.minHeight = `${cardH}px`));
 
-            // 3) Lock scroll so it ends exactly when the last card pins.
-            const tail = window.innerHeight - stackTop - cardH - pad;
+            // 3) Lock scroll so it ends exactly when the last card pins. Sized
+            //    off the stable svh, so even when the toolbar collapses and the
+            //    real viewport grows taller, the page can never scroll past the
+            //    pin (worst case the last card stops a hair short — never a
+            //    release).
+            const tail = svh - stackTop - cardH - pad;
             runway.style.height = `${Math.max(0, tail)}px`;
             runway.style.marginBottom = `${Math.min(0, tail)}px`;
 
             if (Math.abs(window.scrollY - prevY) > 1) window.scrollTo(0, prevY);
         };
 
-        const schedule = () => {
+        const schedule = (force = false) => {
+            if (force) pendingForce = true;
             if (!raf) raf = requestAnimationFrame(apply);
         };
 
-        schedule();
-        window.addEventListener("resize", schedule);
-        document.fonts?.ready.then(schedule).catch(() => {});
+        schedule(true);
+        const onResize = () => schedule(false);
+        const onImgLoad = () => schedule(true);
+        window.addEventListener("resize", onResize);
+        document.fonts?.ready.then(() => schedule(true)).catch(() => {});
         const imgs = Array.from(folders.querySelectorAll("img"));
         imgs.forEach((img) => {
-            if (!img.complete) img.addEventListener("load", schedule);
+            if (!img.complete) img.addEventListener("load", onImgLoad);
         });
 
         return () => {
             if (raf) cancelAnimationFrame(raf);
-            window.removeEventListener("resize", schedule);
-            imgs.forEach((img) => img.removeEventListener("load", schedule));
+            window.removeEventListener("resize", onResize);
+            imgs.forEach((img) => img.removeEventListener("load", onImgLoad));
         };
     }, []);
 
