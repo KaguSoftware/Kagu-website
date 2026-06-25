@@ -102,7 +102,8 @@
    Loud through light + motion, but still pure Kagu deep-sky — no new hue. --- */
 .kagu-glassnav__cta {
   position: relative; /* anchor the sheen, halo + glow */
-  isolation: isolate; /* keep the conic ring's blend local to the pill */
+  isolation: isolate; /* keep the halo's blend local to the pill */
+  overflow: hidden; /* clip the sheen + bird to the rounded pill */
   display: inline-flex;
   align-items: center;
   gap: 0.5ch;
@@ -155,52 +156,13 @@
   50%      { opacity: 0.85; transform: scale(1.06); }
 }
 
-/* Conic ring — a thin spinning gradient border, masked to the edge. Idle it's
-   barely there; on hover it brightens and the spin speeds up. */
-.kagu-glassnav__cta-ring {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  border-radius: 9999px;
-  padding: 1.5px;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    color-mix(in oklab, white 90%, var(--mint-deep)) 60deg,
-    transparent 140deg,
-    color-mix(in oklab, var(--mint-deep) 60%, white) 240deg,
-    transparent 320deg
-  );
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  mask-composite: exclude;
-  opacity: 0.5;
-  animation: kagu-cta-spin 6s linear infinite;
-  transition: opacity 220ms var(--ease-arc, ease);
-  pointer-events: none;
-}
-@keyframes kagu-cta-spin {
-  to { transform: rotate(1turn); }
-}
-.kagu-glassnav__cta:hover .kagu-glassnav__cta-ring {
-  opacity: 1;
-  animation-duration: 2.4s;
-}
-
-/* Traveling sheen — a diagonal light streak sweeps across on a slow loop,
-   clipped to the pill via its own rounded overflow box. */
+/* Traveling sheen — a diagonal light streak that sweeps across on a slow loop.
+   Clipped to the pill by overflow:hidden on .kagu-glassnav__cta. */
 .kagu-glassnav__cta::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 0;
-  border-radius: inherit;
-  overflow: hidden;
   pointer-events: none;
   background: linear-gradient(
     115deg,
@@ -208,8 +170,6 @@
     color-mix(in oklab, white 70%, transparent) 50%,
     transparent 62%
   );
-  -webkit-mask: linear-gradient(#000 0 0);
-  mask: linear-gradient(#000 0 0);
   transform: translateX(-130%);
   animation: kagu-cta-sheen 3.4s var(--ease-arc, ease) infinite;
 }
@@ -224,18 +184,18 @@
 .kagu-glassnav__cta-bird {
   position: absolute;
   top: 50%;
-  right: -14%;
-  width: 64%;
-  height: 150%;
+  right: 4%;
+  width: 42%;
+  height: 100%;
   transform: translateY(-50%);
   pointer-events: none;
   z-index: 1;
-  opacity: 0.9;
+  opacity: 0.55;
   transition: opacity 240ms var(--ease-arc, ease), right 240ms var(--ease-arc, ease);
 }
 .kagu-glassnav__cta:hover .kagu-glassnav__cta-bird {
-  opacity: 1;
-  right: -6%; /* the bird leans in on hover */
+  opacity: 0.75;
+  right: 2%; /* the bird leans in on hover */
 }
 
 /* Label + arrow ride above the bird, ring + sheen. */
@@ -270,7 +230,6 @@
 @media (prefers-reduced-motion: reduce) {
   .kagu-glassnav__cta { transition: none; }
   .kagu-glassnav__cta::before,
-  .kagu-glassnav__cta::after,
-  .kagu-glassnav__cta-ring { animation: none; }
+  .kagu-glassnav__cta::after { animation: none; }
   .kagu-glassnav__cta-arrow { transition: none; }
 }
