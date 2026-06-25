@@ -181,7 +181,7 @@ export function Hero3D({
   subtitle = "AI systems for ambitious teams.",
   greeting = true,
   location = "Est. 2025 · Istanbul",
-  availability = "Accepting projects · 2026 Q3",
+  availability = "",
 }: Hero3DProps = {}) {
   const reducedMotion = useReducedMotion();
   // The Canvas is mounted client-side only (WebGL never runs during SSR).

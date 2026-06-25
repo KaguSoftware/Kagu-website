@@ -144,6 +144,16 @@
   font-size: clamp(2.75rem, 15vw, 4.5rem);
   position: relative;
 }
+/* "Start" stands out — the one word rendered in mint-deep with a trailing arrow. */
+.kagu-blot__link--start .kagu-blot__label {
+  color: var(--mint-deep);
+}
+.kagu-blot__link--start .kagu-blot__label::before {
+  content: "→";
+  font-size: 0.5em;
+  margin-right: 0.3em;
+  vertical-align: middle;
+}
 /* Active route: a drawn-in underline. */
 .kagu-blot__link.is-active .kagu-blot__label::after {
   content: "";

@@ -1,7 +1,7 @@
 "use client";
 
 /*
-  Team roster — interactive layer for /team.
+  Team roster — interactive layer for the /about page's team section.
 
   Each profile is a vertical column (avatar + meta). The bio lives in a
   zero-width panel to the right that expands on hover (preview) OR when the card

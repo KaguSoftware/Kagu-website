@@ -94,6 +94,66 @@
   .kagu-nav-link::after { transition: none; }
 }
 
+/* --- "Start" — the eye-catching nav item: a tinted pill with a live pulse dot,
+   distinct from (and complementary to) the solid mint CTA on the right. --- */
+.kagu-nav-link--start {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5ch;
+  padding: 6px 13px;
+  border-radius: 9999px;
+  color: var(--mint-deep);
+  background: color-mix(in oklab, var(--mint-deep) 12%, transparent);
+  border: 1px solid color-mix(in oklab, var(--mint-deep) 45%, transparent);
+  transition:
+    background 200ms var(--ease-arc, ease),
+    border-color 200ms var(--ease-arc, ease),
+    transform 200ms var(--ease-arc, ease);
+}
+/* The pill replaces the underline sweep the plain links use. */
+.kagu-nav-link--start::after {
+  content: none;
+}
+.kagu-nav-link--start:hover,
+.kagu-nav-link--start:focus-visible,
+.kagu-nav-link--start.is-active {
+  color: var(--mint-deep);
+  background: color-mix(in oklab, var(--mint-deep) 22%, transparent);
+  border-color: var(--mint-deep);
+  transform: translateY(-1px);
+}
+.kagu-nav-link--start:focus-visible {
+  outline: 2px solid var(--mint-deep);
+  outline-offset: 3px;
+}
+
+/* Live pulse dot — a soft, expanding halo so the eye lands here first. */
+.kagu-nav-link__pulse {
+  position: relative;
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 9999px;
+  background: var(--mint-deep);
+}
+.kagu-nav-link__pulse::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--mint-deep);
+  animation: kagu-start-pulse 2.2s ease-out infinite;
+}
+@keyframes kagu-start-pulse {
+  0% { transform: scale(1); opacity: 0.6; }
+  70% { transform: scale(2.6); opacity: 0; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kagu-nav-link--start { transition: none; }
+  .kagu-nav-link__pulse::before { animation: none; }
+}
+
 /* --- CTA pill --- */
 .kagu-glassnav__cta {
   display: inline-flex;

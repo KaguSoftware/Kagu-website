@@ -37,14 +37,18 @@ export function SiteHeader() {
             {navItems.map((item) => {
               const isActive =
                 pathname === item.href || pathname?.startsWith(`${item.href}/`);
+              const isStart = item.href === "/start-project";
               return (
                 <li key={item.href}>
                   <Link
                     href={item.href}
                     data-cursor="nav-link"
-                    className={`kagu-nav-link ${isActive ? "is-active" : ""}`}
+                    className={`kagu-nav-link ${isActive ? "is-active" : ""} ${
+                      isStart ? "kagu-nav-link--start" : ""
+                    }`}
                     aria-current={isActive ? "page" : undefined}
                   >
+                    {isStart ? <span aria-hidden className="kagu-nav-link__pulse" /> : null}
                     {item.label}
                   </Link>
                 </li>
