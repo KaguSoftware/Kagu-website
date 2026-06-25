@@ -37,18 +37,14 @@ export function SiteHeader() {
             {navItems.map((item) => {
               const isActive =
                 pathname === item.href || pathname?.startsWith(`${item.href}/`);
-              const isStart = item.href === "/start-project";
               return (
                 <li key={item.href}>
                   <Link
                     href={item.href}
                     data-cursor="nav-link"
-                    className={`kagu-nav-link ${isActive ? "is-active" : ""} ${
-                      isStart ? "kagu-nav-link--start" : ""
-                    }`}
+                    className={`kagu-nav-link ${isActive ? "is-active" : ""}`}
                     aria-current={isActive ? "page" : undefined}
                   >
-                    {isStart ? <span aria-hidden className="kagu-nav-link__pulse" /> : null}
                     {item.label}
                   </Link>
                 </li>
@@ -68,7 +64,8 @@ export function SiteHeader() {
 
         <div className="kagu-glassnav__right">
           <Link href="/start-project" data-cursor="nav-link" className="kagu-glassnav__cta">
-            Start a project
+            <span className="kagu-glassnav__cta-label">Start a project</span>
+            <span aria-hidden className="kagu-glassnav__cta-arrow">→</span>
           </Link>
         </div>
       </div>

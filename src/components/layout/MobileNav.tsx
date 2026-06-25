@@ -160,7 +160,6 @@ export function MobileNav() {
                 {navItems.map((item, i) => {
                   const isActive =
                     pathname === item.href || pathname?.startsWith(`${item.href}/`);
-                  const isStart = item.href === "/start-project";
                   return (
                     <li key={item.href} className="kagu-blot__item">
                       {/* overflow-hidden mask so the word rises out of nothing */}
@@ -169,9 +168,7 @@ export function MobileNav() {
                           <Link
                             href={item.href}
                             onClick={close}
-                            className={`kagu-blot__link ${isActive ? "is-active" : ""} ${
-                              isStart ? "kagu-blot__link--start" : ""
-                            }`}
+                            className={`kagu-blot__link ${isActive ? "is-active" : ""}`}
                             aria-current={isActive ? "page" : undefined}
                           >
                             <span className="kagu-blot__index">
