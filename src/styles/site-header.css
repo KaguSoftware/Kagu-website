@@ -95,50 +95,127 @@
 }
 
 /* --- CTA pill — the single, unmistakable call-to-action ---
-   Solid deep-sky accent with a continuously traveling sheen, an accent glow,
-   and a trailing arrow that nudges on hover. Eye-catching via motion + light,
-   not a new color, so it still reads as native Kagu. --- */
+   A glowing deep-sky pill that genuinely pops off the glass bar: a vivid
+   gradient fill, a pulsing accent halo that breathes to pull the eye, a
+   gradient-conic ring that lights up on hover, a continuously traveling sheen,
+   the brand bird tucked inside, and a trailing arrow that springs on hover.
+   Loud through light + motion, but still pure Kagu deep-sky — no new hue. --- */
 .kagu-glassnav__cta {
-  position: relative; /* anchor the sheen + glow */
-  overflow: hidden; /* clip the traveling streak to the pill */
+  position: relative; /* anchor the sheen, halo + glow */
+  isolation: isolate; /* keep the conic ring's blend local to the pill */
   display: inline-flex;
   align-items: center;
   gap: 0.5ch;
-  padding: 0.5rem 1.1rem;
+  padding: 0.6rem 1.25rem;
   border-radius: 9999px;
-  background: var(--mint-deep);
-  color: var(--paper);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in oklab, var(--mint-deep) 78%, white) 0%,
+      var(--mint-deep) 48%,
+      color-mix(in oklab, var(--mint-deep) 82%, black) 100%
+    );
+  color: #fff;
   font-family: var(--font-display);
   font-size: var(--type-xs);
+  font-weight: 600;
   letter-spacing: var(--tracking-eyebrow);
   text-transform: uppercase;
   text-decoration: none;
   white-space: nowrap;
-  box-shadow: 0 8px 24px -10px color-mix(in oklab, var(--mint-deep) 55%, transparent);
+  box-shadow:
+    0 6px 18px -6px color-mix(in oklab, var(--mint-deep) 70%, transparent),
+    0 0 0 1px color-mix(in oklab, var(--mint-deep) 60%, transparent),
+    inset 0 1px 0 color-mix(in oklab, white 45%, transparent); /* top rim light */
   transition:
-    filter 200ms var(--ease-arc, ease),
-    transform 200ms var(--ease-arc, ease),
-    box-shadow 200ms var(--ease-arc, ease);
+    filter 220ms var(--ease-arc, ease),
+    transform 220ms var(--ease-out-expo, ease),
+    box-shadow 220ms var(--ease-arc, ease);
 }
 
-/* Traveling sheen — a diagonal light streak sweeps across on a slow loop. */
+/* Pulsing halo — a soft accent glow that breathes underneath the pill so the
+   CTA never sits still; the single strongest "look here" signal. */
+.kagu-glassnav__cta::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  z-index: -1;
+  border-radius: 9999px;
+  background: radial-gradient(
+    60% 120% at 50% 50%,
+    color-mix(in oklab, var(--mint-deep) 85%, transparent),
+    transparent 70%
+  );
+  filter: blur(10px);
+  opacity: 0.55;
+  animation: kagu-cta-pulse 2.6s var(--ease-arc, ease) infinite;
+}
+@keyframes kagu-cta-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.96); }
+  50%      { opacity: 0.85; transform: scale(1.06); }
+}
+
+/* Conic ring — a thin spinning gradient border, masked to the edge. Idle it's
+   barely there; on hover it brightens and the spin speeds up. */
+.kagu-glassnav__cta-ring {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: 9999px;
+  padding: 1.5px;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    color-mix(in oklab, white 90%, var(--mint-deep)) 60deg,
+    transparent 140deg,
+    color-mix(in oklab, var(--mint-deep) 60%, white) 240deg,
+    transparent 320deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0.5;
+  animation: kagu-cta-spin 6s linear infinite;
+  transition: opacity 220ms var(--ease-arc, ease);
+  pointer-events: none;
+}
+@keyframes kagu-cta-spin {
+  to { transform: rotate(1turn); }
+}
+.kagu-glassnav__cta:hover .kagu-glassnav__cta-ring {
+  opacity: 1;
+  animation-duration: 2.4s;
+}
+
+/* Traveling sheen — a diagonal light streak sweeps across on a slow loop,
+   clipped to the pill via its own rounded overflow box. */
 .kagu-glassnav__cta::before {
   content: "";
   position: absolute;
   inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  overflow: hidden;
   pointer-events: none;
   background: linear-gradient(
     115deg,
-    transparent 35%,
-    color-mix(in oklab, var(--ink) 42%, transparent) 50%,
-    transparent 65%
+    transparent 38%,
+    color-mix(in oklab, white 70%, transparent) 50%,
+    transparent 62%
   );
-  transform: translateX(-120%);
-  animation: kagu-cta-sheen 3.2s var(--ease-arc, ease) infinite;
+  -webkit-mask: linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0);
+  transform: translateX(-130%);
+  animation: kagu-cta-sheen 3.4s var(--ease-arc, ease) infinite;
 }
 @keyframes kagu-cta-sheen {
-  0%, 12% { transform: translateX(-120%); }
-  to { transform: translateX(120%); }
+  0%, 18% { transform: translateX(-130%); }
+  to { transform: translateX(130%); }
 }
 
 /* Glass-bird watermark — ghosted KaguMark drifting behind the label, bled off
@@ -152,32 +229,39 @@
   height: 150%;
   transform: translateY(-50%);
   pointer-events: none;
-  z-index: 0;
+  z-index: 1;
   opacity: 0.9;
   transition: opacity 240ms var(--ease-arc, ease), right 240ms var(--ease-arc, ease);
 }
 .kagu-glassnav__cta:hover .kagu-glassnav__cta-bird {
   opacity: 1;
-  right: -8%; /* the bird leans in on hover */
+  right: -6%; /* the bird leans in on hover */
 }
 
-/* Label + arrow ride above the bird + sheen. */
+/* Label + arrow ride above the bird, ring + sheen. */
 .kagu-glassnav__cta-label,
 .kagu-glassnav__cta-arrow {
   position: relative;
-  z-index: 1;
+  z-index: 2;
+  text-shadow: 0 1px 6px color-mix(in oklab, var(--mint-deep) 80%, black);
 }
 .kagu-glassnav__cta-arrow {
-  transition: transform 200ms var(--ease-arc, ease);
+  transition: transform 220ms var(--ease-out-expo, ease);
 }
 .kagu-glassnav__cta:hover .kagu-glassnav__cta-arrow {
-  transform: translateX(3px);
+  transform: translateX(4px);
 }
 
 .kagu-glassnav__cta:hover {
-  filter: brightness(1.08);
-  transform: translateY(-1px);
-  box-shadow: 0 12px 30px -8px color-mix(in oklab, var(--mint-deep) 70%, transparent);
+  filter: brightness(1.1) saturate(1.1);
+  transform: translateY(-2px) scale(1.03);
+  box-shadow:
+    0 14px 34px -8px color-mix(in oklab, var(--mint-deep) 80%, transparent),
+    0 0 0 1px color-mix(in oklab, white 40%, transparent),
+    inset 0 1px 0 color-mix(in oklab, white 55%, transparent);
+}
+.kagu-glassnav__cta:active {
+  transform: translateY(-1px) scale(0.99);
 }
 .kagu-glassnav__cta:focus-visible {
   outline: 2px solid var(--mint-deep);
@@ -185,6 +269,8 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .kagu-glassnav__cta { transition: none; }
-  .kagu-glassnav__cta::before { animation: none; }
+  .kagu-glassnav__cta::before,
+  .kagu-glassnav__cta::after,
+  .kagu-glassnav__cta-ring { animation: none; }
   .kagu-glassnav__cta-arrow { transition: none; }
 }

@@ -67,6 +67,8 @@ export function SiteHeader() {
 
         <div className="kagu-glassnav__right">
           <Link href="/start-project" data-cursor="nav-link" className="kagu-glassnav__cta">
+            {/* Spinning conic ring — lit edge that brightens + speeds up on hover. */}
+            <span aria-hidden className="kagu-glassnav__cta-ring" />
             {/* Glass-bird watermark — the hero's floating KaguMark, ghosted and
                 clipped inside the pill so the CTA carries the brand's signature
                 silhouette. Gentle continuous drift mirrors the hero float. */}
