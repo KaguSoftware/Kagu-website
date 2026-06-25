@@ -141,7 +141,27 @@
   to { transform: translateX(120%); }
 }
 
-/* Label + arrow ride above the sheen. */
+/* Glass-bird watermark — ghosted KaguMark drifting behind the label, bled off
+   the right edge so the wing reads like the hero bird tucked into the pill.
+   Sits above the solid fill but below the sheen + text. */
+.kagu-glassnav__cta-bird {
+  position: absolute;
+  top: 50%;
+  right: -14%;
+  width: 64%;
+  height: 150%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.9;
+  transition: opacity 240ms var(--ease-arc, ease), right 240ms var(--ease-arc, ease);
+}
+.kagu-glassnav__cta:hover .kagu-glassnav__cta-bird {
+  opacity: 1;
+  right: -8%; /* the bird leans in on hover */
+}
+
+/* Label + arrow ride above the bird + sheen. */
 .kagu-glassnav__cta-label,
 .kagu-glassnav__cta-arrow {
   position: relative;

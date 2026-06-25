@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion, useReducedMotion } from "motion/react";
 import { Logo } from "@/components/Logo";
+import { KaguMark } from "@/components/KaguMark";
 import { MobileNav } from "./MobileNav";
 import { navItems } from "./navItems";
 
@@ -21,6 +23,7 @@ import { navItems } from "./navItems";
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const reduced = useReducedMotion() ?? false;
   return (
     <header
       className="fixed top-0 left-0 right-0 flex justify-center"
@@ -64,6 +67,26 @@ export function SiteHeader() {
 
         <div className="kagu-glassnav__right">
           <Link href="/start-project" data-cursor="nav-link" className="kagu-glassnav__cta">
+            {/* Glass-bird watermark — the hero's floating KaguMark, ghosted and
+                clipped inside the pill so the CTA carries the brand's signature
+                silhouette. Gentle continuous drift mirrors the hero float. */}
+            <motion.span
+              aria-hidden
+              className="kagu-glassnav__cta-bird"
+              animate={reduced ? undefined : { y: [0, -2.5, 0], rotate: [0, -2, 0] }}
+              transition={
+                reduced
+                  ? undefined
+                  : { duration: 6, ease: "easeInOut", repeat: Infinity, repeatType: "loop" }
+              }
+            >
+              <KaguMark
+                preserveAspectRatio="xMidYMid meet"
+                wingOpacity={0.16}
+                bodyOpacity={0.5}
+                style={{ width: "100%", height: "100%", color: "var(--ink)" }}
+              />
+            </motion.span>
             <span className="kagu-glassnav__cta-label">Start a project</span>
             <span aria-hidden className="kagu-glassnav__cta-arrow">→</span>
           </Link>
