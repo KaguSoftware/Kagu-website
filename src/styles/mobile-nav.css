@@ -7,6 +7,47 @@
   it from the burger corner. The burger sits above the field and crosses to an ✕.
 */
 
+/* --- persistent logo blob (top-left corner) --- */
+.kagu-blot__home {
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* Same frosted chip as the burger so the brand reads over any section. */
+  background: color-mix(in oklab, var(--mint-pale) 60%, transparent);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid color-mix(in oklab, var(--ink) 12%, transparent);
+  border-radius: 9999px;
+  box-shadow: 0 16px 40px -18px rgba(0, 0, 0, 0.55);
+  color: var(--slate-ink);
+  text-decoration: none;
+  pointer-events: auto;
+  z-index: calc(var(--z-curtain) + 1);
+  transition: opacity 240ms var(--ease-arc, ease), transform 240ms var(--ease-arc, ease);
+}
+.kagu-blot__home .kagu-mark,
+.kagu-blot__home svg { display: block; }
+/* Hide while the menu is open — the flooded panel shows its own brand. */
+.kagu-blot__home.is-hidden {
+  opacity: 0;
+  transform: scale(0.8);
+  pointer-events: none;
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .kagu-blot__home {
+    background: color-mix(in oklab, var(--mint-pale) 94%, var(--paper));
+  }
+}
+/* Mobile only — the desktop glass pill has its own centered logo. */
+@media (min-width: 768px) {
+  .kagu-blot__home { display: none; }
+}
+
 /* --- trigger (top-right corner) --- */
 .kagu-blot__burger {
   position: fixed;
@@ -162,7 +203,7 @@
   position: relative;
   z-index: 1;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 1rem;
   border-top: 1px solid color-mix(in oklab, var(--ink) 18%, transparent);
@@ -170,15 +211,106 @@
   font-family: var(--font-mono, ui-monospace, monospace);
   font-size: var(--type-xs);
 }
+
+/* CTA pill — the same glowing deep-sky treatment as the desktop header CTA:
+   gradient fill, breathing halo, traveling sheen, springing arrow. */
 .kagu-blot__contact {
-  color: var(--ink);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden; /* clip the sheen to the rounded pill */
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5ch;
+  padding: 0.7rem 1.35rem;
+  border-radius: 9999px;
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in oklab, var(--mint-deep) 78%, white) 0%,
+      var(--mint-deep) 48%,
+      color-mix(in oklab, var(--mint-deep) 82%, black) 100%
+    );
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   text-decoration: none;
-  letter-spacing: 0.04em;
-  transition: color 200ms var(--ease-arc, ease);
+  white-space: nowrap;
+  box-shadow:
+    0 6px 18px -6px color-mix(in oklab, var(--mint-deep) 70%, transparent),
+    0 0 0 1px color-mix(in oklab, var(--mint-deep) 60%, transparent),
+    inset 0 1px 0 color-mix(in oklab, white 45%, transparent);
+  transition:
+    filter 220ms var(--ease-arc, ease),
+    transform 220ms var(--ease-out-expo, ease),
+    box-shadow 220ms var(--ease-arc, ease);
+}
+
+/* Breathing halo behind the pill — the "look here" pulse. */
+.kagu-blot__contact::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  z-index: -1;
+  border-radius: 9999px;
+  background: radial-gradient(
+    60% 120% at 50% 50%,
+    color-mix(in oklab, var(--mint-deep) 85%, transparent),
+    transparent 70%
+  );
+  filter: blur(10px);
+  opacity: 0.55;
+  animation: kagu-cta-pulse 2.6s var(--ease-arc, ease) infinite;
+}
+
+/* Traveling sheen — diagonal light streak, clipped by the pill's overflow. */
+.kagu-blot__contact::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 38%,
+    color-mix(in oklab, white 70%, transparent) 50%,
+    transparent 62%
+  );
+  transform: translateX(-130%);
+  animation: kagu-cta-sheen 3.4s var(--ease-arc, ease) infinite;
+}
+
+.kagu-blot__contact-label,
+.kagu-blot__contact-arrow {
+  position: relative;
+  z-index: 2;
+  text-shadow: 0 1px 6px color-mix(in oklab, var(--mint-deep) 80%, black);
+}
+.kagu-blot__contact-arrow {
+  transition: transform 220ms var(--ease-out-expo, ease);
 }
 .kagu-blot__contact:hover,
 .kagu-blot__contact:focus-visible {
-  color: var(--mint-deep);
+  filter: brightness(1.1) saturate(1.1);
+  transform: translateY(-2px) scale(1.03);
+  box-shadow:
+    0 14px 34px -8px color-mix(in oklab, var(--mint-deep) 80%, transparent),
+    0 0 0 1px color-mix(in oklab, white 40%, transparent),
+    inset 0 1px 0 color-mix(in oklab, white 55%, transparent);
+}
+.kagu-blot__contact:hover .kagu-blot__contact-arrow,
+.kagu-blot__contact:focus-visible .kagu-blot__contact-arrow {
+  transform: translateX(4px);
+}
+.kagu-blot__contact:active {
+  transform: translateY(-1px) scale(0.99);
+}
+@media (prefers-reduced-motion: reduce) {
+  .kagu-blot__contact { transition: none; }
+  .kagu-blot__contact::before,
+  .kagu-blot__contact::after { animation: none; }
+  .kagu-blot__contact-arrow { transition: none; }
 }
 .kagu-blot__est {
   letter-spacing: 0.16em;

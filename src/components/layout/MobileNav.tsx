@@ -191,14 +191,27 @@ export function MobileNav() {
               exit={reduced ? undefined : { opacity: 0, y: 8 }}
               transition={{ duration: 0.5, ease: EASE_WORD, delay: reduced ? 0 : 0.5 }}
             >
-              <Link href="/contact" onClick={close} className="kagu-blot__contact">
-                Start a project →
+              <Link href="/start-project" onClick={close} className="kagu-blot__contact">
+                <span className="kagu-blot__contact-label">Start a project</span>
+                <span aria-hidden className="kagu-blot__contact-arrow">→</span>
               </Link>
               <span className="kagu-blot__est">Est. 2025 · Istanbul</span>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Persistent logo blob — top-left frosted chip, mirrors the burger.
+          Hidden while the menu is open (the flooded panel has its own brand). */}
+      <Link
+        href="/"
+        aria-label="Kagu, home"
+        className={`kagu-blot__home ${open ? "is-hidden" : ""}`}
+        tabIndex={open ? -1 : undefined}
+        aria-hidden={open ? "true" : undefined}
+      >
+        <Logo wordmarkOnly size={26} />
+      </Link>
 
       <button
         ref={triggerRef}
