@@ -338,7 +338,7 @@ export const FEATURES: Feature[] = [
     description: "Cards and local methods, securely handled.",
     price: 10000,
     appliesTo: ["ecommerce", "restaurant", "service"],
-    note: "Buyer is responsible for applying to the payment gateway company.",
+    note: "Merchant account and approval are arranged by the client, directly with the payment provider.",
     effect: { kind: "nav-icon", icon: "card" },
   },
   {
@@ -393,6 +393,7 @@ export const FEATURES: Feature[] = [
     description: "Enquiries and orders arrive as structured WhatsApp messages.",
     price: 15000,
     group: "messaging",
+    note: "WhatsApp Business API access and approval are arranged by the client, directly with Meta.",
     effect: { kind: "chat-bubble", style: "whatsapp" },
   },
   {
