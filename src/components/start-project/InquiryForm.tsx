@@ -136,7 +136,7 @@ export function InquiryForm({
         ? `  · Branding — palette, logo direction & identity (+ ${formatPrice(BRANDING_PRICE)})`
         : `  · Palette — Primary ${palette.primary}, Accent ${palette.accent2}, Accent ${palette.accent3}`,
       animation
-        ? `  · ${ANIMATION_LABEL} — site-wide motion (+ ${formatPrice(ANIMATION_PRICE)})`
+        ? `  · ${ANIMATION_LABEL} — motion on the first fold (+ ${formatPrice(ANIMATION_PRICE)})`
         : null,
     ]
       .filter(Boolean)

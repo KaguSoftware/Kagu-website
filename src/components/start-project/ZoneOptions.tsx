@@ -139,6 +139,14 @@ export function ZoneOptions({
               );
             })}
           </div>
+
+          {/* Hero-only motion add-on — rides on top of the chosen hero style */}
+          {group.zone === "hero" ? (
+            <AnimationToggle
+              on={animation}
+              onToggle={() => onAnimationChange(!animation)}
+            />
+          ) : null}
         </div>
       ))}
 
@@ -226,26 +234,6 @@ export function ZoneOptions({
         </div>
       </div>
 
-      {/* Motion — site-wide animation add-on */}
-      <div>
-        <span
-          className="font-mono block"
-          style={{
-            fontSize: "var(--type-xs)",
-            letterSpacing: "var(--tracking-eyebrow)",
-            textTransform: "uppercase",
-            color: "var(--slate-ink)",
-            marginBottom: "var(--space-3)",
-          }}
-        >
-          Motion
-        </span>
-        <AnimationToggle
-          on={animation}
-          onToggle={() => onAnimationChange(!animation)}
-        />
-      </div>
-
       {/* Palette */}
       <div>
         <span
@@ -296,8 +284,9 @@ export function ZoneOptions({
 }
 
 /* ------------------------------------------------------------------ */
-/* Animation toggle — a single full-width checkbox card. Adds the      */
-/* site-wide motion package (entrances, scroll, micro-interactions).   */
+/* Hero animation toggle — a full-width checkbox card shown under the   */
+/* hero styles. Adds motion to the first fold on top of the chosen      */
+/* hero layout (it is additive, not a mutually-exclusive style).        */
 /* ------------------------------------------------------------------ */
 
 function AnimationToggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
@@ -312,7 +301,8 @@ function AnimationToggle({ on, onToggle }: { on: boolean; onToggle: () => void }
       className="flex items-center gap-3 text-left"
       style={{
         width: "100%",
-        padding: "var(--space-4) var(--space-4)",
+        marginTop: "var(--space-2)",
+        padding: "var(--space-3) var(--space-3)",
         border: "1px solid",
         borderColor: on ? "var(--mint-deep)" : "var(--neutral)",
         background: on
@@ -375,7 +365,7 @@ function AnimationToggle({ on, onToggle }: { on: boolean; onToggle: () => void }
             lineHeight: 1.4,
           }}
         >
-          Motion design — entrances, scroll reactions, micro-interactions.
+          Bring the first fold to life — entrance, parallax, micro-interactions.
         </span>
       </span>
 

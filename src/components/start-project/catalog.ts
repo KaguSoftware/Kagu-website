@@ -258,10 +258,10 @@ export const BRANDING_ID = "branding";
 export const BRANDING_PRICE = 23000;
 export const BRANDING_LABEL = "I want branding";
 
-/* Site-wide motion add-on — entrances, scroll reactions, micro-interactions. */
-export const ANIMATION_ID = "animation";
+/* Hero motion add-on — animates the first fold (rides on any hero style). */
+export const ANIMATION_ID = "hero-animation";
 export const ANIMATION_PRICE = 10000;
-export const ANIMATION_LABEL = "Animations";
+export const ANIMATION_LABEL = "Animate the hero";
 
 export function isValidHex(s: string): boolean {
   return /^#([0-9a-f]{6})$/i.test(s);
