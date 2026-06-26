@@ -12,6 +12,8 @@ import {
   BRANDING_LABEL,
   BRANDING_PRICE,
   COMPONENT_GROUPS,
+  NAV_HOVER_LABEL,
+  NAV_HOVER_PRICE,
   THEME_OPTIONS,
   formatPrice,
   type CustomPalette,
@@ -32,6 +34,8 @@ export function ZoneOptions({
   onBrandingChange,
   animation,
   onAnimationChange,
+  navHover,
+  onNavHoverChange,
 }: {
   choices: ZoneChoices;
   onChange: (zone: PreviewZone, variantId: string) => void;
@@ -43,6 +47,8 @@ export function ZoneOptions({
   onBrandingChange: (branding: boolean) => void;
   animation: boolean;
   onAnimationChange: (animation: boolean) => void;
+  navHover: boolean;
+  onNavHoverChange: (navHover: boolean) => void;
 }) {
   return (
     <div className="flex flex-col gap-(--space-8)">
@@ -140,11 +146,23 @@ export function ZoneOptions({
             })}
           </div>
 
-          {/* Hero-only motion add-on — rides on top of the chosen hero style */}
+          {/* Per-zone motion add-ons — additive on top of the chosen style */}
+          {group.zone === "navbar" ? (
+            <AddonToggle
+              on={navHover}
+              onToggle={() => onNavHoverChange(!navHover)}
+              label={NAV_HOVER_LABEL}
+              description="Links and the logo answer the cursor — magnetic hovers, fluid underlines, micro-motion."
+              price={NAV_HOVER_PRICE}
+            />
+          ) : null}
           {group.zone === "hero" ? (
-            <AnimationToggle
+            <AddonToggle
               on={animation}
               onToggle={() => onAnimationChange(!animation)}
+              label={ANIMATION_LABEL}
+              description="Cursor-reactive 3D — a WebGL first fold built to move and respond as visitors do."
+              price={ANIMATION_PRICE}
             />
           ) : null}
         </div>
@@ -284,18 +302,30 @@ export function ZoneOptions({
 }
 
 /* ------------------------------------------------------------------ */
-/* Hero animation toggle — a full-width checkbox card shown under the   */
-/* hero styles. Adds motion to the first fold on top of the chosen      */
-/* hero layout (it is additive, not a mutually-exclusive style).        */
+/* Add-on toggle — a full-width checkbox card shown under a zone's      */
+/* styles (navbar hover, hero motion). Additive on top of the chosen    */
+/* style, not a mutually-exclusive option.                              */
 /* ------------------------------------------------------------------ */
 
-function AnimationToggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+function AddonToggle({
+  on,
+  onToggle,
+  label,
+  description,
+  price,
+}: {
+  on: boolean;
+  onToggle: () => void;
+  label: string;
+  description: string;
+  price: number;
+}) {
   return (
     <button
       type="button"
       role="checkbox"
       aria-checked={on}
-      aria-label={ANIMATION_LABEL}
+      aria-label={label}
       data-cursor="view"
       onClick={onToggle}
       className="flex items-center gap-3 text-left"
@@ -356,7 +386,7 @@ function AnimationToggle({ on, onToggle }: { on: boolean; onToggle: () => void }
             color: on ? "var(--mint-deep)" : "var(--ink)",
           }}
         >
-          {ANIMATION_LABEL}
+          {label}
         </span>
         <span
           style={{
@@ -365,7 +395,7 @@ function AnimationToggle({ on, onToggle }: { on: boolean; onToggle: () => void }
             lineHeight: 1.4,
           }}
         >
-          Bring the first fold to life — entrance, parallax, micro-interactions.
+          {description}
         </span>
       </span>
 
@@ -379,7 +409,7 @@ function AnimationToggle({ on, onToggle }: { on: boolean; onToggle: () => void }
           alignSelf: "flex-start",
         }}
       >
-        + {formatPrice(ANIMATION_PRICE)}
+        + {formatPrice(price)}
       </span>
     </button>
   );

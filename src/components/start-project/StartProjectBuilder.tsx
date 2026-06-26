@@ -209,6 +209,7 @@ export function StartProjectBuilder({
   initialPalette,
   initialBranding,
   initialAnimation,
+  initialNavHover,
 }: {
   initialTypeId: WebsiteTypeId;
   initialFeatureIds: string[];
@@ -217,6 +218,7 @@ export function StartProjectBuilder({
   initialPalette: CustomPalette;
   initialBranding: boolean;
   initialAnimation: boolean;
+  initialNavHover: boolean;
 }) {
   const [typeId, setTypeId] = useState<WebsiteTypeId>(initialTypeId);
   const [selected, setSelected] = useState<Set<string>>(
@@ -227,6 +229,7 @@ export function StartProjectBuilder({
   const [palette, setPalette] = useState<CustomPalette>(initialPalette);
   const [branding, setBranding] = useState<boolean>(initialBranding);
   const [animation, setAnimation] = useState<boolean>(initialAnimation);
+  const [navHover, setNavHover] = useState<boolean>(initialNavHover);
   const [ideas, setIdeas] = useState<string[]>([]);
 
   const paletteToken = branding ? BRANDING_ID : serializePalette(palette);
@@ -242,8 +245,9 @@ export function StartProjectBuilder({
     search.set("theme", theme);
     search.set("accent", paletteToken);
     if (animation) search.set("anim", "1");
+    if (navHover) search.set("navfx", "1");
     window.history.replaceState(null, "", `?${search.toString()}`);
-  }, [typeId, selected, zoneChoices, theme, paletteToken, animation]);
+  }, [typeId, selected, zoneChoices, theme, paletteToken, animation, navHover]);
 
   const changeZone = (zone: PreviewZone, variantId: string) => {
     setZoneChoices((current) => ({ ...current, [zone]: variantId }));
@@ -267,7 +271,7 @@ export function StartProjectBuilder({
     });
   };
 
-  const totals = computeTotals(typeId, selected, zoneChoices, theme, paletteToken, animation);
+  const totals = computeTotals(typeId, selected, zoneChoices, theme, paletteToken, animation, navHover);
   const accent = branding ? DEFAULT_CUSTOM_PALETTE.primary : palette.primary;
   const accent2 = branding ? DEFAULT_CUSTOM_PALETTE.accent2 : palette.accent2;
   const accent3 = branding ? DEFAULT_CUSTOM_PALETTE.accent3 : palette.accent3;
@@ -356,6 +360,8 @@ export function StartProjectBuilder({
                 onBrandingChange={setBranding}
                 animation={animation}
                 onAnimationChange={setAnimation}
+                navHover={navHover}
+                onNavHoverChange={setNavHover}
               />
             </div>
 
@@ -416,6 +422,7 @@ export function StartProjectBuilder({
                 palette={palette}
                 branding={branding}
                 animation={animation}
+                navHover={navHover}
                 ideas={ideas}
               />
             </div>

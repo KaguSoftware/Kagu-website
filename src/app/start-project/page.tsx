@@ -31,6 +31,7 @@ type StartProjectParams = {
   theme?: string;
   accent?: string;
   anim?: string;
+  navfx?: string;
 };
 
 export default async function StartProjectPage({
@@ -69,6 +70,7 @@ export default async function StartProjectPage({
   const initialPalette =
     parsePalette(accentParam) ?? DEFAULT_CUSTOM_PALETTE;
   const initialAnimation = params.anim === "1";
+  const initialNavHover = params.navfx === "1";
 
   return (
     <>
@@ -80,6 +82,7 @@ export default async function StartProjectPage({
         initialPalette={initialPalette}
         initialBranding={initialBranding}
         initialAnimation={initialAnimation}
+        initialNavHover={initialNavHover}
       />
       <SiteFooter />
     </>

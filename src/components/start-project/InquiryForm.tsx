@@ -20,6 +20,9 @@ import {
   BRANDING_ID,
   BRANDING_PRICE,
   CURRENCY,
+  NAV_HOVER_ID,
+  NAV_HOVER_LABEL,
+  NAV_HOVER_PRICE,
   computeTotals,
   formatPrice,
   serializePalette,
@@ -41,6 +44,7 @@ export function InquiryForm({
   palette,
   branding,
   animation,
+  navHover,
   ideas,
 }: {
   typeId: WebsiteTypeId;
@@ -50,6 +54,7 @@ export function InquiryForm({
   palette: CustomPalette;
   branding: boolean;
   animation: boolean;
+  navHover: boolean;
   ideas: string[];
 }) {
   const paletteToken = branding ? BRANDING_ID : serializePalette(palette);
@@ -91,7 +96,7 @@ export function InquiryForm({
     }
 
     const type = getWebsiteType(typeId);
-    const totals = computeTotals(typeId, selected, zoneChoices, theme, paletteToken, animation);
+    const totals = computeTotals(typeId, selected, zoneChoices, theme, paletteToken, animation, navHover);
 
     const supabase = createClient();
     const { error } = await supabase.from("project_inquiries").insert({
@@ -103,6 +108,7 @@ export function InquiryForm({
         `theme:${theme}`,
         `palette:${paletteToken}`,
         ...(animation ? [`${ANIMATION_ID}:true`] : []),
+        ...(navHover ? [`${NAV_HOVER_ID}:true`] : []),
         ...totals.features.map((f) => f.id),
         ...ideas.map((idea) => `idea:${idea}`),
       ],
@@ -135,8 +141,11 @@ export function InquiryForm({
       branding
         ? `  · Branding — palette, logo direction & identity (+ ${formatPrice(BRANDING_PRICE)})`
         : `  · Palette — Primary ${palette.primary}, Accent ${palette.accent2}, Accent ${palette.accent3}`,
+      navHover
+        ? `  · ${NAV_HOVER_LABEL} — cursor-aware navbar motion (+ ${formatPrice(NAV_HOVER_PRICE)})`
+        : null,
       animation
-        ? `  · ${ANIMATION_LABEL} — motion on the first fold (+ ${formatPrice(ANIMATION_PRICE)})`
+        ? `  · ${ANIMATION_LABEL} — cursor-reactive 3D first fold (+ ${formatPrice(ANIMATION_PRICE)})`
         : null,
     ]
       .filter(Boolean)
@@ -168,7 +177,7 @@ export function InquiryForm({
 
   if (stage === "success") {
     const type = getWebsiteType(typeId);
-    const totals = computeTotals(typeId, selected, zoneChoices, theme, paletteToken, animation);
+    const totals = computeTotals(typeId, selected, zoneChoices, theme, paletteToken, animation, navHover);
     return (
       <div
         role="status"

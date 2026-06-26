@@ -258,10 +258,15 @@ export const BRANDING_ID = "branding";
 export const BRANDING_PRICE = 23000;
 export const BRANDING_LABEL = "I want branding";
 
-/* Hero motion add-on — animates the first fold (rides on any hero style). */
+/* Hero motion add-on — cursor-reactive 3D first fold (rides on any hero style). */
 export const ANIMATION_ID = "hero-animation";
 export const ANIMATION_PRICE = 10000;
 export const ANIMATION_LABEL = "Animate the hero";
+
+/* Navbar motion add-on — cursor-aware hover interactions on the navbar. */
+export const NAV_HOVER_ID = "nav-hover";
+export const NAV_HOVER_PRICE = 3000;
+export const NAV_HOVER_LABEL = "Animate on hover";
 
 export function isValidHex(s: string): boolean {
   return /^#([0-9a-f]{6})$/i.test(s);
@@ -416,7 +421,8 @@ export function computeTotals(
   zoneChoices: ZoneChoices,
   theme: ThemeChoice,
   paletteId: string,
-  animation: boolean = false
+  animation: boolean = false,
+  navHover: boolean = false
 ) {
   const type = getWebsiteType(typeId);
   const base = type?.basePrice ?? 0;
@@ -430,6 +436,7 @@ export function computeTotals(
   const themeOption = getThemeOption(theme) ?? THEME_OPTIONS[0];
   const brandingPrice = paletteId === BRANDING_ID ? BRANDING_PRICE : 0;
   const animationPrice = animation ? ANIMATION_PRICE : 0;
+  const navHoverPrice = navHover ? NAV_HOVER_PRICE : 0;
   return {
     base,
     featuresPrice,
@@ -438,13 +445,15 @@ export function computeTotals(
     themeOption,
     brandingPrice,
     animationPrice,
+    navHoverPrice,
     total:
       base +
       featuresPrice +
       variantsPrice +
       themeOption.price +
       brandingPrice +
-      animationPrice,
+      animationPrice +
+      navHoverPrice,
     features,
   };
 }
