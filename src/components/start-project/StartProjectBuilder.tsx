@@ -14,6 +14,7 @@ import {
   BRANDING_ID,
   DEFAULT_CUSTOM_PALETTE,
   computeTotals,
+  dependentFeatureIds,
   featuresForType,
   formatPrice,
   serializePalette,
@@ -265,8 +266,13 @@ export function StartProjectBuilder({
   const toggleFeature = (id: string) => {
     setSelected((current) => {
       const next = new Set(current);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+        // Removing a parent removes any add-on that depends on it.
+        for (const dep of dependentFeatureIds(id)) next.delete(dep);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   };

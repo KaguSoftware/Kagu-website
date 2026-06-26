@@ -46,10 +46,17 @@ export default async function StartProjectPage({
     ? (params.type as WebsiteTypeId)
     : "service";
   const validFeatureIds = new Set(FEATURES.map((f) => f.id));
-  const initialFeatureIds = (params.f ?? "")
+  const requestedFeatureIds = (params.f ?? "")
     .split(",")
     .map((id) => id.trim())
     .filter((id) => validFeatureIds.has(id));
+  // Drop dependent add-ons (e.g. rtl) whose parent feature isn't also present.
+  const requestedSet = new Set(requestedFeatureIds);
+  const requiresOf = new Map(FEATURES.map((f) => [f.id, f.requires]));
+  const initialFeatureIds = requestedFeatureIds.filter((id) => {
+    const req = requiresOf.get(id);
+    return !req || requestedSet.has(req);
+  });
   const initialZoneChoices: ZoneChoices = {
     navbar: getVariant("navbar", params.nav ?? "")
       ? params.nav!

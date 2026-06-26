@@ -254,23 +254,6 @@ function SectionTitle() {
   return <Stub w="26%" h={7} style={{ marginBottom: 9 }} />;
 }
 
-export function BlogSection() {
-  return (
-    <div>
-      <SectionTitle />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-        {[0, 1, 2].map((i) => (
-          <Card key={i}>
-            <Stub h={34} style={{ width: "100%" }} />
-            <Stub w="85%" h={6} />
-            <Stub w="55%" h={5} />
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export function BookingSection() {
   return (
     <div>

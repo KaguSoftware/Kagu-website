@@ -18,11 +18,12 @@ export type PreviewZone = "navbar" | "hero" | "footer";
 
 export type PreviewEffect =
   | { kind: "nav-icon"; icon: "globe" | "currency" | "card" | "avatar" | "theme" }
-  | { kind: "chat-bubble"; style: "ai" | "whatsapp" }
-  | { kind: "section"; section: "blog" | "booking" | "analytics" }
+  | { kind: "chat-bubble"; style: "ai" | "whatsapp" | "telegram" }
+  | { kind: "section"; section: "booking" | "analytics" }
   | { kind: "chrome-badge"; label: string }
   | { kind: "cms-outline" }
-  | { kind: "ambient-motion" };
+  | { kind: "ambient-motion" }
+  | { kind: "none" };
 
 export interface WebsiteType {
   id: WebsiteTypeId;
@@ -40,6 +41,10 @@ export interface Feature {
   price: number;
   /** Types this feature applies to. Undefined = all types. */
   appliesTo?: WebsiteTypeId[];
+  /** Only selectable/charged while this parent feature is also selected. */
+  requires?: string;
+  /** Caveat shown as a red pill on the feature row. */
+  note?: string;
   effect: PreviewEffect;
 }
 
@@ -318,13 +323,6 @@ export const FEATURES: Feature[] = [
     effect: { kind: "cms-outline" },
   },
   {
-    id: "blog",
-    label: "Blog & articles",
-    description: "Publishing pipeline with categories and SEO meta.",
-    price: 37000,
-    effect: { kind: "section", section: "blog" },
-  },
-  {
     id: "booking",
     label: "Booking & reservations",
     description: "Calendar, time slots, confirmations.",
@@ -336,8 +334,9 @@ export const FEATURES: Feature[] = [
     id: "payments",
     label: "Online payments",
     description: "Cards and local methods, securely handled.",
-    price: 44000,
+    price: 10000,
     appliesTo: ["ecommerce", "restaurant", "service"],
+    note: "Buyer is responsible for applying to the payment gateway company.",
     effect: { kind: "nav-icon", icon: "card" },
   },
   {
@@ -352,14 +351,22 @@ export const FEATURES: Feature[] = [
     id: "multilang",
     label: "Multi-language",
     description: "Full i18n — every page in every language you need.",
-    price: 41000,
+    price: 15000,
     effect: { kind: "nav-icon", icon: "globe" },
+  },
+  {
+    id: "rtl",
+    label: "Right-to-left support",
+    description: "Arabic & Persian — mirrored layouts and typography.",
+    price: 10000,
+    requires: "multilang",
+    effect: { kind: "none" },
   },
   {
     id: "multicurrency",
     label: "Multi-currency",
     description: "Prices in the visitor's currency, auto-detected.",
-    price: 27000,
+    price: 10000,
     appliesTo: ["ecommerce"],
     effect: { kind: "nav-icon", icon: "currency" },
   },
@@ -367,43 +374,43 @@ export const FEATURES: Feature[] = [
     id: "llm",
     label: "LLM API integration",
     description: "AI chat, translation, smart drafting — wired to your content.",
-    price: 69000,
+    price: 30000,
     effect: { kind: "chat-bubble", style: "ai" },
   },
   {
-    id: "messaging",
-    label: "WhatsApp / Telegram API",
-    description: "Enquiries and orders land as structured messages where your team lives.",
-    price: 32000,
+    id: "telegram",
+    label: "Telegram API",
+    description: "Enquiries and orders arrive as structured Telegram messages.",
+    price: 10000,
+    effect: { kind: "chat-bubble", style: "telegram" },
+  },
+  {
+    id: "whatsapp",
+    label: "WhatsApp API",
+    description: "Enquiries and orders arrive as structured WhatsApp messages.",
+    price: 15000,
     effect: { kind: "chat-bubble", style: "whatsapp" },
   },
   {
     id: "pdf",
     label: "PDF generation",
-    description: "Documents generated server-side, downloadable in a click.",
-    price: 27000,
+    description: "Documents generated server-side, downloadable in a click — includes PDF design.",
+    price: 15000,
     effect: { kind: "chrome-badge", label: "PDF" },
   },
   {
     id: "seo",
     label: "SEO setup",
     description: "Technical SEO, structured data, sitemaps.",
-    price: 23000,
+    price: 20000,
     effect: { kind: "chrome-badge", label: "SEO" },
   },
   {
     id: "analytics",
-    label: "Analytics dashboard",
+    label: "Deep analytics and insights",
     description: "Privacy-friendly traffic and conversion insight.",
-    price: 32000,
+    price: 35000,
     effect: { kind: "section", section: "analytics" },
-  },
-  {
-    id: "animations",
-    label: "Custom animations",
-    description: "Motion design — entrances, scroll, micro-interactions.",
-    price: 41000,
-    effect: { kind: "ambient-motion" },
   },
 ];
 
@@ -413,6 +420,16 @@ export function getWebsiteType(id: string): WebsiteType | undefined {
 
 export function featuresForType(typeId: WebsiteTypeId): Feature[] {
   return FEATURES.filter((f) => !f.appliesTo || f.appliesTo.includes(typeId));
+}
+
+/** Ids of features that require `featureId` (so they prune when it's removed). */
+export function dependentFeatureIds(featureId: string): string[] {
+  return FEATURES.filter((f) => f.requires === featureId).map((f) => f.id);
+}
+
+/** A feature counts only if selected AND its parent (if any) is also selected. */
+function isFeatureActive(f: Feature, selected: ReadonlySet<string>): boolean {
+  return selected.has(f.id) && (!f.requires || selected.has(f.requires));
 }
 
 export function computeTotals(
@@ -426,7 +443,7 @@ export function computeTotals(
 ) {
   const type = getWebsiteType(typeId);
   const base = type?.basePrice ?? 0;
-  const features = featuresForType(typeId).filter((f) => selected.has(f.id));
+  const features = featuresForType(typeId).filter((f) => isFeatureActive(f, selected));
   const featuresPrice = features.reduce((sum, f) => sum + f.price, 0);
   const variants = COMPONENT_GROUPS.map((group) => ({
     group,

@@ -25,7 +25,6 @@ import {
 } from "./catalog";
 import {
   AnalyticsSection,
-  BlogSection,
   BookingSection,
   ChatGlyph,
   NavGlyph,
@@ -509,11 +508,6 @@ function PreviewPage({
         </AnimatePresence>
 
         <AnimatePresence initial={false}>
-          {sections.has("blog") && (
-            <motion.div key="blog" {...sectionIn} style={{ overflow: "hidden" }}>
-              <BlogSection />
-            </motion.div>
-          )}
           {sections.has("booking") && (
             <motion.div key="booking" {...sectionIn} style={{ overflow: "hidden" }}>
               <BookingSection />
@@ -564,7 +558,12 @@ function PreviewPage({
               width: 40,
               height: 40,
               borderRadius: 999,
-              background: style === "whatsapp" ? "#1faa55" : "var(--spv-accent-2)",
+              background:
+                style === "whatsapp"
+                  ? "#1faa55"
+                  : style === "telegram"
+                    ? "#229ED9"
+                    : "var(--spv-accent-2)",
               color: "#eef1f5",
               display: "flex",
               alignItems: "center",
@@ -572,7 +571,9 @@ function PreviewPage({
               boxShadow:
                 style === "whatsapp"
                   ? "0 6px 18px -6px rgba(31, 170, 85, 0.7)"
-                  : "0 6px 18px -6px color-mix(in oklab, var(--spv-accent-2) 70%, transparent)",
+                  : style === "telegram"
+                    ? "0 6px 18px -6px rgba(34, 158, 217, 0.7)"
+                    : "0 6px 18px -6px color-mix(in oklab, var(--spv-accent-2) 70%, transparent)",
             }}
           >
             <ChatGlyph />
