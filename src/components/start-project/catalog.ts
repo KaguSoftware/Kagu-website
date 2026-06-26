@@ -12,8 +12,7 @@ export type WebsiteTypeId =
   | "ecommerce"
   | "service"
   | "restaurant"
-  | "portfolio"
-  | "saas";
+  | "portfolio";
 
 export type PreviewZone = "navbar" | "hero" | "footer";
 
@@ -55,36 +54,29 @@ export const WEBSITE_TYPES: WebsiteType[] = [
     id: "portfolio",
     label: "Portfolio / Studio",
     tagline: "Show the work. Galleries, case studies, a voice.",
-    basePrice: 93000,
+    basePrice: 30000,
     previewUrl: "yourstudio.com",
   },
   {
     id: "service",
     label: "Service business",
     tagline: "Clinics, salons, agencies — built to win enquiries.",
-    basePrice: 121000,
+    basePrice: 40000,
     previewUrl: "yourbusiness.com",
   },
   {
     id: "restaurant",
     label: "Restaurant & booking",
     tagline: "Menu, atmosphere, reservations that actually convert.",
-    basePrice: 149000,
+    basePrice: 50000,
     previewUrl: "yourrestaurant.com",
   },
   {
     id: "ecommerce",
     label: "E-commerce",
     tagline: "Catalog, cart, checkout — a store that feels premium.",
-    basePrice: 223000,
+    basePrice: 60000,
     previewUrl: "yourstore.com",
-  },
-  {
-    id: "saas",
-    label: "Web app / SaaS",
-    tagline: "Product UI, auth, dashboards — software, not brochure.",
-    basePrice: 349000,
-    previewUrl: "app.yourproduct.com",
   },
 ];
 
@@ -340,7 +332,7 @@ export const FEATURES: Feature[] = [
     label: "Online payments",
     description: "Cards and local methods, securely handled.",
     price: 44000,
-    appliesTo: ["ecommerce", "restaurant", "saas", "service"],
+    appliesTo: ["ecommerce", "restaurant", "service"],
     effect: { kind: "nav-icon", icon: "card" },
   },
   {
@@ -348,7 +340,7 @@ export const FEATURES: Feature[] = [
     label: "User accounts & auth",
     description: "Sign-up, login, password reset, profiles.",
     price: 51000,
-    appliesTo: ["saas", "ecommerce"],
+    appliesTo: ["ecommerce"],
     effect: { kind: "nav-icon", icon: "avatar" },
   },
   {

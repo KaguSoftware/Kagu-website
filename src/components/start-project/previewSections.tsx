@@ -232,62 +232,6 @@ function PortfolioBody() {
   );
 }
 
-function SaasBody() {
-  return (
-    <div
-      className="spv-cms-target"
-      style={{
-        display: "grid",
-        gridTemplateColumns: "52px 1fr",
-        gap: 10,
-        border: "1px solid var(--spv-hairline)",
-        borderRadius: 4,
-        padding: 10,
-        background: "var(--spv-card)",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 8,
-          borderRight: "1px solid var(--spv-hairline)",
-          paddingRight: 10,
-        }}
-      >
-        <Stub w={16} h={16} r={4} style={{ background: "linear-gradient(135deg, var(--spv-accent), var(--spv-accent-2))" }} />
-        {[0, 1, 2, 3].map((i) => (
-          <Stub key={i} w={28} h={5} />
-        ))}
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              style={{
-                border: "1px solid var(--spv-hairline)",
-                borderRadius: 3,
-                padding: 8,
-                display: "flex",
-                flexDirection: "column",
-                gap: 6,
-              }}
-            >
-              <Stub w="40%" h={4} />
-              <Stub w="60%" h={9} />
-            </div>
-          ))}
-        </div>
-        <div style={{ display: "flex", alignItems: "flex-end", gap: 5, height: 52, padding: "0 4px" }}>
-          {[34, 58, 42, 70, 50, 82, 64, 90, 72, 56, 78, 88].map((h, i) => (
-            <Stub key={i} grow h={`${h}%`} r={2} style={{ background: `color-mix(in oklab, var(--spv-accent${i % 2 ? "-3" : ""}) 92%, transparent)` }} />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export function TypeBody({ typeId }: { typeId: WebsiteTypeId }) {
   switch (typeId) {
@@ -299,8 +243,6 @@ export function TypeBody({ typeId }: { typeId: WebsiteTypeId }) {
       return <RestaurantBody />;
     case "portfolio":
       return <PortfolioBody />;
-    case "saas":
-      return <SaasBody />;
   }
 }
 
