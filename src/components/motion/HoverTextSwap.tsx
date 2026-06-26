@@ -36,6 +36,10 @@ export function HoverTextSwap({ children, className = "", style }: HoverTextSwap
         overflow: "hidden",
         verticalAlign: "bottom",
         lineHeight: "inherit",
+        // line-height:1 + overflow:hidden clips Space Mono's descenders (the
+        // "g" tail). Pad the clip box so descenders show; the swap copies still
+        // clear frame since they translate 110% of their own height.
+        paddingBottom: "0.22em",
         ...style,
       }}
     >
@@ -50,7 +54,6 @@ export function HoverTextSwap({ children, className = "", style }: HoverTextSwap
           inset: 0,
           display: "inline-block",
           willChange: "transform, filter",
-          transform: "translateY(110%)",
         }}
       >
         {children}
@@ -61,6 +64,9 @@ export function HoverTextSwap({ children, className = "", style }: HoverTextSwap
                       filter 80ms ease-out 100ms;
         }
         .kagu-text-swap__bottom {
+          /* Initial offset lives here, not inline — an inline transform would
+             beat the :hover rule on specificity and the copy would never rise. */
+          transform: translateY(110%);
           transition: transform 280ms cubic-bezier(0.6, 0.01, 0.05, 0.95),
                       filter 80ms ease-out 100ms;
         }

@@ -181,7 +181,7 @@ export default async function AboutPage({ searchParams }: AboutPageProps) {
                 <Fact label="Founded">{studio.founded}</Fact>
                 <Fact label="Based">{studio.location}</Fact>
                 <Fact label="Stack">Next.js 16 · Supabase · Vercel</Fact>
-                <Fact label="Languages">Turkish · English</Fact>
+                <Fact label="Languages">Turkish · English · Arabic · Persian · Russian</Fact>
               </dl>
             </aside>
           </div>

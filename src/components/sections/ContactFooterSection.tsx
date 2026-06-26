@@ -150,7 +150,8 @@ export function ContactFooterSection({ studio }: { studio: Studio }) {
                 maxWidth: "52ch",
               }}
             >
-              We respond inside 24 hours, in Turkish or English. Tell us the
+              We respond within 24 hours, in Turkish, English, Arabic, Persian,
+              or Russian. Tell us the
               shift you&apos;re trying to make easier. We&apos;ll tell you whether we&apos;re
               the right team for it.
             </p>

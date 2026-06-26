@@ -309,7 +309,7 @@ export default function ContactPage() {
                 Response time
               </span>
               <p style={{ fontSize: "var(--type-md)", color: "var(--ink)", lineHeight: 1.5 }}>
-                Inside 24h · Turkish or English
+                Within 24h · Turkish, English, Arabic, Persian, Russian
               </p>
             </div>
           </aside>
