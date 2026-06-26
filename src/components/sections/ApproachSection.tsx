@@ -74,19 +74,11 @@ export function ApproachSection({ approach }: { approach: ApproachStep[] }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const reduced = useReducedMotion() ?? false;
 
-  // Desktop pins the numeral column via CSS sticky; mobile lets it scroll
-  // naturally (the old GSAP behavior pinned only ≥768px).
-  const [isDesktop, setIsDesktop] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 768px)");
-    const on = () => setIsDesktop(mq.matches);
-    on();
-    mq.addEventListener("change", on);
-    return () => mq.removeEventListener("change", on);
-  }, []);
-
   const onActive = useCallback((i: number) => setActiveIndex(i), []);
-  const sticky = isDesktop && !reduced;
+  // Pin the numeral on every breakpoint so the cross-fade is actually visible
+  // while the steps scroll past. (Previously gated to desktop, which left the
+  // numeral scrolling off-screen on mobile before the next step activated.)
+  const sticky = !reduced;
 
   return (
     <section
