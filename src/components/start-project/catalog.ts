@@ -82,7 +82,7 @@ export const WEBSITE_TYPES: WebsiteType[] = [
     id: "ecommerce",
     label: "E-commerce",
     tagline: "Catalog, cart, checkout — a store that feels premium.",
-    basePrice: 60000,
+    basePrice: 80000,
     previewUrl: "yourstore.com",
   },
 ];
@@ -345,7 +345,7 @@ export const FEATURES: Feature[] = [
     id: "auth",
     label: "User accounts & auth",
     description: "Sign-up, login, password reset, profiles.",
-    price: 51000,
+    price: 50000,
     appliesTo: ["ecommerce"],
     effect: { kind: "nav-icon", icon: "avatar" },
   },
@@ -413,7 +413,7 @@ export const FEATURES: Feature[] = [
     id: "analytics",
     label: "Deep analytics and insights",
     description: "Privacy-friendly traffic and conversion insight.",
-    price: 35000,
+    price: 40000,
     effect: { kind: "section", section: "analytics" },
   },
 ];
