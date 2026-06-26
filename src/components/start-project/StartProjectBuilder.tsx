@@ -15,6 +15,7 @@ import {
   DEFAULT_CUSTOM_PALETTE,
   computeTotals,
   dependentFeatureIds,
+  exclusiveSiblingIds,
   featuresForType,
   formatPrice,
   serializePalette,
@@ -263,14 +264,20 @@ export function StartProjectBuilder({
     });
   };
 
+  const remove = (set: Set<string>, id: string) => {
+    set.delete(id);
+    // Removing a parent removes any add-on that depends on it.
+    for (const dep of dependentFeatureIds(id)) set.delete(dep);
+  };
+
   const toggleFeature = (id: string) => {
     setSelected((current) => {
       const next = new Set(current);
       if (next.has(id)) {
-        next.delete(id);
-        // Removing a parent removes any add-on that depends on it.
-        for (const dep of dependentFeatureIds(id)) next.delete(dep);
+        remove(next, id);
       } else {
+        // Mutually-exclusive group: picking one clears its siblings.
+        for (const sib of exclusiveSiblingIds(id)) remove(next, sib);
         next.add(id);
       }
       return next;

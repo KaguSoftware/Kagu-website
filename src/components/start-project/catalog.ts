@@ -43,6 +43,8 @@ export interface Feature {
   appliesTo?: WebsiteTypeId[];
   /** Only selectable/charged while this parent feature is also selected. */
   requires?: string;
+  /** Mutually-exclusive group — selecting one clears the others (one or none). */
+  group?: string;
   /** Caveat shown as a red pill on the feature row. */
   note?: string;
   effect: PreviewEffect;
@@ -382,6 +384,7 @@ export const FEATURES: Feature[] = [
     label: "Telegram API",
     description: "Enquiries and orders arrive as structured Telegram messages.",
     price: 10000,
+    group: "messaging",
     effect: { kind: "chat-bubble", style: "telegram" },
   },
   {
@@ -389,6 +392,7 @@ export const FEATURES: Feature[] = [
     label: "WhatsApp API",
     description: "Enquiries and orders arrive as structured WhatsApp messages.",
     price: 15000,
+    group: "messaging",
     effect: { kind: "chat-bubble", style: "whatsapp" },
   },
   {
@@ -425,6 +429,13 @@ export function featuresForType(typeId: WebsiteTypeId): Feature[] {
 /** Ids of features that require `featureId` (so they prune when it's removed). */
 export function dependentFeatureIds(featureId: string): string[] {
   return FEATURES.filter((f) => f.requires === featureId).map((f) => f.id);
+}
+
+/** Other ids in the same mutually-exclusive group (cleared when one is picked). */
+export function exclusiveSiblingIds(featureId: string): string[] {
+  const f = FEATURES.find((x) => x.id === featureId);
+  if (!f?.group) return [];
+  return FEATURES.filter((x) => x.group === f.group && x.id !== f.id).map((x) => x.id);
 }
 
 /** A feature counts only if selected AND its parent (if any) is also selected. */

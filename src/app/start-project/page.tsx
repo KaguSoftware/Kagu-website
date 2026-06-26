@@ -50,12 +50,21 @@ export default async function StartProjectPage({
     .split(",")
     .map((id) => id.trim())
     .filter((id) => validFeatureIds.has(id));
-  // Drop dependent add-ons (e.g. rtl) whose parent feature isn't also present.
+  // Drop dependent add-ons (e.g. rtl) whose parent isn't present, and keep at
+  // most one feature per mutually-exclusive group (e.g. telegram/whatsapp).
   const requestedSet = new Set(requestedFeatureIds);
   const requiresOf = new Map(FEATURES.map((f) => [f.id, f.requires]));
+  const groupOf = new Map(FEATURES.map((f) => [f.id, f.group]));
+  const seenGroups = new Set<string>();
   const initialFeatureIds = requestedFeatureIds.filter((id) => {
     const req = requiresOf.get(id);
-    return !req || requestedSet.has(req);
+    if (req && !requestedSet.has(req)) return false;
+    const group = groupOf.get(id);
+    if (group) {
+      if (seenGroups.has(group)) return false;
+      seenGroups.add(group);
+    }
+    return true;
   });
   const initialZoneChoices: ZoneChoices = {
     navbar: getVariant("navbar", params.nav ?? "")
