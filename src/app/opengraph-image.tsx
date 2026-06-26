@@ -75,7 +75,7 @@ export default function OpengraphImage() {
               border: `1px solid ${palette.ink}`,
             }}
           >
-            kagu.software
+            kagusoftware.com
           </span>
         </div>
       </div>

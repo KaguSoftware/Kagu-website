@@ -6,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
     },
-    sitemap: "https://kagu.software/sitemap.xml",
+    sitemap: "https://kagusoftware.com/sitemap.xml",
   };
 }

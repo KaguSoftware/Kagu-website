@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   title: "Kagu · Software for boutique operators",
   description:
     "Kagu builds Next.js + Supabase platforms for hospitality, tourism, and service businesses. Founded 2025, Istanbul.",
-  metadataBase: new URL("https://kagu.software"),
+  metadataBase: new URL("https://kagusoftware.com"),
 };
 
 export const viewport: Viewport = {

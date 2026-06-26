@@ -2,6 +2,10 @@
   Package-builder catalog: website types, feature add-ons, and prices.
   EDIT PRICES HERE — everything renders from this file (option list, preview,
   total, mailto summary, admin inquiry labels). Pure data, server-safe.
+
+  Prices are in Turkish Lira (₺). They were converted from the original USD
+  figures at 1 USD = 46.62 TRY (26 Jun 2026) and rounded DOWN to the nearest
+  1,000. To re-price, edit the ₺ numbers below directly.
 */
 
 export type WebsiteTypeId =
@@ -40,10 +44,10 @@ export interface Feature {
   effect: PreviewEffect;
 }
 
-export const CURRENCY = "USD";
+export const CURRENCY = "TRY";
 
 export function formatPrice(n: number): string {
-  return `$${n.toLocaleString("en-US")}`;
+  return `${n.toLocaleString("tr-TR")} ₺`;
 }
 
 export const WEBSITE_TYPES: WebsiteType[] = [
@@ -51,35 +55,35 @@ export const WEBSITE_TYPES: WebsiteType[] = [
     id: "portfolio",
     label: "Portfolio / Studio",
     tagline: "Show the work. Galleries, case studies, a voice.",
-    basePrice: 2000,
+    basePrice: 93000,
     previewUrl: "yourstudio.com",
   },
   {
     id: "service",
     label: "Service business",
     tagline: "Clinics, salons, agencies — built to win enquiries.",
-    basePrice: 2600,
+    basePrice: 121000,
     previewUrl: "yourbusiness.com",
   },
   {
     id: "restaurant",
     label: "Restaurant & booking",
     tagline: "Menu, atmosphere, reservations that actually convert.",
-    basePrice: 3200,
+    basePrice: 149000,
     previewUrl: "yourrestaurant.com",
   },
   {
     id: "ecommerce",
     label: "E-commerce",
     tagline: "Catalog, cart, checkout — a store that feels premium.",
-    basePrice: 4800,
+    basePrice: 223000,
     previewUrl: "yourstore.com",
   },
   {
     id: "saas",
     label: "Web app / SaaS",
     tagline: "Product UI, auth, dashboards — software, not brochure.",
-    basePrice: 7500,
+    basePrice: 349000,
     previewUrl: "app.yourproduct.com",
   },
 ];
@@ -118,19 +122,19 @@ export const COMPONENT_GROUPS: ComponentGroup[] = [
         id: "pills",
         label: "Wide pill",
         description: "Links grouped in a wide rounded pill.",
-        price: 250,
+        price: 11000,
       },
       {
         id: "floating",
         label: "Floating centered",
         description: "A rounded bar hovering over the page.",
-        price: 250,
+        price: 11000,
       },
       {
         id: "custom",
         label: "Custom design",
         description: "Designed from scratch around your brand.",
-        price: 400,
+        price: 18000,
       },
     ],
   },
@@ -148,19 +152,19 @@ export const COMPONENT_GROUPS: ComponentGroup[] = [
         id: "centered",
         label: "Centered statement",
         description: "One big centered message, nothing else.",
-        price: 300,
+        price: 13000,
       },
       {
         id: "split",
         label: "Split with visual",
         description: "Copy on the left, imagery on the right.",
-        price: 350,
+        price: 16000,
       },
       {
         id: "custom",
         label: "Custom design",
         description: "A first fold designed around your story.",
-        price: 650,
+        price: 30000,
       },
     ],
   },
@@ -178,19 +182,19 @@ export const COMPONENT_GROUPS: ComponentGroup[] = [
         id: "minimal",
         label: "Minimal line",
         description: "One quiet row — logo, links, copyright.",
-        price: 150,
+        price: 6000,
       },
       {
         id: "cta",
         label: "Big CTA",
         description: "A closing headline that asks for the call.",
-        price: 250,
+        price: 11000,
       },
       {
         id: "custom",
         label: "Custom design",
         description: "Closing section with real character.",
-        price: 300,
+        price: 13000,
       },
     ],
   },
@@ -234,7 +238,7 @@ export const THEME_OPTIONS: ThemeOption[] = [
     id: "both",
     label: "Light & dark",
     description: "Two themes, remembered per visitor.",
-    price: 350,
+    price: 16000,
   },
 ];
 
@@ -259,7 +263,7 @@ export const DEFAULT_CUSTOM_PALETTE: CustomPalette = {
 
 /* "I want branding" — no chosen colors; we design the identity. */
 export const BRANDING_ID = "branding";
-export const BRANDING_PRICE = 500;
+export const BRANDING_PRICE = 23000;
 export const BRANDING_LABEL = "I want branding";
 
 export function isValidHex(s: string): boolean {
@@ -308,21 +312,21 @@ export const FEATURES: Feature[] = [
     id: "cms",
     label: "CMS / admin panel",
     description: "Edit content yourself — no developer needed.",
-    price: 1200,
+    price: 55000,
     effect: { kind: "cms-outline" },
   },
   {
     id: "blog",
     label: "Blog & articles",
     description: "Publishing pipeline with categories and SEO meta.",
-    price: 800,
+    price: 37000,
     effect: { kind: "section", section: "blog" },
   },
   {
     id: "booking",
     label: "Booking & reservations",
     description: "Calendar, time slots, confirmations.",
-    price: 1400,
+    price: 65000,
     appliesTo: ["restaurant", "service"],
     effect: { kind: "section", section: "booking" },
   },
@@ -330,7 +334,7 @@ export const FEATURES: Feature[] = [
     id: "payments",
     label: "Online payments",
     description: "Cards and local methods, securely handled.",
-    price: 950,
+    price: 44000,
     appliesTo: ["ecommerce", "restaurant", "saas", "service"],
     effect: { kind: "nav-icon", icon: "card" },
   },
@@ -338,7 +342,7 @@ export const FEATURES: Feature[] = [
     id: "auth",
     label: "User accounts & auth",
     description: "Sign-up, login, password reset, profiles.",
-    price: 1100,
+    price: 51000,
     appliesTo: ["saas", "ecommerce"],
     effect: { kind: "nav-icon", icon: "avatar" },
   },
@@ -346,14 +350,14 @@ export const FEATURES: Feature[] = [
     id: "multilang",
     label: "Multi-language",
     description: "Full i18n — every page in every language you need.",
-    price: 900,
+    price: 41000,
     effect: { kind: "nav-icon", icon: "globe" },
   },
   {
     id: "multicurrency",
     label: "Multi-currency",
     description: "Prices in the visitor's currency, auto-detected.",
-    price: 600,
+    price: 27000,
     appliesTo: ["ecommerce"],
     effect: { kind: "nav-icon", icon: "currency" },
   },
@@ -361,42 +365,42 @@ export const FEATURES: Feature[] = [
     id: "llm",
     label: "LLM API integration",
     description: "AI chat, translation, smart drafting — wired to your content.",
-    price: 1500,
+    price: 69000,
     effect: { kind: "chat-bubble", style: "ai" },
   },
   {
     id: "messaging",
     label: "WhatsApp / Telegram API",
     description: "Enquiries and orders land as structured messages where your team lives.",
-    price: 700,
+    price: 32000,
     effect: { kind: "chat-bubble", style: "whatsapp" },
   },
   {
     id: "pdf",
     label: "PDF generation",
     description: "Documents generated server-side, downloadable in a click.",
-    price: 600,
+    price: 27000,
     effect: { kind: "chrome-badge", label: "PDF" },
   },
   {
     id: "seo",
     label: "SEO setup",
     description: "Technical SEO, structured data, sitemaps.",
-    price: 500,
+    price: 23000,
     effect: { kind: "chrome-badge", label: "SEO" },
   },
   {
     id: "analytics",
     label: "Analytics dashboard",
     description: "Privacy-friendly traffic and conversion insight.",
-    price: 700,
+    price: 32000,
     effect: { kind: "section", section: "analytics" },
   },
   {
     id: "animations",
     label: "Custom animations",
     description: "Motion design — entrances, scroll, micro-interactions.",
-    price: 900,
+    price: 41000,
     effect: { kind: "ambient-motion" },
   },
 ];

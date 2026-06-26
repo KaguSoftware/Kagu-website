@@ -10,6 +10,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Logo } from "@/components/Logo";
+import { FooterLegalStrip } from "./FooterLegalStrip";
 import { createClient } from "@/lib/supabase/client";
 import type { Clock } from "@/lib/supabase/database.types";
 
@@ -207,6 +208,8 @@ export function SiteFooter({ studio: initial }: { studio?: FooterStudio }) {
             {studio.email}
           </a>
         </div>
+
+        <FooterLegalStrip />
       </div>
     </footer>
   );

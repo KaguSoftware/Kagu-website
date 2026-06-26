@@ -18,6 +18,7 @@ import { HoverTextSwap } from "@/components/motion/HoverTextSwap";
 import { HoverMagnet } from "@/components/motion/HoverMagnet";
 import { AmbientDrift } from "@/components/motion/AmbientDrift";
 import { Eyebrow } from "@/components/layout/Eyebrow";
+import { FooterLegalStrip } from "@/components/layout/FooterLegalStrip";
 import type { Studio } from "@/lib/content";
 
 function useLiveTime(tz: string) {
@@ -215,6 +216,8 @@ export function ContactFooterSection({ studio }: { studio: Studio }) {
             {studio.location} · {studio.timezone}
           </span>
         </div>
+
+        <FooterLegalStrip />
       </div>
     </section>
   );
