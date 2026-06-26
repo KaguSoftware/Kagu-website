@@ -208,6 +208,7 @@ export function StartProjectBuilder({
   initialTheme,
   initialPalette,
   initialBranding,
+  initialAnimation,
 }: {
   initialTypeId: WebsiteTypeId;
   initialFeatureIds: string[];
@@ -215,6 +216,7 @@ export function StartProjectBuilder({
   initialTheme: ThemeChoice;
   initialPalette: CustomPalette;
   initialBranding: boolean;
+  initialAnimation: boolean;
 }) {
   const [typeId, setTypeId] = useState<WebsiteTypeId>(initialTypeId);
   const [selected, setSelected] = useState<Set<string>>(
@@ -224,6 +226,7 @@ export function StartProjectBuilder({
   const [theme, setTheme] = useState<ThemeChoice>(initialTheme);
   const [palette, setPalette] = useState<CustomPalette>(initialPalette);
   const [branding, setBranding] = useState<boolean>(initialBranding);
+  const [animation, setAnimation] = useState<boolean>(initialAnimation);
   const [ideas, setIdeas] = useState<string[]>([]);
 
   const paletteToken = branding ? BRANDING_ID : serializePalette(palette);
@@ -238,8 +241,9 @@ export function StartProjectBuilder({
     search.set("foot", zoneChoices.footer);
     search.set("theme", theme);
     search.set("accent", paletteToken);
+    if (animation) search.set("anim", "1");
     window.history.replaceState(null, "", `?${search.toString()}`);
-  }, [typeId, selected, zoneChoices, theme, paletteToken]);
+  }, [typeId, selected, zoneChoices, theme, paletteToken, animation]);
 
   const changeZone = (zone: PreviewZone, variantId: string) => {
     setZoneChoices((current) => ({ ...current, [zone]: variantId }));
@@ -263,7 +267,7 @@ export function StartProjectBuilder({
     });
   };
 
-  const totals = computeTotals(typeId, selected, zoneChoices, theme, paletteToken);
+  const totals = computeTotals(typeId, selected, zoneChoices, theme, paletteToken, animation);
   const accent = branding ? DEFAULT_CUSTOM_PALETTE.primary : palette.primary;
   const accent2 = branding ? DEFAULT_CUSTOM_PALETTE.accent2 : palette.accent2;
   const accent3 = branding ? DEFAULT_CUSTOM_PALETTE.accent3 : palette.accent3;
@@ -350,6 +354,8 @@ export function StartProjectBuilder({
                 onPalette={setPalette}
                 branding={branding}
                 onBrandingChange={setBranding}
+                animation={animation}
+                onAnimationChange={setAnimation}
               />
             </div>
 
@@ -409,6 +415,7 @@ export function StartProjectBuilder({
                 theme={theme}
                 palette={palette}
                 branding={branding}
+                animation={animation}
                 ideas={ideas}
               />
             </div>

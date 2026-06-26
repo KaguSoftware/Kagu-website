@@ -14,6 +14,9 @@ import { createClient } from "@/lib/supabase/client";
 import { HoverMagnet } from "@/components/motion/HoverMagnet";
 import { HoverTextSwap } from "@/components/motion/HoverTextSwap";
 import {
+  ANIMATION_ID,
+  ANIMATION_LABEL,
+  ANIMATION_PRICE,
   BRANDING_ID,
   BRANDING_PRICE,
   CURRENCY,
@@ -37,6 +40,7 @@ export function InquiryForm({
   theme,
   palette,
   branding,
+  animation,
   ideas,
 }: {
   typeId: WebsiteTypeId;
@@ -45,6 +49,7 @@ export function InquiryForm({
   theme: ThemeChoice;
   palette: CustomPalette;
   branding: boolean;
+  animation: boolean;
   ideas: string[];
 }) {
   const paletteToken = branding ? BRANDING_ID : serializePalette(palette);
@@ -86,7 +91,7 @@ export function InquiryForm({
     }
 
     const type = getWebsiteType(typeId);
-    const totals = computeTotals(typeId, selected, zoneChoices, theme, paletteToken);
+    const totals = computeTotals(typeId, selected, zoneChoices, theme, paletteToken, animation);
 
     const supabase = createClient();
     const { error } = await supabase.from("project_inquiries").insert({
@@ -97,6 +102,7 @@ export function InquiryForm({
         ...zoneTokens(zoneChoices),
         `theme:${theme}`,
         `palette:${paletteToken}`,
+        ...(animation ? [`${ANIMATION_ID}:true`] : []),
         ...totals.features.map((f) => f.id),
         ...ideas.map((idea) => `idea:${idea}`),
       ],
@@ -129,7 +135,12 @@ export function InquiryForm({
       branding
         ? `  · Branding — palette, logo direction & identity (+ ${formatPrice(BRANDING_PRICE)})`
         : `  · Palette — Primary ${palette.primary}, Accent ${palette.accent2}, Accent ${palette.accent3}`,
-    ].join("\n");
+      animation
+        ? `  · ${ANIMATION_LABEL} — site-wide motion (+ ${formatPrice(ANIMATION_PRICE)})`
+        : null,
+    ]
+      .filter(Boolean)
+      .join("\n");
     const featureLines = totals.features
       .map((f) => `  + ${f.label} — ${formatPrice(f.price)}`)
       .join("\n");
@@ -157,7 +168,7 @@ export function InquiryForm({
 
   if (stage === "success") {
     const type = getWebsiteType(typeId);
-    const totals = computeTotals(typeId, selected, zoneChoices, theme, paletteToken);
+    const totals = computeTotals(typeId, selected, zoneChoices, theme, paletteToken, animation);
     return (
       <div
         role="status"

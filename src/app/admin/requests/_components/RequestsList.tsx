@@ -12,6 +12,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { InquiryStatus, Tables } from "@/lib/supabase/database.types";
 import {
+  ANIMATION_ID,
+  ANIMATION_LABEL,
   formatPrice,
   getComponentGroup,
   getVariant,
@@ -43,6 +45,7 @@ const FEATURE_LABELS = new Map(FEATURES.map((f) => [f.id, f.label]));
 
 /* Resolves both feature ids and "zone:variant" component tokens to labels. */
 function labelFor(id: string): string {
+  if (id === `${ANIMATION_ID}:true`) return ANIMATION_LABEL;
   if (id.includes(":")) {
     const [zone, variantId] = id.split(":");
     const variant = getVariant(zone as PreviewZone, variantId);

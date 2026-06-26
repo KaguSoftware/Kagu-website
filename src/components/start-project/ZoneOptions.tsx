@@ -7,6 +7,8 @@
 */
 
 import {
+  ANIMATION_LABEL,
+  ANIMATION_PRICE,
   BRANDING_LABEL,
   BRANDING_PRICE,
   COMPONENT_GROUPS,
@@ -28,6 +30,8 @@ export function ZoneOptions({
   onPalette,
   branding,
   onBrandingChange,
+  animation,
+  onAnimationChange,
 }: {
   choices: ZoneChoices;
   onChange: (zone: PreviewZone, variantId: string) => void;
@@ -37,6 +41,8 @@ export function ZoneOptions({
   onPalette: (palette: CustomPalette) => void;
   branding: boolean;
   onBrandingChange: (branding: boolean) => void;
+  animation: boolean;
+  onAnimationChange: (animation: boolean) => void;
 }) {
   return (
     <div className="flex flex-col gap-(--space-8)">
@@ -220,6 +226,26 @@ export function ZoneOptions({
         </div>
       </div>
 
+      {/* Motion — site-wide animation add-on */}
+      <div>
+        <span
+          className="font-mono block"
+          style={{
+            fontSize: "var(--type-xs)",
+            letterSpacing: "var(--tracking-eyebrow)",
+            textTransform: "uppercase",
+            color: "var(--slate-ink)",
+            marginBottom: "var(--space-3)",
+          }}
+        >
+          Motion
+        </span>
+        <AnimationToggle
+          on={animation}
+          onToggle={() => onAnimationChange(!animation)}
+        />
+      </div>
+
       {/* Palette */}
       <div>
         <span
@@ -266,6 +292,106 @@ export function ZoneOptions({
         />
       </div>
     </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Animation toggle — a single full-width checkbox card. Adds the      */
+/* site-wide motion package (entrances, scroll, micro-interactions).   */
+/* ------------------------------------------------------------------ */
+
+function AnimationToggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={on}
+      aria-label={ANIMATION_LABEL}
+      data-cursor="view"
+      onClick={onToggle}
+      className="flex items-center gap-3 text-left"
+      style={{
+        width: "100%",
+        padding: "var(--space-4) var(--space-4)",
+        border: "1px solid",
+        borderColor: on ? "var(--mint-deep)" : "var(--neutral)",
+        background: on
+          ? "color-mix(in oklab, var(--mint-deep) 10%, transparent)"
+          : "transparent",
+        cursor: "pointer",
+        transition:
+          "border-color var(--dur-quick) var(--ease-out-quint), background var(--dur-quick) var(--ease-out-quint)",
+      }}
+    >
+      {/* Checkbox indicator */}
+      <span
+        aria-hidden
+        className="flex items-center justify-center"
+        style={{
+          width: 18,
+          height: 18,
+          flex: "0 0 auto",
+          borderRadius: 4,
+          border: "1px solid",
+          borderColor: on ? "var(--mint-deep)" : "var(--neutral)",
+          background: on ? "var(--mint-deep)" : "transparent",
+          color: "var(--paper)",
+          transition:
+            "border-color var(--dur-quick) var(--ease-out-quint), background var(--dur-quick) var(--ease-out-quint)",
+        }}
+      >
+        {on ? (
+          <svg
+            viewBox="0 0 16 16"
+            width="11"
+            height="11"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M3 8.5 6.5 12 13 4.5" />
+          </svg>
+        ) : null}
+      </span>
+
+      <span className="flex flex-col gap-1" style={{ minWidth: 0, flex: 1 }}>
+        <span
+          className="font-mono"
+          style={{
+            fontSize: "var(--type-xs)",
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            color: on ? "var(--mint-deep)" : "var(--ink)",
+          }}
+        >
+          {ANIMATION_LABEL}
+        </span>
+        <span
+          style={{
+            fontSize: "var(--type-xs)",
+            color: "var(--slate-ink)",
+            lineHeight: 1.4,
+          }}
+        >
+          Motion design — entrances, scroll reactions, micro-interactions.
+        </span>
+      </span>
+
+      <span
+        className="font-mono"
+        style={{
+          marginLeft: "auto",
+          fontSize: "var(--type-xs)",
+          color: on ? "var(--mint-deep)" : "var(--slate-ink)",
+          whiteSpace: "nowrap",
+          alignSelf: "flex-start",
+        }}
+      >
+        + {formatPrice(ANIMATION_PRICE)}
+      </span>
+    </button>
   );
 }
 

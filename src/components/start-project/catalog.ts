@@ -122,19 +122,19 @@ export const COMPONENT_GROUPS: ComponentGroup[] = [
         id: "pills",
         label: "Wide pill",
         description: "Links grouped in a wide rounded pill.",
-        price: 11000,
+        price: 0,
       },
       {
         id: "floating",
         label: "Floating centered",
         description: "A rounded bar hovering over the page.",
-        price: 11000,
+        price: 0,
       },
       {
         id: "custom",
         label: "Custom design",
         description: "Designed from scratch around your brand.",
-        price: 18000,
+        price: 2000,
       },
     ],
   },
@@ -152,19 +152,19 @@ export const COMPONENT_GROUPS: ComponentGroup[] = [
         id: "centered",
         label: "Centered statement",
         description: "One big centered message, nothing else.",
-        price: 13000,
+        price: 0,
       },
       {
         id: "split",
         label: "Split with visual",
         description: "Copy on the left, imagery on the right.",
-        price: 16000,
+        price: 0,
       },
       {
         id: "custom",
         label: "Custom design",
         description: "A first fold designed around your story.",
-        price: 30000,
+        price: 5000,
       },
     ],
   },
@@ -182,19 +182,19 @@ export const COMPONENT_GROUPS: ComponentGroup[] = [
         id: "minimal",
         label: "Minimal line",
         description: "One quiet row — logo, links, copyright.",
-        price: 6000,
+        price: 0,
       },
       {
         id: "cta",
         label: "Big CTA",
         description: "A closing headline that asks for the call.",
-        price: 11000,
+        price: 0,
       },
       {
         id: "custom",
         label: "Custom design",
         description: "Closing section with real character.",
-        price: 13000,
+        price: 2000,
       },
     ],
   },
@@ -238,7 +238,7 @@ export const THEME_OPTIONS: ThemeOption[] = [
     id: "both",
     label: "Light & dark",
     description: "Two themes, remembered per visitor.",
-    price: 16000,
+    price: 5000,
   },
 ];
 
@@ -265,6 +265,11 @@ export const DEFAULT_CUSTOM_PALETTE: CustomPalette = {
 export const BRANDING_ID = "branding";
 export const BRANDING_PRICE = 23000;
 export const BRANDING_LABEL = "I want branding";
+
+/* Site-wide motion add-on — entrances, scroll reactions, micro-interactions. */
+export const ANIMATION_ID = "animation";
+export const ANIMATION_PRICE = 10000;
+export const ANIMATION_LABEL = "Animations";
 
 export function isValidHex(s: string): boolean {
   return /^#([0-9a-f]{6})$/i.test(s);
@@ -418,7 +423,8 @@ export function computeTotals(
   selected: ReadonlySet<string>,
   zoneChoices: ZoneChoices,
   theme: ThemeChoice,
-  paletteId: string
+  paletteId: string,
+  animation: boolean = false
 ) {
   const type = getWebsiteType(typeId);
   const base = type?.basePrice ?? 0;
@@ -431,6 +437,7 @@ export function computeTotals(
   const variantsPrice = variants.reduce((sum, v) => sum + v.variant.price, 0);
   const themeOption = getThemeOption(theme) ?? THEME_OPTIONS[0];
   const brandingPrice = paletteId === BRANDING_ID ? BRANDING_PRICE : 0;
+  const animationPrice = animation ? ANIMATION_PRICE : 0;
   return {
     base,
     featuresPrice,
@@ -438,7 +445,14 @@ export function computeTotals(
     variantsPrice,
     themeOption,
     brandingPrice,
-    total: base + featuresPrice + variantsPrice + themeOption.price + brandingPrice,
+    animationPrice,
+    total:
+      base +
+      featuresPrice +
+      variantsPrice +
+      themeOption.price +
+      brandingPrice +
+      animationPrice,
     features,
   };
 }
