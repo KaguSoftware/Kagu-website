@@ -4,26 +4,28 @@
   Section 2 — Capabilities.
   Background: --mint-pale (lift from baseline).
   Type-dominance: 4xl (sub-display).
-  Primary motion: SectionRise on the rail (M07 stand-in for M05 reveal).
+  Primary motion: SectionRise on the deck (M07 stand-in for M05 reveal).
   Supporting: M06 marquee at bottom (stack lineage, use #1 of 2).
-  Cards run as a horizontal snap-scroll rail, each step coloured along the
-  shared case ramp (navy → sky → light, see /work). A custom progress
-  indicator below the rail mirrors the scroll position as a window onto the
-  same gradient. VARIANCE 7 / MOTION 5 / DENSITY 4.
+  Cards run as a vertical card-deck carousel — stacked behind each other,
+  each step coloured along the shared case ramp (navy → sky → light, see
+  /work). It auto-advances and steps with the up/down controls or arrow keys;
+  the ramp-coloured dots double as a position indicator. VARIANCE 7 / MOTION 5.
 */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { useReducedMotion } from "motion/react";
 import type { Capability } from "@/lib/content";
 import type { MarqueeItem } from "@/lib/marquees";
 import { SectionRise } from "@/components/motion/SectionRise";
 import { Marquee } from "@/components/motion/Marquee";
 import { Eyebrow } from "@/components/layout/Eyebrow";
 import { GLYPHS } from "@/components/cases/CapabilityGlyph";
-import { rampColor, inkFor, rgba, NAVY, SKY, LIGHT } from "@/lib/caseRamp";
+import { rampColor, inkFor, rgba } from "@/lib/caseRamp";
 
-// The indicator and the rail share one gradient so the moving thumb reads as
-// a window onto the exact colours of the cards beneath it.
-const RAMP_GRADIENT = `linear-gradient(90deg, ${NAVY}, ${SKY}, ${LIGHT})`;
+// How many cards peek out behind the active one before they're hidden.
+const DEPTH = 3;
+// Autoplay dwell per card (ms).
+const AUTOPLAY_MS = 4200;
 
 export function CapabilitiesSection({
   capabilities,
@@ -32,34 +34,29 @@ export function CapabilitiesSection({
   capabilities: Capability[];
   stackTokens: MarqueeItem[];
 }) {
-  const railRef = useRef<HTMLDivElement | null>(null);
-  // progress: 0→1 across the scrollable width. thumb: fraction of the rail
-  // currently visible (drives the indicator window's size).
-  const [progress, setProgress] = useState(0);
-  const [thumb, setThumb] = useState(1);
-
-  const measure = useCallback(() => {
-    const el = railRef.current;
-    if (!el) return;
-    const max = el.scrollWidth - el.clientWidth;
-    setThumb(el.scrollWidth > 0 ? Math.min(1, el.clientWidth / el.scrollWidth) : 1);
-    setProgress(max > 0 ? el.scrollLeft / max : 0);
-  }, []);
-
-  useEffect(() => {
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
-  }, [measure]);
-
-  const onScroll = () => {
-    const el = railRef.current;
-    if (!el) return;
-    const max = el.scrollWidth - el.clientWidth;
-    setProgress(max > 0 ? el.scrollLeft / max : 0);
-  };
-
+  const reduced = useReducedMotion();
   const n = capabilities.length;
+  const [index, setIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+
+  const go = (dir: number) => setIndex((p) => (p + dir + n) % n);
+
+  // Autoplay — pauses on hover/focus and when reduced motion is requested.
+  useEffect(() => {
+    if (paused || reduced || n <= 1) return;
+    const id = setInterval(() => setIndex((p) => (p + 1) % n), AUTOPLAY_MS);
+    return () => clearInterval(id);
+  }, [paused, reduced, n]);
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+      e.preventDefault();
+      go(-1);
+    } else if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+      e.preventDefault();
+      go(1);
+    }
+  };
 
   return (
     <section
@@ -95,175 +92,275 @@ export function CapabilitiesSection({
           </div>
         </SectionRise>
 
-        {/* Cards — horizontal snap-scroll rail, coloured along the case ramp */}
+        {/* Cards — vertical card-deck carousel, coloured along the case ramp */}
         <SectionRise amount={0.1}>
           <div
-            ref={railRef}
-            onScroll={onScroll}
-            className="cap-rail"
-            role="region"
-            aria-label="What we build — scroll horizontally"
+            className="cap-deck"
+            role="group"
+            aria-roledescription="carousel"
+            aria-label="What we build"
             tabIndex={0}
+            onKeyDown={onKeyDown}
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+            onFocus={() => setPaused(true)}
+            onBlur={() => setPaused(false)}
           >
-            {capabilities.map((cap, i) => {
-              const t = n > 1 ? i / (n - 1) : 0;
-              const bg = rampColor(t);
-              const ink = inkFor(bg);
-              const Glyph = GLYPHS[cap.id];
-              return (
-                <article
-                  key={cap.id}
-                  className="cap-card"
-                  style={
-                    {
-                      "--card-bg": bg,
-                      "--card-ink": ink,
-                      "--card-muted": rgba(ink, 0.78),
-                      "--card-line": rgba(ink, 0.22),
-                    } as React.CSSProperties
-                  }
-                >
-                  <div className="flex items-start justify-between mb-(--space-5)">
-                    <span
-                      className="font-mono"
-                      style={{
-                        fontSize: "var(--type-xs)",
-                        color: "var(--card-muted)",
-                        letterSpacing: "var(--tracking-eyebrow)",
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      0{i + 1}
-                    </span>
-                    {Glyph ? (
-                      <span style={{ color: "var(--card-ink)" }}>
-                        <Glyph size={48} />
-                      </span>
-                    ) : null}
-                  </div>
-                  <h3
-                    className="display"
-                    style={{
-                      fontSize: "var(--type-2xl)",
-                      lineHeight: 1.05,
-                      marginBottom: "var(--space-5)",
-                      color: "var(--card-ink)",
-                    }}
+            <div className="cap-deck__stage">
+              {capabilities.map((cap, i) => {
+                const t = n > 1 ? i / (n - 1) : 0;
+                const bg = rampColor(t);
+                const ink = inkFor(bg);
+                const Glyph = GLYPHS[cap.id];
+                // 0 = front; larger = deeper in the stack (wraps so it loops).
+                const pos = (i - index + n) % n;
+                const hidden = pos > DEPTH;
+                return (
+                  <article
+                    key={cap.id}
+                    className="cap-card"
+                    aria-hidden={pos !== 0}
+                    style={
+                      {
+                        "--card-bg": bg,
+                        "--card-ink": ink,
+                        "--card-muted": rgba(ink, 0.78),
+                        "--card-line": rgba(ink, 0.22),
+                        zIndex: n - pos,
+                        opacity: hidden ? 0 : 1 - pos * 0.18,
+                        transform: `translateY(${-pos * 20}px) scale(${1 - pos * 0.05})`,
+                        pointerEvents: pos === 0 ? "auto" : "none",
+                      } as React.CSSProperties
+                    }
                   >
-                    {cap.title}
-                  </h3>
-                  <p
-                    style={{
-                      fontSize: "var(--type-md)",
-                      lineHeight: 1.55,
-                      color: "var(--card-muted)",
-                      marginBottom: "var(--space-6)",
-                    }}
-                  >
-                    {cap.body}
-                  </p>
-                  <ul
-                    className="list-none p-0 m-0 font-mono"
-                    style={{
-                      marginTop: "auto",
-                      borderTop: "1px solid var(--card-line)",
-                      fontSize: "var(--type-xs)",
-                      letterSpacing: "var(--tracking-eyebrow)",
-                      textTransform: "uppercase",
-                      color: "var(--card-muted)",
-                    }}
-                  >
-                    {cap.detail.map((d) => (
-                      <li
-                        key={d}
+                    <div className="flex items-start justify-between mb-(--space-5)">
+                      <span
+                        className="font-mono"
                         style={{
-                          padding: "var(--space-3) 0",
-                          borderBottom: "1px solid var(--card-line)",
+                          fontSize: "var(--type-xs)",
+                          color: "var(--card-muted)",
+                          letterSpacing: "var(--tracking-eyebrow)",
+                          textTransform: "uppercase",
                         }}
                       >
-                        {d}
-                      </li>
-                    ))}
-                  </ul>
-                </article>
-              );
-            })}
-          </div>
+                        0{i + 1}
+                      </span>
+                      {Glyph ? (
+                        <span style={{ color: "var(--card-ink)" }}>
+                          <Glyph size={48} />
+                        </span>
+                      ) : null}
+                    </div>
+                    <h3
+                      className="display"
+                      style={{
+                        fontSize: "var(--type-2xl)",
+                        lineHeight: 1.05,
+                        marginBottom: "var(--space-5)",
+                        color: "var(--card-ink)",
+                      }}
+                    >
+                      {cap.title}
+                    </h3>
+                    <p
+                      style={{
+                        fontSize: "var(--type-md)",
+                        lineHeight: 1.55,
+                        color: "var(--card-muted)",
+                        marginBottom: "var(--space-6)",
+                      }}
+                    >
+                      {cap.body}
+                    </p>
+                    <ul
+                      className="list-none p-0 m-0 font-mono"
+                      style={{
+                        marginTop: "auto",
+                        borderTop: "1px solid var(--card-line)",
+                        fontSize: "var(--type-xs)",
+                        letterSpacing: "var(--tracking-eyebrow)",
+                        textTransform: "uppercase",
+                        color: "var(--card-muted)",
+                      }}
+                    >
+                      {cap.detail.map((d) => (
+                        <li
+                          key={d}
+                          style={{
+                            padding: "var(--space-3) 0",
+                            borderBottom: "1px solid var(--card-line)",
+                          }}
+                        >
+                          {d}
+                        </li>
+                      ))}
+                    </ul>
+                  </article>
+                );
+              })}
+            </div>
 
-          {/* Scroll indicator — a window onto the same ramp the cards run on */}
-          <div className="cap-indicator" aria-hidden>
-            <span className="cap-indicator__track" />
-            <span
-              className="cap-indicator__thumb"
-              style={{
-                width: `${thumb * 100}%`,
-                left: `${progress * (1 - thumb) * 100}%`,
-                backgroundImage: RAMP_GRADIENT,
-                backgroundSize: `${thumb > 0 ? (1 / thumb) * 100 : 100}% 100%`,
-                backgroundPosition: `${progress * 100}% 0`,
-              }}
-            />
+            {/* Up / down controls + ramp-coloured position indicator */}
+            <div className="cap-deck__controls">
+              <button
+                type="button"
+                className="cap-deck__nav"
+                onClick={() => go(-1)}
+                aria-label="Previous"
+              >
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path d="M6 14l6-6 6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+              <ol className="cap-deck__dots">
+                {capabilities.map((cap, i) => (
+                  <li key={cap.id}>
+                    <button
+                      type="button"
+                      className="cap-deck__dot"
+                      aria-label={`Show: ${cap.title}`}
+                      aria-current={i === index ? "true" : undefined}
+                      data-active={i === index || undefined}
+                      onClick={() => setIndex(i)}
+                      style={
+                        {
+                          "--dot": rampColor(n > 1 ? i / (n - 1) : 0),
+                        } as React.CSSProperties
+                      }
+                    />
+                  </li>
+                ))}
+              </ol>
+              <button
+                type="button"
+                className="cap-deck__nav"
+                onClick={() => go(1)}
+                aria-label="Next"
+              >
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path d="M6 10l6 6 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           <style>{`
-            .cap-rail {
-              display: flex;
-              gap: var(--space-6);
-              overflow-x: auto;
-              overscroll-behavior-x: contain;
-              scroll-snap-type: x mandatory;
-              -webkit-overflow-scrolling: touch;
-              /* room so the cards' drop shadow isn't clipped by the overflow box */
-              padding-block: var(--space-2);
-              scrollbar-width: none; /* native bar hidden — we draw our own */
-            }
-            .cap-rail::-webkit-scrollbar { display: none; }
-            .cap-rail:focus-visible {
-              outline: 2px solid var(--mint-deep);
-              outline-offset: 6px;
-              border-radius: 4px;
-            }
-            .cap-card {
-              flex: 0 0 clamp(18rem, 80vw, 25rem);
-              scroll-snap-align: start;
+            .cap-deck {
               display: flex;
               flex-direction: column;
-              min-height: clamp(22rem, 60vh, 27rem);
-              padding: clamp(1.5rem, 1rem + 1.6vw, 2.25rem);
-              border-radius: clamp(16px, 1.4vw, 22px);
+              align-items: center;
+              gap: var(--space-8);
+            }
+            .cap-deck:focus-visible {
+              outline: 2px solid var(--mint-deep);
+              outline-offset: 10px;
+              border-radius: 10px;
+            }
+            .cap-deck__stage {
+              position: relative;
+              width: 100%;
+              max-width: 42rem;
+              height: clamp(23rem, 62vh, 29rem);
+            }
+            .cap-card {
+              position: absolute;
+              inset: 0;
+              display: flex;
+              flex-direction: column;
+              overflow: hidden;
+              padding: clamp(1.6rem, 1rem + 1.8vw, 2.6rem);
+              border-radius: clamp(18px, 1.6vw, 26px);
               background: var(--card-bg);
               color: var(--card-ink);
               box-shadow:
                 inset 0 1px 0 rgba(255, 255, 255, 0.14),
-                0 26px 50px -34px rgba(10, 26, 63, 0.65);
-            }
-            @media (min-width: 768px) {
-              .cap-rail { gap: var(--space-8); }
+                0 30px 60px -34px rgba(10, 26, 63, 0.7);
+              transform-origin: center;
+              transition:
+                transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1);
             }
 
-            .cap-indicator {
-              position: relative;
-              height: 6px;
-              margin-top: var(--space-8);
+            /* Controls: a row beneath the deck on phones, a column beside it on
+               wider screens (handled in the md breakpoint below). */
+            .cap-deck__controls {
+              display: flex;
+              flex-direction: row;
+              align-items: center;
+              gap: var(--space-6);
+            }
+            .cap-deck__nav {
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              width: 2.75rem;
+              height: 2.75rem;
+              padding: 0;
               border-radius: 999px;
+              border: 1px solid color-mix(in oklab, var(--ink) 24%, transparent);
+              background: var(--paper);
+              color: var(--ink);
+              cursor: pointer;
+              transition:
+                background 0.25s var(--ease-out-quint),
+                color 0.25s var(--ease-out-quint),
+                border-color 0.25s var(--ease-out-quint),
+                transform 0.25s var(--ease-out-quint);
             }
-            .cap-indicator__track {
-              position: absolute;
-              inset: 0;
-              border-radius: inherit;
-              background: color-mix(in oklab, var(--ink) 14%, transparent);
+            .cap-deck__nav svg { width: 1.15rem; height: 1.15rem; }
+            .cap-deck__nav:focus-visible {
+              outline: 2px solid var(--mint-deep);
+              outline-offset: 2px;
             }
-            .cap-indicator__thumb {
-              position: absolute;
-              top: 0;
-              bottom: 0;
-              border-radius: inherit;
-              background-repeat: no-repeat;
-              box-shadow: 0 1px 4px -1px rgba(10, 26, 63, 0.45);
-              transition: none;
+            @media (hover: hover) {
+              .cap-deck__nav:hover {
+                background: var(--ink);
+                color: var(--paper);
+                border-color: var(--ink);
+              }
             }
+            .cap-deck__dots {
+              display: flex;
+              flex-direction: row;
+              align-items: center;
+              gap: var(--space-4);
+              list-style: none;
+              margin: 0;
+              padding: 0;
+            }
+            .cap-deck__dot {
+              display: block;
+              width: 11px;
+              height: 11px;
+              padding: 0;
+              border: 0;
+              border-radius: 999px;
+              background: var(--dot);
+              opacity: 0.38;
+              cursor: pointer;
+              transition: opacity 0.3s var(--ease-out-quint), transform 0.3s var(--ease-out-quint);
+            }
+            .cap-deck__dot[data-active] { opacity: 1; transform: scale(1.4); }
+            .cap-deck__dot:focus-visible {
+              outline: 2px solid var(--mint-deep);
+              outline-offset: 3px;
+            }
+
+            @media (min-width: 768px) {
+              .cap-deck {
+                flex-direction: row;
+                align-items: center;
+                justify-content: center;
+                gap: var(--space-16);
+              }
+              .cap-deck__controls { flex-direction: column; }
+              .cap-deck__dots { flex-direction: column; }
+            }
+
             @media (prefers-reduced-motion: reduce) {
-              .cap-rail { scroll-snap-type: none; scroll-behavior: auto; }
+              .cap-card,
+              .cap-deck__dot,
+              .cap-deck__nav { transition: none; }
             }
           `}</style>
         </SectionRise>
