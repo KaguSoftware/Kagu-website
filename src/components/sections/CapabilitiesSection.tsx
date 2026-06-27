@@ -189,7 +189,7 @@ export function CapabilitiesSection({
                   aria-label="Previous"
                 >
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-                    <path d="M6 14l6-6 6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M14 6l-6 6 6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </button>
                 <button
@@ -199,7 +199,7 @@ export function CapabilitiesSection({
                   aria-label="Next"
                 >
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-                    <path d="M6 10l6 6 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M10 6l6 6-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </button>
               </div>
@@ -253,7 +253,21 @@ export function CapabilitiesSection({
               color: var(--accent);
             }
             .cap-show__no em { font-style: normal; opacity: 0.5; }
-            .cap-show__glyph { color: var(--accent); flex: none; }
+            .cap-show__glyph {
+              color: var(--accent);
+              flex: none;
+              transform-origin: center;
+            }
+            /* Re-fires every time an item gains [data-active] — i.e. on each
+               advance — so the glyph "draws in" as the slide arrives. */
+            .cap-show__item[data-active] .cap-show__glyph {
+              animation: cap-glyph-in 0.7s var(--ease-out-quint) both;
+            }
+            @keyframes cap-glyph-in {
+              0% { opacity: 0; transform: translateY(10px) scale(0.7) rotate(-12deg); }
+              60% { opacity: 1; }
+              100% { opacity: 1; transform: none; }
+            }
             .cap-show__title {
               font-size: clamp(2.5rem, 1.5rem + 4.6vw, 5.5rem);
               line-height: 0.98;
@@ -348,16 +362,16 @@ export function CapabilitiesSection({
               to { transform: scaleX(1); }
             }
 
-            .cap-show__nav-group { display: flex; gap: var(--space-3); flex: none; }
+            .cap-show__nav-group { display: flex; gap: var(--space-2); flex: none; }
             .cap-show__nav {
               display: inline-flex;
               align-items: center;
               justify-content: center;
               width: 2.6rem;
-              height: 2.6rem;
+              height: 1.7rem;
               padding: 0;
               border-radius: 999px;
-              border: 1px solid color-mix(in oklab, var(--ink) 24%, transparent);
+              border: 1px solid color-mix(in oklab, var(--ink) 22%, transparent);
               background: transparent;
               color: var(--ink);
               cursor: pointer;
@@ -366,7 +380,7 @@ export function CapabilitiesSection({
                 color 0.25s var(--ease-out-quint),
                 border-color 0.25s var(--ease-out-quint);
             }
-            .cap-show__nav svg { width: 1.1rem; height: 1.1rem; }
+            .cap-show__nav svg { width: 1rem; height: 1rem; }
             .cap-show__nav:focus-visible {
               outline: 2px solid var(--mint-deep);
               outline-offset: 2px;
@@ -381,6 +395,7 @@ export function CapabilitiesSection({
 
             @media (prefers-reduced-motion: reduce) {
               .cap-show__item { transition: none; }
+              .cap-show__item[data-active] .cap-show__glyph { animation: none; }
               .cap-show__seg-fill[data-active] { animation: none; transform: scaleX(1); }
             }
           `}</style>
