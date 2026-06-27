@@ -4,28 +4,26 @@
   Section 2 — Capabilities.
   Background: --mint-pale (lift from baseline).
   Type-dominance: 4xl (sub-display).
-  Primary motion: SectionRise per card (M07 stand-in for M05 reveal).
+  Primary motion: SectionRise on the rail (M07 stand-in for M05 reveal).
   Supporting: M06 marquee at bottom (stack lineage, use #1 of 2).
-  VARIANCE 7 / MOTION 5 / DENSITY 4. Asymmetric grid — NOT 3 equal cards.
+  Cards run as a horizontal snap-scroll rail, each step coloured along the
+  shared case ramp (navy → sky → light, see /work). A custom progress
+  indicator below the rail mirrors the scroll position as a window onto the
+  same gradient. VARIANCE 7 / MOTION 5 / DENSITY 4.
 */
 
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Capability } from "@/lib/content";
 import type { MarqueeItem } from "@/lib/marquees";
 import { SectionRise } from "@/components/motion/SectionRise";
 import { Marquee } from "@/components/motion/Marquee";
 import { Eyebrow } from "@/components/layout/Eyebrow";
 import { GLYPHS } from "@/components/cases/CapabilityGlyph";
+import { rampColor, inkFor, rgba, NAVY, SKY, LIGHT } from "@/lib/caseRamp";
 
-// Hard asymmetry — varied spans + varied vertical offsets so adjacent cards
-// never pair into rows. Card 2 sits deep, card 4 floats high, card 5 anchors
-// off-center wide. Mobile falls back to single column.
-const layout = [
-  { colSpan: "md:col-span-7", offset: "" },
-  { colSpan: "md:col-span-4 md:col-start-9", offset: "md:mt-(--space-48)" },
-  { colSpan: "md:col-span-5 md:col-start-2", offset: "md:-mt-(--space-20)" },
-  { colSpan: "md:col-span-6 md:col-start-7", offset: "md:mt-(--space-24)" },
-  { colSpan: "md:col-span-8 md:col-start-3", offset: "md:mt-(--space-16)" },
-];
+// The indicator and the rail share one gradient so the moving thumb reads as
+// a window onto the exact colours of the cards beneath it.
+const RAMP_GRADIENT = `linear-gradient(90deg, ${NAVY}, ${SKY}, ${LIGHT})`;
 
 export function CapabilitiesSection({
   capabilities,
@@ -34,6 +32,35 @@ export function CapabilitiesSection({
   capabilities: Capability[];
   stackTokens: MarqueeItem[];
 }) {
+  const railRef = useRef<HTMLDivElement | null>(null);
+  // progress: 0→1 across the scrollable width. thumb: fraction of the rail
+  // currently visible (drives the indicator window's size).
+  const [progress, setProgress] = useState(0);
+  const [thumb, setThumb] = useState(1);
+
+  const measure = useCallback(() => {
+    const el = railRef.current;
+    if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    setThumb(el.scrollWidth > 0 ? Math.min(1, el.clientWidth / el.scrollWidth) : 1);
+    setProgress(max > 0 ? el.scrollLeft / max : 0);
+  }, []);
+
+  useEffect(() => {
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [measure]);
+
+  const onScroll = () => {
+    const el = railRef.current;
+    if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    setProgress(max > 0 ? el.scrollLeft / max : 0);
+  };
+
+  const n = capabilities.length;
+
   return (
     <section
       aria-label="Capabilities"
@@ -68,84 +95,178 @@ export function CapabilitiesSection({
           </div>
         </SectionRise>
 
-        {/* Cards — asymmetric grid */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-x-8 gap-y-(--space-16)">
-          {capabilities.map((cap, i) => {
-            const slot = layout[i] ?? layout[0];
-            const Glyph = GLYPHS[cap.id];
-            return (
-              <SectionRise
-                key={cap.id}
-                as="article"
-                className={`${slot.colSpan} ${slot.offset}`}
-                delay={i * 0.08}
-                amount={0.15}
-              >
-                <div className="flex items-start justify-between mb-(--space-5)">
-                  <span
-                    className="font-mono"
-                    style={{
-                      fontSize: "var(--type-xs)",
-                      color: "var(--slate-ink)",
-                      letterSpacing: "var(--tracking-eyebrow)",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    0{i + 1}
-                  </span>
-                  {Glyph ? (
-                    <span style={{ color: "var(--slate-ink)" }}>
-                      <Glyph size={48} />
-                    </span>
-                  ) : null}
-                </div>
-                <h3
-                  className="display"
-                  style={{
-                    fontSize: "var(--type-2xl)",
-                    lineHeight: 1.05,
-                    marginBottom: "var(--space-5)",
-                  }}
+        {/* Cards — horizontal snap-scroll rail, coloured along the case ramp */}
+        <SectionRise amount={0.1}>
+          <div
+            ref={railRef}
+            onScroll={onScroll}
+            className="cap-rail"
+            role="region"
+            aria-label="What we build — scroll horizontally"
+            tabIndex={0}
+          >
+            {capabilities.map((cap, i) => {
+              const t = n > 1 ? i / (n - 1) : 0;
+              const bg = rampColor(t);
+              const ink = inkFor(bg);
+              const Glyph = GLYPHS[cap.id];
+              return (
+                <article
+                  key={cap.id}
+                  className="cap-card"
+                  style={
+                    {
+                      "--card-bg": bg,
+                      "--card-ink": ink,
+                      "--card-muted": rgba(ink, 0.78),
+                      "--card-line": rgba(ink, 0.22),
+                    } as React.CSSProperties
+                  }
                 >
-                  {cap.title}
-                </h3>
-                <p
-                  style={{
-                    fontSize: "var(--type-md)",
-                    lineHeight: 1.55,
-                    color: "var(--ink)",
-                    marginBottom: "var(--space-6)",
-                    maxWidth: "44ch",
-                  }}
-                >
-                  {cap.body}
-                </p>
-                <ul
-                  className="list-none p-0 m-0 font-mono"
-                  style={{
-                    borderTop: "1px solid var(--neutral)",
-                    fontSize: "var(--type-xs)",
-                    letterSpacing: "var(--tracking-eyebrow)",
-                    textTransform: "uppercase",
-                    color: "var(--slate-ink)",
-                  }}
-                >
-                  {cap.detail.map((d) => (
-                    <li
-                      key={d}
+                  <div className="flex items-start justify-between mb-(--space-5)">
+                    <span
+                      className="font-mono"
                       style={{
-                        padding: "var(--space-3) 0",
-                        borderBottom: "1px solid color-mix(in oklab, var(--neutral) 60%, transparent)",
+                        fontSize: "var(--type-xs)",
+                        color: "var(--card-muted)",
+                        letterSpacing: "var(--tracking-eyebrow)",
+                        textTransform: "uppercase",
                       }}
                     >
-                      {d}
-                    </li>
-                  ))}
-                </ul>
-              </SectionRise>
-            );
-          })}
-        </div>
+                      0{i + 1}
+                    </span>
+                    {Glyph ? (
+                      <span style={{ color: "var(--card-ink)" }}>
+                        <Glyph size={48} />
+                      </span>
+                    ) : null}
+                  </div>
+                  <h3
+                    className="display"
+                    style={{
+                      fontSize: "var(--type-2xl)",
+                      lineHeight: 1.05,
+                      marginBottom: "var(--space-5)",
+                      color: "var(--card-ink)",
+                    }}
+                  >
+                    {cap.title}
+                  </h3>
+                  <p
+                    style={{
+                      fontSize: "var(--type-md)",
+                      lineHeight: 1.55,
+                      color: "var(--card-muted)",
+                      marginBottom: "var(--space-6)",
+                    }}
+                  >
+                    {cap.body}
+                  </p>
+                  <ul
+                    className="list-none p-0 m-0 font-mono"
+                    style={{
+                      marginTop: "auto",
+                      borderTop: "1px solid var(--card-line)",
+                      fontSize: "var(--type-xs)",
+                      letterSpacing: "var(--tracking-eyebrow)",
+                      textTransform: "uppercase",
+                      color: "var(--card-muted)",
+                    }}
+                  >
+                    {cap.detail.map((d) => (
+                      <li
+                        key={d}
+                        style={{
+                          padding: "var(--space-3) 0",
+                          borderBottom: "1px solid var(--card-line)",
+                        }}
+                      >
+                        {d}
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+              );
+            })}
+          </div>
+
+          {/* Scroll indicator — a window onto the same ramp the cards run on */}
+          <div className="cap-indicator" aria-hidden>
+            <span className="cap-indicator__track" />
+            <span
+              className="cap-indicator__thumb"
+              style={{
+                width: `${thumb * 100}%`,
+                left: `${progress * (1 - thumb) * 100}%`,
+                backgroundImage: RAMP_GRADIENT,
+                backgroundSize: `${thumb > 0 ? (1 / thumb) * 100 : 100}% 100%`,
+                backgroundPosition: `${progress * 100}% 0`,
+              }}
+            />
+          </div>
+
+          <style>{`
+            .cap-rail {
+              display: flex;
+              gap: var(--space-6);
+              overflow-x: auto;
+              overscroll-behavior-x: contain;
+              scroll-snap-type: x mandatory;
+              -webkit-overflow-scrolling: touch;
+              /* room so the cards' drop shadow isn't clipped by the overflow box */
+              padding-block: var(--space-2);
+              scrollbar-width: none; /* native bar hidden — we draw our own */
+            }
+            .cap-rail::-webkit-scrollbar { display: none; }
+            .cap-rail:focus-visible {
+              outline: 2px solid var(--mint-deep);
+              outline-offset: 6px;
+              border-radius: 4px;
+            }
+            .cap-card {
+              flex: 0 0 clamp(18rem, 80vw, 25rem);
+              scroll-snap-align: start;
+              display: flex;
+              flex-direction: column;
+              min-height: clamp(22rem, 60vh, 27rem);
+              padding: clamp(1.5rem, 1rem + 1.6vw, 2.25rem);
+              border-radius: clamp(16px, 1.4vw, 22px);
+              background: var(--card-bg);
+              color: var(--card-ink);
+              box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.14),
+                0 26px 50px -34px rgba(10, 26, 63, 0.65);
+            }
+            @media (min-width: 768px) {
+              .cap-rail { gap: var(--space-8); }
+            }
+
+            .cap-indicator {
+              position: relative;
+              height: 6px;
+              margin-top: var(--space-8);
+              border-radius: 999px;
+            }
+            .cap-indicator__track {
+              position: absolute;
+              inset: 0;
+              border-radius: inherit;
+              background: color-mix(in oklab, var(--ink) 14%, transparent);
+            }
+            .cap-indicator__thumb {
+              position: absolute;
+              top: 0;
+              bottom: 0;
+              border-radius: inherit;
+              background-repeat: no-repeat;
+              box-shadow: 0 1px 4px -1px rgba(10, 26, 63, 0.45);
+              transition: none;
+            }
+            @media (prefers-reduced-motion: reduce) {
+              .cap-rail { scroll-snap-type: none; scroll-behavior: auto; }
+            }
+          `}</style>
+        </SectionRise>
 
         {/* Stack marquee */}
         <div style={{ marginTop: "var(--space-32)", borderTop: "1px solid var(--neutral)", paddingTop: "var(--space-8)" }}>

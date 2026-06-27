@@ -15,6 +15,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getCases, type Case } from "@/lib/content";
+import { rampColor, inkFor, rgba } from "@/lib/caseRamp";
 import { TabLink } from "./TabLink";
 import { WorkStackFit } from "./WorkStackFit";
 
@@ -22,56 +23,6 @@ export const metadata = {
     title: "Work · Kagu",
     description: "Selected work from Kagu Software.",
 };
-
-/* ----------------------- dark→light colour ramp ----------------------- */
-
-const NAVY = "#0a1a3f"; // darkest folder (top of the pile)
-const SKY = "#1f8fe0"; // brand accent (ramp midpoint)
-const LIGHT = "#d9ecfc"; // lightest folder (bottom)
-const DARK_INK = "#091633"; // tinted navy ink (never pure black)
-const LIGHT_INK = "#eef5ff"; // tinted off-white ink (never pure white)
-
-function hexToRgb(hex: string): [number, number, number] {
-    const h = hex.replace("#", "");
-    return [
-        parseInt(h.slice(0, 2), 16),
-        parseInt(h.slice(2, 4), 16),
-        parseInt(h.slice(4, 6), 16),
-    ];
-}
-function toHex(v: number) {
-    return Math.max(0, Math.min(255, Math.round(v)))
-        .toString(16)
-        .padStart(2, "0");
-}
-function mix(a: string, b: string, t: number) {
-    const A = hexToRgb(a);
-    const B = hexToRgb(b);
-    return `#${toHex(A[0] + (B[0] - A[0]) * t)}${toHex(
-        A[1] + (B[1] - A[1]) * t
-    )}${toHex(A[2] + (B[2] - A[2]) * t)}`;
-}
-function rgba(hex: string, a: number) {
-    const [r, g, b] = hexToRgb(hex);
-    return `rgba(${r}, ${g}, ${b}, ${a})`;
-}
-// Piecewise so the midpoint lands on the brand sky rather than a muddy blend.
-function rampColor(t: number) {
-    return t < 0.5 ? mix(NAVY, SKY, t / 0.5) : mix(SKY, LIGHT, (t - 0.5) / 0.5);
-}
-// WCAG relative luminance + contrast, so ink is chosen for legibility, not a guess.
-function relLum(hex: string) {
-    const lin = hexToRgb(hex).map((v) => {
-        const s = v / 255;
-        return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
-    });
-    return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2];
-}
-function contrast(a: string, b: string) {
-    const hi = Math.max(relLum(a), relLum(b));
-    const lo = Math.min(relLum(a), relLum(b));
-    return (hi + 0.05) / (lo + 0.05);
-}
 
 /* --------------------------- framed thumbnail --------------------------- */
 
@@ -151,10 +102,7 @@ export default async function WorkIndexPage() {
                     // mid-band; the extremes (navy / light sky) read best.
                     const t = n > 1 ? Math.pow(i / (n - 1), 1.25) : 0;
                     const bg = rampColor(t);
-                    const ink =
-                        contrast(bg, DARK_INK) >= contrast(bg, LIGHT_INK)
-                            ? DARK_INK
-                            : LIGHT_INK;
+                    const ink = inkFor(bg);
                     const muted = rgba(ink, 0.78);
                     const no = String(i + 1).padStart(2, "0");
                     return (
