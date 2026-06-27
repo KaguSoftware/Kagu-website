@@ -146,12 +146,12 @@ export function CapabilitiesSection({
               <ol className="cap-show__timeline">
                 {capabilities.map((cap, i) => {
                   const seg = rampColor(n > 1 ? i / (n - 1) : 0);
-                  const done = i < index;
                   const active = i === index;
                   return (
                     <li
                       key={cap.id}
                       className="cap-show__seg"
+                      data-active={active || undefined}
                       style={{ "--seg": seg } as React.CSSProperties}
                     >
                       <button
@@ -162,19 +162,22 @@ export function CapabilitiesSection({
                         onClick={() => setIndex(i)}
                       >
                         <span className="cap-show__seg-track">
-                          {done || (active && reduced) ? (
-                            <span className="cap-show__seg-fill" data-full />
-                          ) : active ? (
-                            <span
-                              key={index}
-                              className="cap-show__seg-fill"
-                              data-active
-                              style={{
-                                animationDuration: `${AUTOPLAY_MS}ms`,
-                                animationPlayState: paused ? "paused" : "running",
-                              }}
-                            />
-                          ) : null}
+                          {/* One persistent fill per segment: the active one
+                              animates 0→100% over the dwell; when its turn ends
+                              it eases back to empty. No cumulative reset, so the
+                              first segment never snaps and the last fills fully. */}
+                          <span
+                            className="cap-show__seg-fill"
+                            data-active={active || undefined}
+                            style={
+                              active
+                                ? {
+                                    animationDuration: `${AUTOPLAY_MS}ms`,
+                                    animationPlayState: paused ? "paused" : "running",
+                                  }
+                                : undefined
+                            }
+                          />
                         </span>
                       </button>
                     </li>
@@ -344,7 +347,9 @@ export function CapabilitiesSection({
               border-radius: 999px;
               overflow: hidden;
               background: color-mix(in oklab, var(--ink) 16%, transparent);
+              transition: height 0.25s var(--ease-out-quint);
             }
+            .cap-show__seg[data-active] .cap-show__seg-track { height: 4px; }
             .cap-show__seg-fill {
               position: absolute;
               inset: 0;
@@ -352,10 +357,11 @@ export function CapabilitiesSection({
               transform: scaleX(0);
               border-radius: inherit;
               background: var(--seg);
+              /* eases back to empty once the segment is no longer active */
+              transition: transform 0.5s var(--ease-out-quint);
             }
-            .cap-show__seg-fill[data-full] { transform: scaleX(1); }
             .cap-show__seg-fill[data-active] {
-              animation: cap-seg-fill linear forwards;
+              animation: cap-seg-fill 4200ms linear forwards;
             }
             @keyframes cap-seg-fill {
               from { transform: scaleX(0); }
@@ -396,6 +402,7 @@ export function CapabilitiesSection({
             @media (prefers-reduced-motion: reduce) {
               .cap-show__item { transition: none; }
               .cap-show__item[data-active] .cap-show__glyph { animation: none; }
+              .cap-show__seg-fill { transition: none; }
               .cap-show__seg-fill[data-active] { animation: none; transform: scaleX(1); }
             }
           `}</style>
