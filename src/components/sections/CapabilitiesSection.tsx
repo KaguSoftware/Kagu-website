@@ -4,12 +4,13 @@
   Section 2 — Capabilities.
   Background: --mint-pale (lift from baseline).
   Type-dominance: 4xl (sub-display).
-  Primary motion: SectionRise on the deck (M07 stand-in for M05 reveal).
+  Primary motion: SectionRise on the showcase (M07 stand-in for M05 reveal).
   Supporting: M06 marquee at bottom (stack lineage, use #1 of 2).
-  Cards run as a vertical card-deck carousel — stacked behind each other,
-  each step coloured along the shared case ramp (navy → sky → light, see
-  /work). It auto-advances and steps with the up/down controls or arrow keys;
-  the ramp-coloured dots double as a position indicator. VARIANCE 7 / MOTION 5.
+  Capabilities run as a minimal editorial showcase — one at a time, big type
+  on the section surface, no panels. The shared case ramp (navy → sky → light,
+  see /work) is used only as an accent (index, glyph, rule, spec separators)
+  and as the colour of a self-filling progress timeline. It auto-advances and
+  steps with the up/down controls or arrow keys. VARIANCE 7 / MOTION 5.
 */
 
 import { useEffect, useState } from "react";
@@ -20,11 +21,9 @@ import { SectionRise } from "@/components/motion/SectionRise";
 import { Marquee } from "@/components/motion/Marquee";
 import { Eyebrow } from "@/components/layout/Eyebrow";
 import { GLYPHS } from "@/components/cases/CapabilityGlyph";
-import { rampColor, inkFor, rgba } from "@/lib/caseRamp";
+import { rampColor } from "@/lib/caseRamp";
 
-// How many cards peek out behind the active one before they're hidden.
-const DEPTH = 3;
-// Autoplay dwell per card (ms).
+// Autoplay dwell per capability (ms). The progress fill animation matches this.
 const AUTOPLAY_MS = 4200;
 
 export function CapabilitiesSection({
@@ -92,10 +91,10 @@ export function CapabilitiesSection({
           </div>
         </SectionRise>
 
-        {/* Cards — vertical card-deck carousel, coloured along the case ramp */}
+        {/* Showcase — one capability at a time, ramp colour as accent only */}
         <SectionRise amount={0.1}>
           <div
-            className="cap-deck"
+            className="cap-show"
             role="group"
             aria-roledescription="carousel"
             aria-label="What we build"
@@ -106,93 +105,35 @@ export function CapabilitiesSection({
             onFocus={() => setPaused(true)}
             onBlur={() => setPaused(false)}
           >
-            <div className="cap-deck__stage">
+            <div className="cap-show__stage">
               {capabilities.map((cap, i) => {
-                const t = n > 1 ? i / (n - 1) : 0;
-                const bg = rampColor(t);
-                const ink = inkFor(bg);
+                const accent = rampColor(n > 1 ? i / (n - 1) : 0);
                 const Glyph = GLYPHS[cap.id];
-                // 0 = front; larger = deeper in the stack (wraps so it loops).
-                const pos = (i - index + n) % n;
-                const hidden = pos > DEPTH;
+                const active = i === index;
                 return (
                   <article
                     key={cap.id}
-                    className="cap-card"
-                    aria-hidden={pos !== 0}
-                    style={
-                      {
-                        "--card-bg": bg,
-                        "--card-ink": ink,
-                        "--card-muted": rgba(ink, 0.78),
-                        "--card-line": rgba(ink, 0.22),
-                        zIndex: n - pos,
-                        opacity: hidden ? 0 : 1 - pos * 0.18,
-                        transform: `translateY(${-pos * 20}px) scale(${1 - pos * 0.05})`,
-                        pointerEvents: pos === 0 ? "auto" : "none",
-                      } as React.CSSProperties
-                    }
+                    className="cap-show__item"
+                    data-active={active || undefined}
+                    aria-hidden={!active}
+                    style={{ "--accent": accent } as React.CSSProperties}
                   >
-                    <div className="flex items-start justify-between mb-(--space-5)">
-                      <span
-                        className="font-mono"
-                        style={{
-                          fontSize: "var(--type-xs)",
-                          color: "var(--card-muted)",
-                          letterSpacing: "var(--tracking-eyebrow)",
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        0{i + 1}
+                    <div className="cap-show__head">
+                      <span className="cap-show__no">
+                        0{i + 1} <em>/ 0{n}</em>
                       </span>
                       {Glyph ? (
-                        <span style={{ color: "var(--card-ink)" }}>
-                          <Glyph size={48} />
+                        <span className="cap-show__glyph" aria-hidden>
+                          <Glyph size={64} />
                         </span>
                       ) : null}
                     </div>
-                    <h3
-                      className="display"
-                      style={{
-                        fontSize: "var(--type-2xl)",
-                        lineHeight: 1.05,
-                        marginBottom: "var(--space-5)",
-                        color: "var(--card-ink)",
-                      }}
-                    >
-                      {cap.title}
-                    </h3>
-                    <p
-                      style={{
-                        fontSize: "var(--type-md)",
-                        lineHeight: 1.55,
-                        color: "var(--card-muted)",
-                        marginBottom: "var(--space-6)",
-                      }}
-                    >
-                      {cap.body}
-                    </p>
-                    <ul
-                      className="list-none p-0 m-0 font-mono"
-                      style={{
-                        marginTop: "auto",
-                        borderTop: "1px solid var(--card-line)",
-                        fontSize: "var(--type-xs)",
-                        letterSpacing: "var(--tracking-eyebrow)",
-                        textTransform: "uppercase",
-                        color: "var(--card-muted)",
-                      }}
-                    >
+                    <h3 className="cap-show__title display">{cap.title}</h3>
+                    <span className="cap-show__rule" aria-hidden />
+                    <p className="cap-show__body">{cap.body}</p>
+                    <ul className="cap-show__specs">
                       {cap.detail.map((d) => (
-                        <li
-                          key={d}
-                          style={{
-                            padding: "var(--space-3) 0",
-                            borderBottom: "1px solid var(--card-line)",
-                          }}
-                        >
-                          {d}
-                        </li>
+                        <li key={d}>{d}</li>
                       ))}
                     </ul>
                   </article>
@@ -200,167 +141,247 @@ export function CapabilitiesSection({
               })}
             </div>
 
-            {/* Up / down controls + ramp-coloured position indicator */}
-            <div className="cap-deck__controls">
-              <button
-                type="button"
-                className="cap-deck__nav"
-                onClick={() => go(-1)}
-                aria-label="Previous"
-              >
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <path d="M6 14l6-6 6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-              <ol className="cap-deck__dots">
-                {capabilities.map((cap, i) => (
-                  <li key={cap.id}>
-                    <button
-                      type="button"
-                      className="cap-deck__dot"
-                      aria-label={`Show: ${cap.title}`}
-                      aria-current={i === index ? "true" : undefined}
-                      data-active={i === index || undefined}
-                      onClick={() => setIndex(i)}
-                      style={
-                        {
-                          "--dot": rampColor(n > 1 ? i / (n - 1) : 0),
-                        } as React.CSSProperties
-                      }
-                    />
-                  </li>
-                ))}
+            {/* Self-filling progress timeline (also the up/down stepper) */}
+            <div className="cap-show__footer">
+              <ol className="cap-show__timeline">
+                {capabilities.map((cap, i) => {
+                  const seg = rampColor(n > 1 ? i / (n - 1) : 0);
+                  const done = i < index;
+                  const active = i === index;
+                  return (
+                    <li
+                      key={cap.id}
+                      className="cap-show__seg"
+                      style={{ "--seg": seg } as React.CSSProperties}
+                    >
+                      <button
+                        type="button"
+                        className="cap-show__seg-btn"
+                        aria-label={`Show: ${cap.title}`}
+                        aria-current={active ? "true" : undefined}
+                        onClick={() => setIndex(i)}
+                      >
+                        <span className="cap-show__seg-track">
+                          {done || (active && reduced) ? (
+                            <span className="cap-show__seg-fill" data-full />
+                          ) : active ? (
+                            <span
+                              key={index}
+                              className="cap-show__seg-fill"
+                              data-active
+                              style={{
+                                animationDuration: `${AUTOPLAY_MS}ms`,
+                                animationPlayState: paused ? "paused" : "running",
+                              }}
+                            />
+                          ) : null}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
               </ol>
-              <button
-                type="button"
-                className="cap-deck__nav"
-                onClick={() => go(1)}
-                aria-label="Next"
-              >
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <path d="M6 10l6 6 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
+              <div className="cap-show__nav-group">
+                <button
+                  type="button"
+                  className="cap-show__nav"
+                  onClick={() => go(-1)}
+                  aria-label="Previous"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path d="M6 14l6-6 6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  className="cap-show__nav"
+                  onClick={() => go(1)}
+                  aria-label="Next"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path d="M6 10l6 6 6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
 
           <style>{`
-            .cap-deck {
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              gap: var(--space-8);
-            }
-            .cap-deck:focus-visible {
+            .cap-show:focus-visible {
               outline: 2px solid var(--mint-deep);
               outline-offset: 10px;
               border-radius: 10px;
             }
-            .cap-deck__stage {
+            .cap-show__stage {
               position: relative;
               width: 100%;
-              max-width: 42rem;
-              height: clamp(23rem, 62vh, 29rem);
+              display: grid;
+              min-height: clamp(20rem, 46vh, 26rem);
             }
-            .cap-card {
-              position: absolute;
-              inset: 0;
+            .cap-show__item {
+              /* every item shares the same grid cell so they overlap for the
+                 cross-fade while the cell sizes to the tallest one (no clipping
+                 or overflow into the footer on short screens). */
+              grid-area: 1 / 1;
               display: flex;
               flex-direction: column;
-              overflow: hidden;
-              padding: clamp(1.6rem, 1rem + 1.8vw, 2.6rem);
-              border-radius: clamp(18px, 1.6vw, 26px);
-              background: var(--card-bg);
-              color: var(--card-ink);
-              box-shadow:
-                inset 0 1px 0 rgba(255, 255, 255, 0.14),
-                0 30px 60px -34px rgba(10, 26, 63, 0.7);
-              transform-origin: center;
+              justify-content: center;
+              opacity: 0;
+              transform: translateY(16px);
+              pointer-events: none;
               transition:
-                transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
-                opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+                opacity 0.55s var(--ease-out-quint),
+                transform 0.55s var(--ease-out-quint);
+            }
+            .cap-show__item[data-active] {
+              opacity: 1;
+              transform: none;
+              pointer-events: auto;
+            }
+            .cap-show__head {
+              display: flex;
+              align-items: flex-start;
+              justify-content: space-between;
+              gap: var(--space-6);
+              margin-bottom: var(--space-6);
+            }
+            .cap-show__no {
+              font-family: var(--font-mono);
+              font-size: var(--type-sm);
+              letter-spacing: var(--tracking-eyebrow);
+              text-transform: uppercase;
+              color: var(--accent);
+            }
+            .cap-show__no em { font-style: normal; opacity: 0.5; }
+            .cap-show__glyph { color: var(--accent); flex: none; }
+            .cap-show__title {
+              font-size: clamp(2.5rem, 1.5rem + 4.6vw, 5.5rem);
+              line-height: 0.98;
+              letter-spacing: var(--tracking-display);
+              color: var(--ink);
+              max-width: 16ch;
+            }
+            .cap-show__rule {
+              display: block;
+              width: clamp(3rem, 7vw, 5rem);
+              height: 3px;
+              margin: var(--space-6) 0;
+              border-radius: 999px;
+              background: var(--accent);
+            }
+            .cap-show__body {
+              max-width: 48ch;
+              font-size: var(--type-lg);
+              line-height: var(--leading-normal);
+              color: var(--slate-ink);
+            }
+            .cap-show__specs {
+              display: flex;
+              flex-wrap: wrap;
+              align-items: center;
+              list-style: none;
+              margin: var(--space-8) 0 0;
+              padding: 0;
+              font-family: var(--font-mono);
+              font-size: var(--type-xs);
+              letter-spacing: var(--tracking-eyebrow);
+              text-transform: uppercase;
+              color: var(--slate-ink);
+            }
+            .cap-show__specs li + li::before {
+              content: "·";
+              margin: 0 0.7em;
+              color: var(--accent);
             }
 
-            /* Controls: a row beneath the deck on phones, a column beside it on
-               wider screens (handled in the md breakpoint below). */
-            .cap-deck__controls {
+            /* Footer: timeline + up/down stepper */
+            .cap-show__footer {
               display: flex;
-              flex-direction: row;
               align-items: center;
-              gap: var(--space-6);
+              gap: var(--space-8);
+              margin-top: var(--space-12);
             }
-            .cap-deck__nav {
+            .cap-show__timeline {
+              flex: 1;
+              display: flex;
+              gap: var(--space-3);
+              list-style: none;
+              margin: 0;
+              padding: 0;
+            }
+            .cap-show__seg { flex: 1; }
+            .cap-show__seg-btn {
+              display: block;
+              width: 100%;
+              padding: var(--space-3) 0;
+              border: 0;
+              background: none;
+              cursor: pointer;
+            }
+            .cap-show__seg-btn:focus-visible {
+              outline: 2px solid var(--mint-deep);
+              outline-offset: 4px;
+              border-radius: 4px;
+            }
+            .cap-show__seg-track {
+              display: block;
+              position: relative;
+              height: 3px;
+              border-radius: 999px;
+              overflow: hidden;
+              background: color-mix(in oklab, var(--ink) 16%, transparent);
+            }
+            .cap-show__seg-fill {
+              position: absolute;
+              inset: 0;
+              transform-origin: left center;
+              transform: scaleX(0);
+              border-radius: inherit;
+              background: var(--seg);
+            }
+            .cap-show__seg-fill[data-full] { transform: scaleX(1); }
+            .cap-show__seg-fill[data-active] {
+              animation: cap-seg-fill linear forwards;
+            }
+            @keyframes cap-seg-fill {
+              from { transform: scaleX(0); }
+              to { transform: scaleX(1); }
+            }
+
+            .cap-show__nav-group { display: flex; gap: var(--space-3); flex: none; }
+            .cap-show__nav {
               display: inline-flex;
               align-items: center;
               justify-content: center;
-              width: 2.75rem;
-              height: 2.75rem;
+              width: 2.6rem;
+              height: 2.6rem;
               padding: 0;
               border-radius: 999px;
               border: 1px solid color-mix(in oklab, var(--ink) 24%, transparent);
-              background: var(--paper);
+              background: transparent;
               color: var(--ink);
               cursor: pointer;
               transition:
                 background 0.25s var(--ease-out-quint),
                 color 0.25s var(--ease-out-quint),
-                border-color 0.25s var(--ease-out-quint),
-                transform 0.25s var(--ease-out-quint);
+                border-color 0.25s var(--ease-out-quint);
             }
-            .cap-deck__nav svg { width: 1.15rem; height: 1.15rem; }
-            .cap-deck__nav:focus-visible {
+            .cap-show__nav svg { width: 1.1rem; height: 1.1rem; }
+            .cap-show__nav:focus-visible {
               outline: 2px solid var(--mint-deep);
               outline-offset: 2px;
             }
             @media (hover: hover) {
-              .cap-deck__nav:hover {
+              .cap-show__nav:hover {
                 background: var(--ink);
                 color: var(--paper);
                 border-color: var(--ink);
               }
             }
-            .cap-deck__dots {
-              display: flex;
-              flex-direction: row;
-              align-items: center;
-              gap: var(--space-4);
-              list-style: none;
-              margin: 0;
-              padding: 0;
-            }
-            .cap-deck__dot {
-              display: block;
-              width: 11px;
-              height: 11px;
-              padding: 0;
-              border: 0;
-              border-radius: 999px;
-              background: var(--dot);
-              opacity: 0.38;
-              cursor: pointer;
-              transition: opacity 0.3s var(--ease-out-quint), transform 0.3s var(--ease-out-quint);
-            }
-            .cap-deck__dot[data-active] { opacity: 1; transform: scale(1.4); }
-            .cap-deck__dot:focus-visible {
-              outline: 2px solid var(--mint-deep);
-              outline-offset: 3px;
-            }
-
-            @media (min-width: 768px) {
-              .cap-deck {
-                flex-direction: row;
-                align-items: center;
-                justify-content: center;
-                gap: var(--space-16);
-              }
-              .cap-deck__controls { flex-direction: column; }
-              .cap-deck__dots { flex-direction: column; }
-            }
 
             @media (prefers-reduced-motion: reduce) {
-              .cap-card,
-              .cap-deck__dot,
-              .cap-deck__nav { transition: none; }
+              .cap-show__item { transition: none; }
+              .cap-show__seg-fill[data-active] { animation: none; transform: scaleX(1); }
             }
           `}</style>
         </SectionRise>
