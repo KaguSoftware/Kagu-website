@@ -25,7 +25,7 @@ const publicSans = Public_Sans({
 export const metadata: Metadata = {
   title: "Kagu · Software for boutique operators",
   description:
-    "Kagu builds Next.js + Supabase platforms for hospitality, tourism, and service businesses. Founded 2025, Istanbul.",
+    "Kagu builds Next.js + Supabase platforms for hospitality and service businesses. Founded 2025, Istanbul.",
   metadataBase: new URL("https://kagusoftware.com"),
 };
 

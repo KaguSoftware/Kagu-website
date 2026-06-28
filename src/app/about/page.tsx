@@ -151,7 +151,7 @@ export default async function AboutPage({ searchParams }: AboutPageProps) {
                   marginBottom: "var(--space-6)",
                 }}
               >
-                We work in hospitality, tourism, and operator-facing software,
+                We work in hospitality and operator-facing software,
                 verticals where the test of a system is whether the team uses it
                 on Friday night, not whether it photographs well on Monday morning.
               </p>

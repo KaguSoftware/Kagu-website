@@ -50,7 +50,7 @@ export function AboutSection({
               }}
             >
               Kagu is small on purpose. The people who write the code are the
-              people in the meetings. We work in hospitality, tourism, and
+              people in the meetings. We work in hospitality and
               operator-facing software, verticals where production is the
               deliverable, not the kickoff deck.
             </p>

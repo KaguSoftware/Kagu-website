@@ -100,9 +100,15 @@ export function CapabilitiesSection({
     }
   };
 
+  // Accent ramp trimmed at the dark end: pure navy (/work's first folder)
+  // disappears on this dark surface, so we start at a visible medium-blue and
+  // keep the blue → sky → light identity across the set.
+  const accentAt = (i: number) =>
+    rampColor(n > 1 ? 0.3 + 0.7 * (i / (n - 1)) : 0.65);
+
   // Colour of the item on screen — carried into the header so the title visibly
   // belongs to whichever capability is playing.
-  const accent = rampColor(n > 1 ? index / (n - 1) : 0);
+  const accent = accentAt(index);
 
   return (
     <section
@@ -146,7 +152,7 @@ export function CapabilitiesSection({
 
             <div className="cap-show__stage">
               {capabilities.map((cap, i) => {
-                const accent = rampColor(n > 1 ? i / (n - 1) : 0);
+                const accent = accentAt(i);
                 const Glyph = GLYPHS[cap.id];
                 const active = i === index;
                 return (
@@ -168,7 +174,6 @@ export function CapabilitiesSection({
                       ) : null}
                     </div>
                     <h3 className="cap-show__title display">{cap.title}</h3>
-                    <span className="cap-show__rule" aria-hidden />
                     <p className="cap-show__body">{cap.body}</p>
                     <ul className="cap-show__specs">
                       {cap.detail.map((d) => (
@@ -184,7 +189,7 @@ export function CapabilitiesSection({
             <div className="cap-show__footer">
               <ol className="cap-show__timeline">
                 {capabilities.map((cap, i) => {
-                  const seg = rampColor(n > 1 ? i / (n - 1) : 0);
+                  const seg = accentAt(i);
                   const active = !resetting && i === index;
                   const past = !resetting && i < index;
                   return (
@@ -350,15 +355,8 @@ export function CapabilitiesSection({
               color: var(--ink);
               max-width: 16ch;
             }
-            .cap-show__rule {
-              display: block;
-              width: clamp(3rem, 7vw, 5rem);
-              height: 3px;
-              margin: var(--space-6) 0;
-              border-radius: 999px;
-              background: var(--accent);
-            }
             .cap-show__body {
+              margin-top: var(--space-6);
               max-width: 48ch;
               font-size: var(--type-lg);
               line-height: var(--leading-normal);

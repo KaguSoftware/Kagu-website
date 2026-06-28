@@ -62,7 +62,7 @@ export default function OpengraphImage() {
           }}
         >
           <span style={{ maxWidth: 600, lineHeight: 1.4, color: palette.ink }}>
-            Next.js + Supabase platforms for hospitality, tourism, and operator tools.
+            Next.js + Supabase platforms for hospitality and operator tools.
           </span>
           <span
             style={{

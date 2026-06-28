@@ -255,8 +255,8 @@ export function HeroSection({ heroMarquee }: { heroMarquee: MarqueeItem[] }) {
                 color: "var(--ink)",
               }}
             >
-              We build Next.js + Supabase platforms for hospitality, tourism,
-              and service businesses. Small team. Real production work. No
+              We build Next.js + Supabase platforms for hospitality and
+              service businesses. Small team. Real production work. No
               agency theatre.
             </p>
           </motion.div>
