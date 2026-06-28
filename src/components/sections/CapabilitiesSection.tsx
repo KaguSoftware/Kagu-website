@@ -129,8 +129,6 @@ export function CapabilitiesSection({
             aria-label="What we build"
             tabIndex={0}
             onKeyDown={onKeyDown}
-            onMouseEnter={() => setPaused(true)}
-            onMouseLeave={() => setPaused(false)}
             onFocus={() => setPaused(true)}
             onBlur={() => setPaused(false)}
             style={{ "--accent-now": accent } as React.CSSProperties}
@@ -148,7 +146,11 @@ export function CapabilitiesSection({
                 Not a full-service menu. We say no to most of what we&apos;re
                 asked, so the work we ship is the work we&apos;re known for.
               </p>
-              <ol className="cap-vx__list">
+              <ol
+                className="cap-vx__list"
+                onMouseEnter={() => setPaused(true)}
+                onMouseLeave={() => setPaused(false)}
+              >
                 {capabilities.map((cap, i) => {
                   const itemAccent = accentAt(i);
                   const active = !resetting && i === index;
@@ -390,8 +392,8 @@ export function CapabilitiesSection({
               100% { opacity: 1; transform: none; }
             }
             .cap-vx__body {
-              max-width: 46ch;
-              font-size: var(--type-lg);
+              max-width: 42ch;
+              font-size: var(--type-xl);
               line-height: var(--leading-normal);
               color: var(--slate-ink);
             }
@@ -403,7 +405,7 @@ export function CapabilitiesSection({
               margin: var(--space-8) 0 0;
               padding: 0;
               font-family: var(--font-mono);
-              font-size: var(--type-xs);
+              font-size: var(--type-sm);
               letter-spacing: var(--tracking-eyebrow);
               text-transform: uppercase;
               color: var(--slate-ink);
