@@ -13,7 +13,7 @@
   steps with the up/down controls or arrow keys. VARIANCE 7 / MOTION 5.
 */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import type { Capability } from "@/lib/content";
 import type { MarqueeItem } from "@/lib/marquees";
@@ -23,8 +23,10 @@ import { Eyebrow } from "@/components/layout/Eyebrow";
 import { GLYPHS } from "@/components/cases/CapabilityGlyph";
 import { rampColor } from "@/lib/caseRamp";
 
-// Autoplay dwell per capability (ms). The progress fill animation matches this.
+// Autoplay dwell per capability (ms) — how long the active segment takes to fill.
 const AUTOPLAY_MS = 4200;
+// Time the whole bar takes to drain back to empty when a cycle completes (ms).
+const RESET_MS = 520;
 
 export function CapabilitiesSection({
   capabilities,
@@ -37,15 +39,56 @@ export function CapabilitiesSection({
   const n = capabilities.length;
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+  // While true the bar drains every segment to empty before restarting at 0,
+  // so the loop never snaps the first segment from full back to nothing.
+  const [resetting, setResetting] = useState(false);
 
-  const go = (dir: number) => setIndex((p) => (p + dir + n) % n);
+  // The active segment's fill is driven straight on the DOM (rAF) so its
+  // progress survives re-renders and pause/resume without re-animating.
+  const activeFillRef = useRef<HTMLSpanElement | null>(null);
+  const progressRef = useRef(0); // 0→1 fill of the active segment
+  const rafRef = useRef(0);
 
-  // Autoplay — pauses on hover/focus and when reduced motion is requested.
+  const goTo = (i: number) => {
+    progressRef.current = 0;
+    setResetting(false);
+    setIndex(((i % n) + n) % n);
+  };
+  const go = (dir: number) => goTo(index + dir);
+
+  // Drive the active fill and advance when it tops out. On the last segment we
+  // enter the drain phase instead of wrapping straight to 0.
   useEffect(() => {
-    if (paused || reduced || n <= 1) return;
-    const id = setInterval(() => setIndex((p) => (p + 1) % n), AUTOPLAY_MS);
-    return () => clearInterval(id);
-  }, [paused, reduced, n]);
+    if (paused || reduced || resetting || n <= 1) return;
+    let prev: number | undefined;
+    const tick = (ts: number) => {
+      if (prev === undefined) prev = ts;
+      progressRef.current = Math.min(progressRef.current + (ts - prev) / AUTOPLAY_MS, 1);
+      prev = ts;
+      if (activeFillRef.current) {
+        activeFillRef.current.style.transform = `scaleX(${progressRef.current})`;
+      }
+      if (progressRef.current >= 1) {
+        progressRef.current = 0;
+        if (index === n - 1) setResetting(true);
+        else setIndex(index + 1);
+        return;
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [index, paused, reduced, resetting, n]);
+
+  // After the drain animation finishes, restart the cycle from the first item.
+  useEffect(() => {
+    if (!resetting) return;
+    const t = setTimeout(() => {
+      setIndex(0);
+      setResetting(false);
+    }, RESET_MS);
+    return () => clearTimeout(t);
+  }, [resetting]);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
@@ -57,6 +100,10 @@ export function CapabilitiesSection({
     }
   };
 
+  // Colour of the item on screen — carried into the header so the title visibly
+  // belongs to whichever capability is playing.
+  const accent = rampColor(n > 1 ? index / (n - 1) : 0);
+
   return (
     <section
       aria-label="Capabilities"
@@ -64,35 +111,12 @@ export function CapabilitiesSection({
       className="px-(--container-x) py-(--section-y)"
     >
       <div className="w-full max-w-(--container-max) mx-auto">
-        {/* Header row */}
-        <SectionRise className="grid grid-cols-1 md:grid-cols-12 gap-8 mb-(--space-24)">
-          <div className="md:col-span-5">
-            <Eyebrow number="02">What we build</Eyebrow>
-          </div>
-          <div className="md:col-span-6 md:col-start-7">
-            <h2
-              className="display"
-              style={{ fontSize: "var(--type-4xl)", lineHeight: 1, maxWidth: "18ch" }}
-            >
-              Five things, done well.
-            </h2>
-            <p
-              style={{
-                fontSize: "var(--type-md)",
-                lineHeight: 1.55,
-                marginTop: "var(--space-6)",
-                maxWidth: "44ch",
-                color: "var(--ink)",
-              }}
-            >
-              Not a full-service menu. We say no to most of what we&apos;re asked, so
-              the work we ship is the work we&apos;re known for.
-            </p>
-          </div>
-        </SectionRise>
-
-        {/* Showcase — one capability at a time, ramp colour as accent only */}
-        <SectionRise amount={0.1}>
+        {/* What we build — header and showcase as one composition: the title
+            block and the progress console occupy the left column, the active
+            capability plays in the right. The heading sits directly above the
+            five progress segments, so it reads as part of the set rather than a
+            detached band, and they reveal together in a single motion. */}
+        <SectionRise amount={0.15}>
           <div
             className="cap-show"
             role="group"
@@ -104,7 +128,22 @@ export function CapabilitiesSection({
             onMouseLeave={() => setPaused(false)}
             onFocus={() => setPaused(true)}
             onBlur={() => setPaused(false)}
+            style={{ "--accent-now": accent } as React.CSSProperties}
           >
+            <div className="cap-show__header">
+              <Eyebrow number="02">What we build</Eyebrow>
+              <h2 className="cap-show__heading display">
+                Five things, done well
+                <span className="cap-show__dot" aria-hidden>
+                  .
+                </span>
+              </h2>
+              <p className="cap-show__intro">
+                Not a full-service menu. We say no to most of what we&apos;re
+                asked, so the work we ship is the work we&apos;re known for.
+              </p>
+            </div>
+
             <div className="cap-show__stage">
               {capabilities.map((cap, i) => {
                 const accent = rampColor(n > 1 ? i / (n - 1) : 0);
@@ -146,7 +185,8 @@ export function CapabilitiesSection({
               <ol className="cap-show__timeline">
                 {capabilities.map((cap, i) => {
                   const seg = rampColor(n > 1 ? i / (n - 1) : 0);
-                  const active = i === index;
+                  const active = !resetting && i === index;
+                  const past = !resetting && i < index;
                   return (
                     <li
                       key={cap.id}
@@ -159,23 +199,22 @@ export function CapabilitiesSection({
                         className="cap-show__seg-btn"
                         aria-label={`Show: ${cap.title}`}
                         aria-current={active ? "true" : undefined}
-                        onClick={() => setIndex(i)}
+                        onClick={() => goTo(i)}
                       >
                         <span className="cap-show__seg-track">
-                          {/* One persistent fill per segment: the active one
-                              animates 0→100% over the dwell; when its turn ends
-                              it eases back to empty. No cumulative reset, so the
-                              first segment never snaps and the last fills fully. */}
+                          {/* Past segments stay full; the active one is filled by
+                              rAF (transform set on the DOM, no CSS transition);
+                              everything else (and the whole bar while resetting)
+                              eases to empty via the CSS transition below. */}
                           <span
+                            ref={active && !reduced ? activeFillRef : undefined}
                             className="cap-show__seg-fill"
-                            data-active={active || undefined}
                             style={
                               active
-                                ? {
-                                    animationDuration: `${AUTOPLAY_MS}ms`,
-                                    animationPlayState: paused ? "paused" : "running",
-                                  }
-                                : undefined
+                                ? reduced
+                                  ? { transform: "scaleX(1)" }
+                                  : { transition: "none" }
+                                : { transform: `scaleX(${past ? 1 : 0})` }
                             }
                           />
                         </span>
@@ -210,11 +249,44 @@ export function CapabilitiesSection({
           </div>
 
           <style>{`
+            /* One composition: header + console (left) and the playing
+               capability (right). On a single column they stack
+               header → stage → footer in reading order. */
+            .cap-show {
+              display: grid;
+              grid-template-columns: 1fr;
+              grid-template-areas: "header" "stage" "footer";
+              gap: var(--space-10);
+            }
+            .cap-show__header { grid-area: header; align-self: start; }
+            .cap-show__stage { grid-area: stage; }
+            .cap-show__footer { grid-area: footer; }
             .cap-show:focus-visible {
               outline: 2px solid var(--mint-deep);
               outline-offset: 10px;
               border-radius: 10px;
             }
+
+            .cap-show__heading {
+              font-size: var(--type-4xl);
+              line-height: 1.02;
+              letter-spacing: var(--tracking-display);
+              max-width: 18ch;
+              margin-top: var(--space-5);
+            }
+            /* live through-line: the period takes the on-screen item's colour */
+            .cap-show__dot {
+              color: var(--accent-now);
+              transition: color 0.5s var(--ease-out-quint);
+            }
+            .cap-show__intro {
+              margin-top: var(--space-6);
+              max-width: 40ch;
+              font-size: var(--type-md);
+              line-height: 1.55;
+              color: var(--slate-ink);
+            }
+
             .cap-show__stage {
               position: relative;
               width: 100%;
@@ -311,12 +383,11 @@ export function CapabilitiesSection({
               color: var(--accent);
             }
 
-            /* Footer: timeline + up/down stepper */
+            /* Footer: timeline + up/down stepper (grid gap handles spacing) */
             .cap-show__footer {
               display: flex;
               align-items: center;
-              gap: var(--space-8);
-              margin-top: var(--space-12);
+              gap: var(--space-6);
             }
             .cap-show__timeline {
               flex: 1;
@@ -357,15 +428,9 @@ export function CapabilitiesSection({
               transform: scaleX(0);
               border-radius: inherit;
               background: var(--seg);
-              /* eases back to empty once the segment is no longer active */
+              /* smooths click-to-fill and the end-of-cycle drain; the active
+                 segment overrides this with transition:none (rAF drives it). */
               transition: transform 0.5s var(--ease-out-quint);
-            }
-            .cap-show__seg-fill[data-active] {
-              animation: cap-seg-fill 4200ms linear forwards;
-            }
-            @keyframes cap-seg-fill {
-              from { transform: scaleX(0); }
-              to { transform: scaleX(1); }
             }
 
             .cap-show__nav-group { display: flex; gap: var(--space-2); flex: none; }
@@ -399,11 +464,30 @@ export function CapabilitiesSection({
               }
             }
 
+            /* Two columns: title + console on the left, the playing capability
+               on the right. The middle row flexes so the console settles at the
+               stage's baseline and header/items share one visual frame. */
+            @media (min-width: 900px) {
+              .cap-show {
+                grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+                grid-template-rows: auto 1fr auto;
+                grid-template-areas:
+                  "header stage"
+                  ".      stage"
+                  "footer stage";
+                column-gap: clamp(2rem, 5vw, 5rem);
+                row-gap: var(--space-8);
+                align-items: start;
+              }
+              .cap-show__stage { align-self: stretch; }
+              .cap-show__footer { align-self: end; }
+              .cap-show__heading { margin-top: var(--space-6); }
+            }
+
             @media (prefers-reduced-motion: reduce) {
               .cap-show__item { transition: none; }
               .cap-show__item[data-active] .cap-show__glyph { animation: none; }
               .cap-show__seg-fill { transition: none; }
-              .cap-show__seg-fill[data-active] { animation: none; transform: scaleX(1); }
             }
           `}</style>
         </SectionRise>
