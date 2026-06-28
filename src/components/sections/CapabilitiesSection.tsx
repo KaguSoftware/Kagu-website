@@ -66,7 +66,7 @@ export function CapabilitiesSection({
       progressRef.current = Math.min(progressRef.current + (ts - prev) / AUTOPLAY_MS, 1);
       prev = ts;
       if (activeFillRef.current) {
-        activeFillRef.current.style.transform = `scaleX(${progressRef.current})`;
+        activeFillRef.current.style.transform = `scaleY(${progressRef.current})`;
       }
       if (progressRef.current >= 1) {
         progressRef.current = 0;
@@ -117,14 +117,13 @@ export function CapabilitiesSection({
       className="px-(--container-x) py-(--section-y)"
     >
       <div className="w-full max-w-(--container-max) mx-auto">
-        {/* What we build — header and showcase as one composition: the title
-            block and the progress console occupy the left column, the active
-            capability plays in the right. The heading sits directly above the
-            five progress segments, so it reads as part of the set rather than a
-            detached band, and they reveal together in a single motion. */}
+        {/* What we build — vertical index + detail. The heading sits above a
+            vertical list of all five capabilities; a progress spine fills down
+            that list as it plays, and the active capability's glyph, body and
+            specs show alongside it on the right. */}
         <SectionRise amount={0.15}>
           <div
-            className="cap-show"
+            className="cap-vx"
             role="group"
             aria-roledescription="carousel"
             aria-label="What we build"
@@ -136,46 +135,88 @@ export function CapabilitiesSection({
             onBlur={() => setPaused(false)}
             style={{ "--accent-now": accent } as React.CSSProperties}
           >
-            <div className="cap-show__header">
+            {/* Left: heading + vertical index of all five */}
+            <div className="cap-vx__index">
               <Eyebrow number="02">What we build</Eyebrow>
-              <h2 className="cap-show__heading display">
+              <h2 className="cap-vx__heading display">
                 Five things, done well
-                <span className="cap-show__dot" aria-hidden>
+                <span className="cap-vx__dot" aria-hidden>
                   .
                 </span>
               </h2>
-              <p className="cap-show__intro">
+              <p className="cap-vx__intro">
                 Not a full-service menu. We say no to most of what we&apos;re
                 asked, so the work we ship is the work we&apos;re known for.
               </p>
+              <ol className="cap-vx__list">
+                {capabilities.map((cap, i) => {
+                  const itemAccent = accentAt(i);
+                  const active = !resetting && i === index;
+                  const past = !resetting && i < index;
+                  return (
+                    <li
+                      key={cap.id}
+                      className="cap-vx__row"
+                      data-active={active || undefined}
+                      style={{ "--accent": itemAccent } as React.CSSProperties}
+                    >
+                      <button
+                        type="button"
+                        className="cap-vx__row-btn"
+                        aria-current={active ? "true" : undefined}
+                        onClick={() => goTo(i)}
+                      >
+                        <span className="cap-vx__spine">
+                          {/* Past rows full; the active row's spine is filled by
+                              rAF (scaleY on the DOM, no transition); the rest (and
+                              the whole spine while resetting) ease empty in CSS. */}
+                          <span
+                            ref={active && !reduced ? activeFillRef : undefined}
+                            className="cap-vx__spine-fill"
+                            style={
+                              active
+                                ? reduced
+                                  ? { transform: "scaleY(1)" }
+                                  : { transition: "none" }
+                                : { transform: `scaleY(${past ? 1 : 0})` }
+                            }
+                          />
+                        </span>
+                        <span className="cap-vx__no">0{i + 1}</span>
+                        <span className="cap-vx__name">{cap.title}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
             </div>
 
-            <div className="cap-show__stage">
+            {/* Right: the active capability's detail */}
+            <div className="cap-vx__stage">
               {capabilities.map((cap, i) => {
-                const accent = accentAt(i);
+                const itemAccent = accentAt(i);
                 const Glyph = GLYPHS[cap.id];
                 const active = i === index;
                 return (
                   <article
                     key={cap.id}
-                    className="cap-show__item"
+                    className="cap-vx__detail"
                     data-active={active || undefined}
                     aria-hidden={!active}
-                    style={{ "--accent": accent } as React.CSSProperties}
+                    style={{ "--accent": itemAccent } as React.CSSProperties}
                   >
-                    <div className="cap-show__head">
-                      <span className="cap-show__no">
+                    <div className="cap-vx__detail-head">
+                      <span className="cap-vx__detail-no">
                         0{i + 1} <em>/ 0{n}</em>
                       </span>
                       {Glyph ? (
-                        <span className="cap-show__glyph" aria-hidden>
-                          <Glyph size={64} />
+                        <span className="cap-vx__glyph" aria-hidden>
+                          <Glyph size={72} />
                         </span>
                       ) : null}
                     </div>
-                    <h3 className="cap-show__title display">{cap.title}</h3>
-                    <p className="cap-show__body">{cap.body}</p>
-                    <ul className="cap-show__specs">
+                    <p className="cap-vx__body">{cap.body}</p>
+                    <ul className="cap-vx__specs">
                       {cap.detail.map((d) => (
                         <li key={d}>{d}</li>
                       ))}
@@ -184,95 +225,24 @@ export function CapabilitiesSection({
                 );
               })}
             </div>
-
-            {/* Self-filling progress timeline (also the up/down stepper) */}
-            <div className="cap-show__footer">
-              <ol className="cap-show__timeline">
-                {capabilities.map((cap, i) => {
-                  const seg = accentAt(i);
-                  const active = !resetting && i === index;
-                  const past = !resetting && i < index;
-                  return (
-                    <li
-                      key={cap.id}
-                      className="cap-show__seg"
-                      data-active={active || undefined}
-                      style={{ "--seg": seg } as React.CSSProperties}
-                    >
-                      <button
-                        type="button"
-                        className="cap-show__seg-btn"
-                        aria-label={`Show: ${cap.title}`}
-                        aria-current={active ? "true" : undefined}
-                        onClick={() => goTo(i)}
-                      >
-                        <span className="cap-show__seg-track">
-                          {/* Past segments stay full; the active one is filled by
-                              rAF (transform set on the DOM, no CSS transition);
-                              everything else (and the whole bar while resetting)
-                              eases to empty via the CSS transition below. */}
-                          <span
-                            ref={active && !reduced ? activeFillRef : undefined}
-                            className="cap-show__seg-fill"
-                            style={
-                              active
-                                ? reduced
-                                  ? { transform: "scaleX(1)" }
-                                  : { transition: "none" }
-                                : { transform: `scaleX(${past ? 1 : 0})` }
-                            }
-                          />
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ol>
-              <div className="cap-show__nav-group">
-                <button
-                  type="button"
-                  className="cap-show__nav"
-                  onClick={() => go(-1)}
-                  aria-label="Previous"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-                    <path d="M14 6l-6 6 6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-                <button
-                  type="button"
-                  className="cap-show__nav"
-                  onClick={() => go(1)}
-                  aria-label="Next"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden>
-                    <path d="M10 6l6 6-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </button>
-              </div>
-            </div>
           </div>
 
           <style>{`
-            /* One composition: header + console (left) and the playing
-               capability (right). On a single column they stack
-               header → stage → footer in reading order. */
-            .cap-show {
+            /* Vertical index + detail: heading + a vertical list of all five
+               on the left, the active capability's detail on the right. One
+               column on phones (index above detail). */
+            .cap-vx {
               display: grid;
               grid-template-columns: 1fr;
-              grid-template-areas: "header" "stage" "footer";
-              gap: var(--space-10);
+              gap: var(--space-12);
             }
-            .cap-show__header { grid-area: header; align-self: start; }
-            .cap-show__stage { grid-area: stage; }
-            .cap-show__footer { grid-area: footer; }
-            .cap-show:focus-visible {
+            .cap-vx:focus-visible {
               outline: 2px solid var(--mint-deep);
               outline-offset: 10px;
               border-radius: 10px;
             }
 
-            .cap-show__heading {
+            .cap-vx__heading {
               font-size: var(--type-4xl);
               line-height: 1.02;
               letter-spacing: var(--tracking-display);
@@ -280,67 +250,138 @@ export function CapabilitiesSection({
               margin-top: var(--space-5);
             }
             /* live through-line: the period takes the on-screen item's colour */
-            .cap-show__dot {
+            .cap-vx__dot {
               color: var(--accent-now);
               transition: color 0.5s var(--ease-out-quint);
             }
-            .cap-show__intro {
+            .cap-vx__intro {
               margin-top: var(--space-6);
-              max-width: 40ch;
+              max-width: 38ch;
               font-size: var(--type-md);
               line-height: 1.55;
               color: var(--slate-ink);
             }
 
-            .cap-show__stage {
-              position: relative;
-              width: 100%;
-              display: grid;
-              min-height: clamp(20rem, 46vh, 26rem);
+            /* ---- left: the vertical index ---- */
+            .cap-vx__list {
+              list-style: none;
+              margin: var(--space-10) 0 0;
+              padding: 0;
             }
-            .cap-show__item {
-              /* every item shares the same grid cell so they overlap for the
-                 cross-fade while the cell sizes to the tallest one (no clipping
-                 or overflow into the footer on short screens). */
+            .cap-vx__row-btn {
+              display: grid;
+              grid-template-columns: 3px auto minmax(0, 1fr);
+              align-items: center;
+              column-gap: var(--space-5);
+              width: 100%;
+              /* no vertical padding + no list gap so the spines of consecutive
+                 rows join into one continuous line down the index */
+              min-height: clamp(3.25rem, 2.6rem + 1.4vw, 4.5rem);
+              padding: 0;
+              border: 0;
+              background: none;
+              text-align: left;
+              cursor: pointer;
+              color: var(--slate-ink);
+            }
+            .cap-vx__row-btn:focus-visible {
+              outline: 2px solid var(--mint-deep);
+              outline-offset: 4px;
+              border-radius: 6px;
+            }
+            .cap-vx__spine {
+              position: relative;
+              align-self: stretch;
+              width: 3px;
+              border-radius: 999px;
+              overflow: hidden;
+              background: color-mix(in oklab, var(--ink) 14%, transparent);
+            }
+            .cap-vx__spine-fill {
+              position: absolute;
+              inset: 0;
+              transform-origin: top center;
+              transform: scaleY(0);
+              border-radius: inherit;
+              background: var(--accent);
+              /* smooths click-to-fill and the drain; active overrides w/ none */
+              transition: transform 0.5s var(--ease-out-quint);
+            }
+            .cap-vx__no {
+              font-family: var(--font-mono);
+              font-size: var(--type-xs);
+              letter-spacing: var(--tracking-eyebrow);
+              color: var(--accent);
+              opacity: 0.7;
+              transition: opacity 0.3s var(--ease-out-quint);
+            }
+            .cap-vx__name {
+              font-family: var(--font-display);
+              font-size: var(--type-lg);
+              line-height: 1.08;
+              letter-spacing: var(--tracking-display);
+              color: var(--slate-ink);
+              transition:
+                color 0.3s var(--ease-out-quint),
+                font-size 0.35s var(--ease-out-quint);
+            }
+            .cap-vx__row[data-active] .cap-vx__no { opacity: 1; }
+            .cap-vx__row[data-active] .cap-vx__name {
+              color: var(--ink);
+              font-size: var(--type-2xl);
+            }
+            @media (hover: hover) {
+              .cap-vx__row:not([data-active]) .cap-vx__row-btn:hover .cap-vx__name {
+                color: var(--ink);
+              }
+            }
+
+            /* ---- right: the active capability's detail ---- */
+            .cap-vx__stage {
+              position: relative;
+              display: grid;
+              min-height: clamp(15rem, 34vh, 20rem);
+            }
+            .cap-vx__detail {
+              /* all details share one grid cell so they cross-fade in place */
               grid-area: 1 / 1;
               display: flex;
               flex-direction: column;
-              justify-content: center;
               opacity: 0;
-              transform: translateY(16px);
+              transform: translateY(14px);
               pointer-events: none;
               transition:
                 opacity 0.55s var(--ease-out-quint),
                 transform 0.55s var(--ease-out-quint);
             }
-            .cap-show__item[data-active] {
+            .cap-vx__detail[data-active] {
               opacity: 1;
               transform: none;
               pointer-events: auto;
             }
-            .cap-show__head {
+            .cap-vx__detail-head {
               display: flex;
               align-items: flex-start;
               justify-content: space-between;
               gap: var(--space-6);
-              margin-bottom: var(--space-6);
+              margin-bottom: var(--space-8);
             }
-            .cap-show__no {
+            .cap-vx__detail-no {
               font-family: var(--font-mono);
               font-size: var(--type-sm);
               letter-spacing: var(--tracking-eyebrow);
               text-transform: uppercase;
               color: var(--accent);
             }
-            .cap-show__no em { font-style: normal; opacity: 0.5; }
-            .cap-show__glyph {
+            .cap-vx__detail-no em { font-style: normal; opacity: 0.5; }
+            .cap-vx__glyph {
               color: var(--accent);
               flex: none;
               transform-origin: center;
             }
-            /* Re-fires every time an item gains [data-active] — i.e. on each
-               advance — so the glyph "draws in" as the slide arrives. */
-            .cap-show__item[data-active] .cap-show__glyph {
+            /* Re-fires every time a detail gains [data-active] — i.e. on each
+               advance — so the glyph "draws in" as the capability arrives. */
+            .cap-vx__detail[data-active] .cap-vx__glyph {
               animation: cap-glyph-in 0.7s var(--ease-out-quint) both;
             }
             @keyframes cap-glyph-in {
@@ -348,21 +389,13 @@ export function CapabilitiesSection({
               60% { opacity: 1; }
               100% { opacity: 1; transform: none; }
             }
-            .cap-show__title {
-              font-size: clamp(2.5rem, 1.5rem + 4.6vw, 5.5rem);
-              line-height: 0.98;
-              letter-spacing: var(--tracking-display);
-              color: var(--ink);
-              max-width: 16ch;
-            }
-            .cap-show__body {
-              margin-top: var(--space-6);
-              max-width: 48ch;
+            .cap-vx__body {
+              max-width: 46ch;
               font-size: var(--type-lg);
               line-height: var(--leading-normal);
               color: var(--slate-ink);
             }
-            .cap-show__specs {
+            .cap-vx__specs {
               display: flex;
               flex-wrap: wrap;
               align-items: center;
@@ -375,117 +408,28 @@ export function CapabilitiesSection({
               text-transform: uppercase;
               color: var(--slate-ink);
             }
-            .cap-show__specs li + li::before {
+            .cap-vx__specs li + li::before {
               content: "·";
               margin: 0 0.7em;
               color: var(--accent);
             }
 
-            /* Footer: timeline + up/down stepper (grid gap handles spacing) */
-            .cap-show__footer {
-              display: flex;
-              align-items: center;
-              gap: var(--space-6);
-            }
-            .cap-show__timeline {
-              flex: 1;
-              display: flex;
-              gap: var(--space-3);
-              list-style: none;
-              margin: 0;
-              padding: 0;
-            }
-            .cap-show__seg { flex: 1; }
-            .cap-show__seg-btn {
-              display: block;
-              width: 100%;
-              padding: var(--space-3) 0;
-              border: 0;
-              background: none;
-              cursor: pointer;
-            }
-            .cap-show__seg-btn:focus-visible {
-              outline: 2px solid var(--mint-deep);
-              outline-offset: 4px;
-              border-radius: 4px;
-            }
-            .cap-show__seg-track {
-              display: block;
-              position: relative;
-              height: 3px;
-              border-radius: 999px;
-              overflow: hidden;
-              background: color-mix(in oklab, var(--ink) 16%, transparent);
-              transition: height 0.25s var(--ease-out-quint);
-            }
-            .cap-show__seg[data-active] .cap-show__seg-track { height: 4px; }
-            .cap-show__seg-fill {
-              position: absolute;
-              inset: 0;
-              transform-origin: left center;
-              transform: scaleX(0);
-              border-radius: inherit;
-              background: var(--seg);
-              /* smooths click-to-fill and the end-of-cycle drain; the active
-                 segment overrides this with transition:none (rAF drives it). */
-              transition: transform 0.5s var(--ease-out-quint);
-            }
-
-            .cap-show__nav-group { display: flex; gap: var(--space-2); flex: none; }
-            .cap-show__nav {
-              display: inline-flex;
-              align-items: center;
-              justify-content: center;
-              width: 2.6rem;
-              height: 1.7rem;
-              padding: 0;
-              border-radius: 999px;
-              border: 1px solid color-mix(in oklab, var(--ink) 22%, transparent);
-              background: transparent;
-              color: var(--ink);
-              cursor: pointer;
-              transition:
-                background 0.25s var(--ease-out-quint),
-                color 0.25s var(--ease-out-quint),
-                border-color 0.25s var(--ease-out-quint);
-            }
-            .cap-show__nav svg { width: 1rem; height: 1rem; }
-            .cap-show__nav:focus-visible {
-              outline: 2px solid var(--mint-deep);
-              outline-offset: 2px;
-            }
-            @media (hover: hover) {
-              .cap-show__nav:hover {
-                background: var(--ink);
-                color: var(--paper);
-                border-color: var(--ink);
-              }
-            }
-
-            /* Two columns: title + console on the left, the playing capability
-               on the right. The middle row flexes so the console settles at the
-               stage's baseline and header/items share one visual frame. */
+            /* Two columns on wider screens: the vertical index on the left, the
+               active capability's detail on the right, centred against it. */
             @media (min-width: 900px) {
-              .cap-show {
-                grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-                grid-template-rows: auto 1fr auto;
-                grid-template-areas:
-                  "header stage"
-                  ".      stage"
-                  "footer stage";
-                column-gap: clamp(2rem, 5vw, 5rem);
-                row-gap: var(--space-8);
-                align-items: start;
+              .cap-vx {
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+                column-gap: clamp(2.5rem, 6vw, 6rem);
+                align-items: center;
               }
-              .cap-show__stage { align-self: stretch; }
-              .cap-show__footer { align-self: end; }
-              .cap-show__heading { margin-top: var(--space-6); }
+              .cap-vx__heading { margin-top: var(--space-6); }
             }
 
             @media (prefers-reduced-motion: reduce) {
-              .cap-show__item { transition: none; }
-              .cap-show__item[data-active] .cap-show__glyph { animation: none; }
-              .cap-show__seg-fill { transition: none; }
+              .cap-vx__detail { transition: none; }
+              .cap-vx__detail[data-active] .cap-vx__glyph { animation: none; }
+              .cap-vx__spine-fill { transition: none; }
+              .cap-vx__name { transition: none; }
             }
           `}</style>
         </SectionRise>
