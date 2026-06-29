@@ -137,7 +137,7 @@ export function CapabilitiesSection({
             <div className="cap-vx__index">
               <Eyebrow number="02">What we build</Eyebrow>
               <h2 className="cap-vx__heading display">
-                Five things, done well
+                Six things, done well
                 <span className="cap-vx__dot" aria-hidden>
                   .
                 </span>

@@ -85,10 +85,25 @@ export function GlyphShip({ size = 56, className }: GlyphProps) {
   );
 }
 
+// "Solutions, not systems" — a target with a hit centre: aim at the problem,
+// not the scaffolding around it.
+export function GlyphSolution({ size = 56, className }: GlyphProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 56 56" className={className} aria-hidden>
+      <g {...props}>
+        <circle cx="28" cy="28" r="20" />
+        <circle cx="28" cy="28" r="11" />
+        <circle cx="28" cy="28" r="2.6" fill="currentColor" stroke="none" />
+      </g>
+    </svg>
+  );
+}
+
 export const GLYPHS: Record<string, React.ComponentType<GlyphProps>> = {
   "full-stack": GlyphFullStack,
   admin: GlyphAdmin,
   multilingual: GlyphMultilingual,
   realtime: GlyphRealtime,
   deploy: GlyphShip,
+  solutions: GlyphSolution,
 };
