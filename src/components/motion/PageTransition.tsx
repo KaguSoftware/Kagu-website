@@ -72,9 +72,10 @@ export function PageTransition({ sessionKey }: { sessionKey: string }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setShow(true);
 
-    // in (~0.4) + hold (~0.5) + out (~0.4) ≈ 1.3s. Hide once the swipe-out ends;
-    // AnimatePresence plays the exit swipe. Reduced-motion: quick fade.
-    const total = reduced ? 500 : 900; // time visible before we trigger exit
+    // in (~0.85) + hold (~0.8) ≈ 1.65s visible, then a ~0.85s swipe-out — a slow,
+    // premium ≈2.5s total. Hide once the hold ends; AnimatePresence plays the exit
+    // swipe. Reduced-motion: quick fade.
+    const total = reduced ? 600 : 1650; // time visible before we trigger exit
     const t = setTimeout(() => setShow(false), total);
     return () => clearTimeout(t);
   }, [pathname, reduced, sessionKey]);
@@ -88,7 +89,7 @@ export function PageTransition({ sessionKey }: { sessionKey: string }) {
           initial={reduced ? { opacity: 0 } : { x: "-100%" }}
           animate={reduced ? { opacity: 1 } : { x: "0%" }}
           exit={reduced ? { opacity: 0 } : { x: "-100%" }}
-          transition={{ duration: reduced ? 0.25 : 0.42, ease: EASE }}
+          transition={{ duration: reduced ? 0.3 : 0.85, ease: EASE }}
         >
           <div className="kagu-swipe__inner">
             <div className="kagu-swipe__mark">
