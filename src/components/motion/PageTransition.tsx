@@ -22,8 +22,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
-// Flat-2D Kagu mark — same paths/fills as the boot mark, kept static here.
+// Flat-2D Kagu mark — same paths/fills as the boot mark. The full silhouette
+// (with head-fold detour) strokes itself on; the fills bloom in afterward.
 const VIEWBOX = "0 0 1079 486";
+const SILHOUETTE =
+  "M 1078 0 L 778 0 Q 741 0 719 19 L 459 262 L 340 146 L 104 146 L 0 256 L 218 256 L 345 368 L 564 369 L 663 463 L 911 486 L 733 317 Z";
 const RIBBON =
   "M 1078 0 L 778 0 Q 741 0 719 19 L 459 262 L 340 146 L 104 146 L 218 256 L 345 368 L 564 369 L 663 463 L 911 486 L 733 317 Z";
 const FOLD = "M 104 146 L 0 256 L 218 256 Z";
@@ -32,8 +35,9 @@ const WING = "M 1078 0 L 778 0 Q 741 0 719 19 L 345 368 L 677 368 Z";
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 // Minimum time the cover stays up so fast navigations still read as a deliberate
-// transition — and long enough to actually read the phrase.
-const MIN_COVER_MS = 1400;
+// transition — long enough for the logo draw-on (~1.9s) to finish and to read
+// the phrase.
+const MIN_COVER_MS = 2400;
 
 // Playful, studio/software-flavored loading lines — picked at random per swipe.
 const PHRASES = [
@@ -114,7 +118,7 @@ export function PageTransition({ sessionKey }: { sessionKey: string }) {
     coverFromPath.current = null; // no nav to wait on — reveal on the timer
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setShow(true);
-    const t = setTimeout(() => setShow(false), reduced ? 700 : 2200);
+    const t = setTimeout(() => setShow(false), reduced ? 700 : 2600);
     return () => clearTimeout(t);
   }, [reduced, sessionKey]);
 
@@ -178,10 +182,59 @@ export function PageTransition({ sessionKey }: { sessionKey: string }) {
           <div className="kagu-swipe__inner">
             <div className="kagu-swipe__mark">
               <svg viewBox={VIEWBOX} className="kagu-swipe__svg" aria-hidden>
-                <path d={RIBBON} fill="var(--ink)" opacity={0.57} />
-                <path d={FOLD} fill="var(--ink)" opacity={0.47} />
-                <path d={WING} fill="var(--ink)" opacity={0.95} />
+                {/* Stroke draw-on: the outline sweeps itself in */}
+                {[SILHOUETTE, WING].map((d, i) => (
+                  <motion.path
+                    key={`stroke-${i}`}
+                    d={d}
+                    fill="none"
+                    stroke="var(--mint-deep)"
+                    strokeWidth={4}
+                    strokeLinejoin="round"
+                    strokeLinecap="round"
+                    initial={reduced ? { pathLength: 1 } : { pathLength: 0, opacity: 0.9 }}
+                    animate={{ pathLength: 1, opacity: 0.9 }}
+                    transition={{
+                      duration: reduced ? 0 : 1.1,
+                      ease: EASE,
+                      delay: reduced ? 0 : 0.25 + i * 0.18,
+                    }}
+                  />
+                ))}
+                {/* Solid fills bloom in after the stroke has drawn */}
+                <motion.path
+                  d={RIBBON}
+                  fill="var(--ink)"
+                  initial={reduced ? { opacity: 0.57 } : { opacity: 0 }}
+                  animate={{ opacity: 0.57 }}
+                  transition={{ duration: reduced ? 0 : 0.6, delay: reduced ? 0 : 1.25 }}
+                />
+                <motion.path
+                  d={FOLD}
+                  fill="var(--ink)"
+                  initial={reduced ? { opacity: 0.47 } : { opacity: 0 }}
+                  animate={{ opacity: 0.47 }}
+                  transition={{ duration: reduced ? 0 : 0.6, delay: reduced ? 0 : 1.25 }}
+                />
+                <motion.path
+                  d={WING}
+                  fill="var(--ink)"
+                  initial={reduced ? { opacity: 0.95 } : { opacity: 0 }}
+                  animate={{ opacity: 0.95 }}
+                  transition={{ duration: reduced ? 0 : 0.6, delay: reduced ? 0 : 1.35 }}
+                />
               </svg>
+
+              {/* Mint scan-line sweep across the mark */}
+              {!reduced && (
+                <motion.span
+                  className="kagu-swipe__scan"
+                  aria-hidden
+                  initial={{ x: "-130%" }}
+                  animate={{ x: "130%" }}
+                  transition={{ duration: 1.1, ease: EASE, delay: 1.0 }}
+                />
+              )}
             </div>
             <span className="kagu-swipe__phrase">{phrase}</span>
           </div>
@@ -207,13 +260,31 @@ export function PageTransition({ sessionKey }: { sessionKey: string }) {
               gap: clamp(1rem, 3.5vh, 1.75rem);
             }
             .kagu-swipe__mark {
+              position: relative;
               width: min(52vw, 300px);
+              overflow: hidden;
             }
             .kagu-swipe__svg {
               display: block;
               width: 100%;
               height: auto;
               overflow: visible;
+            }
+            .kagu-swipe__scan {
+              position: absolute;
+              top: -10%;
+              left: 0;
+              width: 42%;
+              height: 120%;
+              pointer-events: none;
+              background: linear-gradient(
+                100deg,
+                transparent 0%,
+                color-mix(in oklab, var(--mint-deep) 55%, transparent) 50%,
+                transparent 100%
+              );
+              mix-blend-mode: screen;
+              filter: blur(6px);
             }
             .kagu-swipe__phrase {
               font-family: var(--font-mono, ui-monospace, monospace);
