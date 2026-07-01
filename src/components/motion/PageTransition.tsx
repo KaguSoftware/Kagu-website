@@ -47,6 +47,36 @@ const PHRASES = [
   "Convincing the cache…",
   "Shipping something nice…",
   "Almost there, promise…",
+  "Bribing the load balancer…",
+  "Untangling the spaghetti code…",
+  "Asking the intern nicely…",
+  "Feeding the hamsters…",
+  "Dividing by zero, carefully…",
+  "Rounding up the stray semicolons…",
+  "Blaming it on the cache…",
+  "Petting the server rack…",
+  "Summoning the pixels…",
+  "Yelling at the router…",
+  "Pretending to load…",
+  "Buffering your patience…",
+  "Consulting the rubber duck…",
+  "Applying a light coat of magic…",
+  "Waking up the designers…",
+  "Counting to infinity, twice…",
+  "Hiding the merge conflicts…",
+  "Sacrificing a bug to the compiler…",
+  "Making it look effortless…",
+  "Aligning the stars (and the divs)…",
+  "Refilling the coffee machine…",
+  "Turning it off and on again…",
+  "Downloading more RAM…",
+  "Teaching the AI some manners…",
+  "Whispering to the database…",
+  "Herding the microservices…",
+  "Ignoring the warnings…",
+  "Faking it till we make it…",
+  "Loading the loading screen…",
+  "Please hold, we're vibing…",
 ] as const;
 
 function pickPhrase() {
@@ -153,14 +183,7 @@ export function PageTransition({ sessionKey }: { sessionKey: string }) {
                 <path d={WING} fill="var(--ink)" opacity={0.95} />
               </svg>
             </div>
-            <motion.span
-              className="kagu-swipe__phrase"
-              initial={reduced ? false : { opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, ease: EASE, delay: reduced ? 0 : 0.5 }}
-            >
-              {phrase}
-            </motion.span>
+            <span className="kagu-swipe__phrase">{phrase}</span>
           </div>
 
           {/* Styles inline so they only ship when the overlay mounts. */}
