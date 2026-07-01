@@ -92,6 +92,9 @@ export function PageTransition({ sessionKey }: { sessionKey: string }) {
   const pathname = usePathname();
   const [show, setShow] = useState(false);
   const [phrase, setPhrase] = useState<string>(PHRASES[0]);
+  // Bumped every time the cover is raised so the SVG remounts and replays its
+  // draw-on animation from scratch on every transition (not just the first).
+  const [runId, setRunId] = useState(0);
 
   // When the cover went up, so we can enforce MIN_COVER_MS before revealing.
   const coverStart = useRef(0);
@@ -103,6 +106,7 @@ export function PageTransition({ sessionKey }: { sessionKey: string }) {
   const raise = useCallback(() => {
     if (hideTimer.current) clearTimeout(hideTimer.current);
     setPhrase(pickPhrase());
+    setRunId((n) => n + 1);
     coverStart.current = Date.now();
     coverFromPath.current = window.location.pathname;
     setShow(true);
@@ -114,6 +118,7 @@ export function PageTransition({ sessionKey }: { sessionKey: string }) {
     if (sessionStorage.getItem(sessionKey)) return;
     sessionStorage.setItem(sessionKey, "1");
     setPhrase(pickPhrase());
+    setRunId((n) => n + 1);
     coverStart.current = Date.now();
     coverFromPath.current = null; // no nav to wait on — reveal on the timer
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -181,8 +186,10 @@ export function PageTransition({ sessionKey }: { sessionKey: string }) {
         >
           <div className="kagu-swipe__inner">
             <div className="kagu-swipe__mark">
-              <svg viewBox={VIEWBOX} className="kagu-swipe__svg" aria-hidden>
-                {/* Stroke draw-on: the outline sweeps itself in */}
+              <svg key={runId} viewBox={VIEWBOX} className="kagu-swipe__svg" aria-hidden>
+                {/* Stroke draw-on: the outline sweeps itself in. Kept independent
+                    of reduced-motion (it's the point of the transition) — only
+                    the big panel swipe honors reduced-motion. */}
                 {[SILHOUETTE, WING].map((d, i) => (
                   <motion.path
                     key={`stroke-${i}`}
@@ -192,12 +199,12 @@ export function PageTransition({ sessionKey }: { sessionKey: string }) {
                     strokeWidth={4}
                     strokeLinejoin="round"
                     strokeLinecap="round"
-                    initial={reduced ? { pathLength: 1 } : { pathLength: 0, opacity: 0.9 }}
+                    initial={{ pathLength: 0, opacity: 0.9 }}
                     animate={{ pathLength: 1, opacity: 0.9 }}
                     transition={{
-                      duration: reduced ? 0 : 1.1,
+                      duration: 1.1,
                       ease: EASE,
-                      delay: reduced ? 0 : 0.25 + i * 0.18,
+                      delay: 0.25 + i * 0.18,
                     }}
                   />
                 ))}
@@ -205,36 +212,34 @@ export function PageTransition({ sessionKey }: { sessionKey: string }) {
                 <motion.path
                   d={RIBBON}
                   fill="var(--ink)"
-                  initial={reduced ? { opacity: 0.57 } : { opacity: 0 }}
+                  initial={{ opacity: 0 }}
                   animate={{ opacity: 0.57 }}
-                  transition={{ duration: reduced ? 0 : 0.6, delay: reduced ? 0 : 1.25 }}
+                  transition={{ duration: 0.6, delay: 1.25 }}
                 />
                 <motion.path
                   d={FOLD}
                   fill="var(--ink)"
-                  initial={reduced ? { opacity: 0.47 } : { opacity: 0 }}
+                  initial={{ opacity: 0 }}
                   animate={{ opacity: 0.47 }}
-                  transition={{ duration: reduced ? 0 : 0.6, delay: reduced ? 0 : 1.25 }}
+                  transition={{ duration: 0.6, delay: 1.25 }}
                 />
                 <motion.path
                   d={WING}
                   fill="var(--ink)"
-                  initial={reduced ? { opacity: 0.95 } : { opacity: 0 }}
+                  initial={{ opacity: 0 }}
                   animate={{ opacity: 0.95 }}
-                  transition={{ duration: reduced ? 0 : 0.6, delay: reduced ? 0 : 1.35 }}
+                  transition={{ duration: 0.6, delay: 1.35 }}
                 />
               </svg>
 
               {/* Mint scan-line sweep across the mark */}
-              {!reduced && (
-                <motion.span
-                  className="kagu-swipe__scan"
-                  aria-hidden
-                  initial={{ x: "-130%" }}
-                  animate={{ x: "130%" }}
-                  transition={{ duration: 1.1, ease: EASE, delay: 1.0 }}
-                />
-              )}
+              <motion.span
+                className="kagu-swipe__scan"
+                aria-hidden
+                initial={{ x: "-130%" }}
+                animate={{ x: "130%" }}
+                transition={{ duration: 1.1, ease: EASE, delay: 1.0 }}
+              />
             </div>
             <span className="kagu-swipe__phrase">{phrase}</span>
           </div>
