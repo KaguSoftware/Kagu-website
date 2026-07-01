@@ -32,8 +32,8 @@ const WING = "M 1078 0 L 778 0 Q 741 0 719 19 L 345 368 L 677 368 Z";
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 // Minimum time the cover stays up so fast navigations still read as a deliberate
-// transition rather than a flash.
-const MIN_COVER_MS = 650;
+// transition — and long enough to actually read the phrase.
+const MIN_COVER_MS = 1400;
 
 // Playful, studio/software-flavored loading lines — picked at random per swipe.
 const PHRASES = [
@@ -84,7 +84,7 @@ export function PageTransition({ sessionKey }: { sessionKey: string }) {
     coverFromPath.current = null; // no nav to wait on — reveal on the timer
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setShow(true);
-    const t = setTimeout(() => setShow(false), reduced ? 600 : 1500);
+    const t = setTimeout(() => setShow(false), reduced ? 700 : 2200);
     return () => clearTimeout(t);
   }, [reduced, sessionKey]);
 
@@ -143,7 +143,7 @@ export function PageTransition({ sessionKey }: { sessionKey: string }) {
           initial={reduced ? { opacity: 0 } : { x: "-100%" }}
           animate={reduced ? { opacity: 1 } : { x: "0%" }}
           exit={reduced ? { opacity: 0 } : { x: "100%" }}
-          transition={{ duration: reduced ? 0.3 : 0.7, ease: EASE }}
+          transition={{ duration: reduced ? 0.3 : 0.9, ease: EASE }}
         >
           <div className="kagu-swipe__inner">
             <div className="kagu-swipe__mark">
@@ -153,7 +153,14 @@ export function PageTransition({ sessionKey }: { sessionKey: string }) {
                 <path d={WING} fill="var(--ink)" opacity={0.95} />
               </svg>
             </div>
-            <span className="kagu-swipe__phrase">{phrase}</span>
+            <motion.span
+              className="kagu-swipe__phrase"
+              initial={reduced ? false : { opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: EASE, delay: reduced ? 0 : 0.5 }}
+            >
+              {phrase}
+            </motion.span>
           </div>
 
           {/* Styles inline so they only ship when the overlay mounts. */}
@@ -187,10 +194,11 @@ export function PageTransition({ sessionKey }: { sessionKey: string }) {
             }
             .kagu-swipe__phrase {
               font-family: var(--font-mono, ui-monospace, monospace);
-              font-size: var(--type-xs);
-              letter-spacing: 0.18em;
+              font-size: clamp(0.95rem, 2.6vw, 1.25rem);
+              font-weight: 700;
+              letter-spacing: 0.12em;
               text-transform: uppercase;
-              color: var(--mint-deep);
+              color: var(--ink);
             }
           `}</style>
         </motion.div>
