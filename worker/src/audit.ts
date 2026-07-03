@@ -193,6 +193,10 @@ const UA =
 
 export interface AuditOptions {
   maxPages?: number; // 1 = only the given URL
+  /* Called after each page is audited — lets a caller report progress and
+     abort (by throwing) on job cancellation, exactly like researchKeywords.
+     `total` is the page cap, not the pages that will actually be found. */
+  onProgress?: (done: number, total: number) => Promise<void> | void;
 }
 
 interface SiteContext {
@@ -266,6 +270,7 @@ export async function auditSite(inputUrl: string, opts: AuditOptions = {}): Prom
       const audit = await auditPage(pageUrl, ctx, nav ?? undefined);
       visited.add(normKey(audit.result.finalUrl));
       audits.push(audit);
+      await opts.onProgress?.(audits.length, maxPages); // may throw to cancel
 
       for (const link of audit.internalLinks) {
         const key = normKey(link);

@@ -187,3 +187,31 @@ export const SEO_INTENT_CLASSES: Record<string, string> = {
   transactional: "border-[#3fb27f] text-[#3fb27f]",
   navigational: "border-[#d9a13b] text-[#d9a13b]",
 };
+
+/* ------------------------------------------------------------------------ */
+/* SEO site audit                                                            */
+/* ------------------------------------------------------------------------ */
+
+/* Crawl-depth choices for the "New audit" form (each page = a full throttled
+   mobile render on the worker, ≈20s/page). */
+export const SEO_AUDIT_DEPTH_OPTIONS: Array<{ value: number; label: string }> = [
+  { value: 1, label: "1 page (just the URL)" },
+  { value: 5, label: "5 pages (quick)" },
+  { value: 12, label: "12 pages (standard)" },
+  { value: 20, label: "20 pages (deep)" },
+  { value: 30, label: "30 pages (max)" },
+];
+
+/* Finding-severity badge styling for the audit report. */
+export const SEO_AUDIT_SEVERITY_CLASSES: Record<string, string> = {
+  error: "border-[#e5594e] text-[#e5594e]",
+  warn: "border-[#d9a13b] text-[#d9a13b]",
+  info: "border-neutral text-slate-ink",
+};
+
+/* Score → tone, shared by the jobs table and the report page. */
+export function seoAuditScoreClass(score: number): string {
+  if (score >= 90) return "text-[#3fb27f]";
+  if (score >= 70) return "text-[#d9a13b]";
+  return "text-[#e5594e]";
+}

@@ -29,7 +29,17 @@ import {
   requeueOrphanedSeoJobs,
   updateSeoJobProgress,
 } from "./seo-jobs.js";
-import type { ScrapeJobRow, SeoJobRow, SeoKeywordInsert } from "./types.js";
+import { auditSite } from "./audit.js";
+import {
+  claimNextSeoAuditJob,
+  completeSeoAuditJob,
+  failSeoAuditJob,
+  isSeoAuditCancelRequested,
+  markSeoAuditCancelled,
+  requeueOrphanedSeoAuditJobs,
+  updateSeoAuditJobProgress,
+} from "./seo-audit-jobs.js";
+import type { ScrapeJobRow, SeoAuditJobRow, SeoJobRow, SeoKeywordInsert } from "./types.js";
 
 const CANCEL_CHECK_EVERY = 3; // leads between cancellation checks
 // Progress is phase-weighted: visiting place pages (crawl) and processing
@@ -234,6 +244,40 @@ async function processSeoJob(job: SeoJobRow): Promise<void> {
 }
 
 /*
+  SEO site-audit job: crawl the site from the given URL as a throttled mobile
+  device, score every page, and write the merged report back onto the job row.
+  Same cooperative-cancellation path as the other queues.
+*/
+async function processSeoAuditJob(job: SeoAuditJobRow): Promise<void> {
+  console.log(`[audit-job ${job.id}] ${job.url} (max ${job.max_pages} pages) — auditing…`);
+
+  let report;
+  try {
+    report = await auditSite(job.url, {
+      maxPages: job.max_pages,
+      onProgress: async (done, total) => {
+        if (await isSeoAuditCancelRequested(job.id)) throw new JobCancelled();
+        // The page loop owns 5–95%; completion snaps to 100.
+        await updateSeoAuditJobProgress(job.id, 5 + (done / total) * 90);
+      },
+    });
+  } catch (err) {
+    if (err instanceof JobCancelled) {
+      console.log(`[audit-job ${job.id}] cancellation requested — stopping`);
+      await markSeoAuditCancelled(job.id);
+      return;
+    }
+    throw err;
+  }
+
+  await completeSeoAuditJob(job.id, report);
+  console.log(
+    `[audit-job ${job.id}] done — score ${report.score}/100, ` +
+      `${report.pages.length} pages, ${report.findings.length} issues`
+  );
+}
+
+/*
   Re-queue jobs orphaned in "running" by a previous worker process dying
   mid-job (deploy restart, crash, reboot). Safe with a single worker —
   re-processing is idempotent (leads upsert on place_id, drafting skips
@@ -258,10 +302,11 @@ async function main(): Promise<void> {
   );
   await requeueOrphanedJobs();
   await requeueOrphanedSeoJobs();
+  await requeueOrphanedSeoAuditJobs();
 
   for (;;) {
-    // Lead scrapes take priority; SEO research jobs drain when the lead queue
-    // is idle. One worker, two queues — same poll cadence.
+    // Lead scrapes take priority; SEO research then site-audit jobs drain
+    // when the lead queue is idle. One worker, three queues — same cadence.
     let scrapeJob: ScrapeJobRow | null = null;
     try {
       scrapeJob = await claimNextJob();
@@ -297,6 +342,25 @@ async function main(): Promise<void> {
         const message = err instanceof Error ? err.message : String(err);
         console.error(`[seo-job ${seoJob.id}] failed:`, message);
         await failSeoJob(seoJob.id, message);
+      }
+      if (config.runOnce) break;
+      continue;
+    }
+
+    let auditJob: SeoAuditJobRow | null = null;
+    try {
+      auditJob = await claimNextSeoAuditJob();
+    } catch (err) {
+      console.error("Failed to poll for SEO audit jobs:", err);
+    }
+
+    if (auditJob) {
+      try {
+        await processSeoAuditJob(auditJob);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error(`[audit-job ${auditJob.id}] failed:`, message);
+        await failSeoAuditJob(auditJob.id, message);
       }
       if (config.runOnce) break;
       continue;

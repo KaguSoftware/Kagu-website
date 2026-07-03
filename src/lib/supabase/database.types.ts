@@ -80,6 +80,60 @@ export type SeoOrganicResult = {
   domain: string;
 };
 
+// SEO site-audit module (supabase/seo_audit_module.sql). These mirror
+// worker/src/audit.ts (AuditReport et al.) — the worker writes the whole
+// report as one jsonb blob on seo_audit_jobs.report.
+export type SeoAuditSeverity = "error" | "warn" | "info";
+
+export type SeoAuditCategoryScore = {
+  category: string;
+  label: string;
+  score: number | null; // null = no applicable checks (e.g. render failed)
+};
+
+export type SeoAuditMetrics = {
+  ttfbMs: number | null;
+  lcpMs: number | null;
+  cls: number | null;
+  loadMs: number | null;
+  pageWeightBytes: number | null;
+  requestCount: number | null;
+};
+
+export type SeoAuditPage = {
+  url: string;
+  finalUrl: string;
+  httpStatus: number;
+  renderOk: boolean;
+  score: number;
+  categories: SeoAuditCategoryScore[];
+  metrics: SeoAuditMetrics;
+  error?: string;
+};
+
+export type SeoAuditFinding = {
+  category: string;
+  label: string; // stable check name, e.g. "Legible font sizes"
+  severity: SeoAuditSeverity;
+  issue: string; // what is wrong, with the numbers found
+  why: string; // why this matters for SEO
+  fix: string; // the concrete code-level change
+  specifics: string[]; // exact offending parts, [path]-prefixed in site mode
+  pages: string[]; // page paths this issue was found on
+};
+
+export type SeoAuditReport = {
+  url: string;
+  siteHost: string;
+  fetchedAt: string;
+  maxPages: number;
+  pages: SeoAuditPage[];
+  score: number;
+  categories: SeoAuditCategoryScore[];
+  findings: SeoAuditFinding[];
+  passed: string[];
+};
+
 export interface Database {
   public: {
     Tables: {
@@ -750,6 +804,57 @@ export interface Database {
             referencedColumns: ["id"];
           },
         ];
+      };
+      seo_audit_jobs: {
+        Row: {
+          id: string;
+          url: string;
+          max_pages: number;
+          status: JobStatus;
+          progress: number;
+          score: number | null;
+          pages_audited: number;
+          issues_found: number;
+          report: SeoAuditReport | null;
+          error: string | null;
+          requested_by: string | null;
+          started_at: string | null;
+          finished_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          url: string;
+          max_pages?: number;
+          status?: JobStatus;
+          progress?: number;
+          score?: number | null;
+          pages_audited?: number;
+          issues_found?: number;
+          report?: SeoAuditReport | null;
+          error?: string | null;
+          requested_by?: string | null;
+          started_at?: string | null;
+          finished_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          url?: string;
+          max_pages?: number;
+          status?: JobStatus;
+          progress?: number;
+          score?: number | null;
+          pages_audited?: number;
+          issues_found?: number;
+          report?: SeoAuditReport | null;
+          error?: string | null;
+          requested_by?: string | null;
+          started_at?: string | null;
+          finished_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
       };
       contact_requests: {
         Row: {

@@ -105,6 +105,27 @@ export interface SeoJobRow {
   created_at: string;
 }
 
+/* ------------------------------------------------------------------------ */
+/* SEO site-audit module (supabase/seo_audit_module.sql)                     */
+/* ------------------------------------------------------------------------ */
+
+export interface SeoAuditJobRow {
+  id: string;
+  url: string;
+  max_pages: number;
+  status: JobStatus; // same lifecycle as scrape_jobs
+  progress: number;
+  score: number | null;
+  pages_audited: number;
+  issues_found: number;
+  report: unknown; // AuditReport (jsonb), written on completion
+  error: string | null;
+  requested_by: string | null;
+  started_at: string | null;
+  finished_at: string | null;
+  created_at: string;
+}
+
 /* One row the worker inserts into seo_keywords (id/created_at are defaulted). */
 export interface SeoKeywordInsert {
   job_id: string;
