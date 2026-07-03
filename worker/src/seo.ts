@@ -478,18 +478,19 @@ const STOPWORDS = new Set<string>([
 
 /* ------------------------------------------------------------------------ */
 /* HTML text helpers (regex-only — no DOM parser dependency)                */
+/* Exported: audit.ts reuses them for its static on-page checks.            */
 /* ------------------------------------------------------------------------ */
 
-function firstMatch(html: string, re: RegExp): string {
+export function firstMatch(html: string, re: RegExp): string {
   return html.match(re)?.[1] ?? "";
 }
 
-function allMatches(html: string, re: RegExp): string[] {
+export function allMatches(html: string, re: RegExp): string[] {
   return [...html.matchAll(re)].map((m) => m[1]);
 }
 
 /* <meta name="description"|"keywords" content="…"> in either attr order. */
-function metaContent(html: string, name: string): string {
+export function metaContent(html: string, name: string): string {
   const a = html.match(
     new RegExp(`<meta[^>]+name=["']${name}["'][^>]*content=["']([^"']*)["']`, "i")
   );
@@ -501,7 +502,7 @@ function metaContent(html: string, name: string): string {
 }
 
 /* Strip script/style/markup, leaving readable prose. */
-function visibleText(html: string): string {
+export function visibleText(html: string): string {
   // Scope to <body> so <head> JSON-LD/meta/preload noise never enters the
   // text. If there's no <body> (rare), fall back to the whole document.
   const body = html.match(/<body[\s\S]*$/i)?.[0] ?? html;
@@ -522,11 +523,11 @@ function visibleText(html: string): string {
   );
 }
 
-function stripTags(s: string): string {
+export function stripTags(s: string): string {
   return decodeEntities(s.replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
 }
 
-function decodeEntities(s: string): string {
+export function decodeEntities(s: string): string {
   return s
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")

@@ -83,8 +83,10 @@ export async function launchStealth(): Promise<{
   return { browser, context };
 }
 
-/* Prefer real Chrome; fall back to bundled Chromium when it isn't installed. */
-async function launchBrowser(): Promise<Browser> {
+/* Prefer real Chrome; fall back to bundled Chromium when it isn't installed.
+   Exported for callers that want their own context (e.g. the mobile-emulating
+   SEO audit) without the desktop stealth patches. */
+export async function launchBrowser(): Promise<Browser> {
   const opts = {
     headless: config.headless,
     // Removes the "Chrome is being controlled by automated software" switch.

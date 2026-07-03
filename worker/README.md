@@ -43,6 +43,7 @@ cp .env.example .env   # then fill in the values
 | `SEO_MAX_KEYWORDS` | no | `30` | SEO tool: keywords kept in the report |
 | `SEO_REGION` | no | `tr` | SEO tool: Google `gl` region bias (country code) |
 | `SEO_LANGUAGE` | no | `en` | SEO tool: Google `hl` interface language |
+| `SEO_AUDIT_MAX_PAGES` | no | `12` | Site audit: page cap for the crawl (`--max-pages` overrides) |
 
 Note: `tsx` does **not** load `.env` by itself — export the vars in your
 shell, use `env $(cat .env | xargs) npm start`, or point a process manager at
@@ -98,6 +99,48 @@ How it works (`src/seo.ts`):
 Like the Maps crawl it uses one headless Chromium with human pacing and
 **aborts on CAPTCHA** (Google's results page is heavily anti-bot; space out
 runs). Requires `npx playwright install chromium`.
+
+## SEO site audit
+
+On-page audit for a **whole site** — crawls from the start URL (start page →
+sitemap.xml URLs → internal links, breadth-first) and outputs an overall
+score (0–100), per-category and per-page scores, and every issue found. Each
+finding carries what's wrong, **why** it matters for ranking, **where**
+exactly (the offending elements — heading texts, image files, CSS-selector
+descriptions of tiny-font/overflow culprits, the LCP element), which pages it
+affects, and the concrete fix. CLI-only, writes nothing to the DB, needs no
+Supabase creds:
+
+```sh
+npm run seo:audit -- https://example.com
+npm run seo:audit -- --single example.com/pricing    # just that one page
+npm run seo:audit -- --max-pages 20 example.com      # crawl deeper (default 12)
+npm run seo:audit -- --json example.com              # machine-readable
+```
+
+How it works (`src/audit.ts`) — two passes per page:
+
+1. **Static** (plain `fetch`): redirect chain, title/meta/canonical/robots
+   directives, structured data (JSON-LD), render-blocking `<head>` resources,
+   compression, mixed content. Site-level probes — robots.txt rules,
+   sitemap contents, HTTP/2 via ALPN — run once and are shared by every page;
+   a site-wide HEAD-status cache checks each internal link for 404 at most
+   once per crawl (sampled, up to 10 per page).
+2. **Rendered** (Playwright emulating a Pixel-class phone with 4G network +
+   4× CPU throttling — Google indexes mobile-first): heading hierarchy as the
+   renderer sees it, image alt/dimensions/lazy-loading, viewport/overflow/
+   font-size/tap-target usability, JS-dependence of the content (raw vs
+   rendered text), and lab web vitals (TTFB / LCP / CLS / page weight). One
+   browser serves the crawl; each page gets a fresh context so metrics are
+   cold-cache honest.
+
+Nine weighted categories (headings, title & meta, content, mobile, speed,
+images, indexability, links, structured data); checks score full/half/zero
+credit and inapplicable checks are excluded rather than counted as passes.
+Identical issues merge across pages ("no canonical — on 12 of 12 pages").
+If the browser pass fails the static checks still report — mobile/speed
+categories just drop out of the score. Page cap via `--max-pages` or
+`SEO_AUDIT_MAX_PAGES` (each page is a full throttled render, ≈20s/page).
 
 ### systemd unit (VPS)
 

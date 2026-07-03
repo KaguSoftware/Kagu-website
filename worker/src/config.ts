@@ -48,4 +48,9 @@ export const config = {
   // Region bias (DuckDuckGo `kl`, derived from this) and interface language.
   seoRegion: process.env.SEO_REGION ?? "tr",
   seoLanguage: process.env.SEO_LANGUAGE ?? "en",
+
+  // --- SEO site audit (worker/src/audit.ts, run via `npm run seo:audit`) ---
+  // Page cap for the site crawl; each page gets a full throttled mobile
+  // render, so runtime is roughly maxPages × ~20s.
+  seoAuditMaxPages: Number(process.env.SEO_AUDIT_MAX_PAGES) || 12,
 };
