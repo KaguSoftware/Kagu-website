@@ -47,7 +47,7 @@ export default function RootLayout({
           Skip to content
         </a>
         <SmoothScrollProvider>
-          <PageTransition sessionKey="kagu_visited" />
+          <PageTransition />
           <SiteHeaderGate />
           <main id="main">{children}</main>
         </SmoothScrollProvider>
