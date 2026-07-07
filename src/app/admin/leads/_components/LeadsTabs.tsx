@@ -9,8 +9,6 @@ const TABS = [
   { href: "/admin/leads/list", label: "Leads" },
   { href: "/admin/leads/messages", label: "Messages" },
   { href: "/admin/leads/seo", label: "SEO" },
-  { href: "/admin/leads/audit", label: "Site audit" },
-  { href: "/admin/leads/strategy", label: "Strategy" },
 ];
 
 export function LeadsTabs() {

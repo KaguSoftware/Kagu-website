@@ -151,9 +151,17 @@ categories just drop out of the score. Page cap via `--max-pages` or
 ## SEO strategy tool
 
 The whole funnel in one command: **give it a URL, get back the master prompt
-that makes the site rank.** CLI-only, writes nothing to the DB, needs no
-Supabase creds — but **requires `GROQ_API_KEY`** (understanding and keyword
-generation are LLM passes; there is no heuristic fallback here).
+that makes the site rank.** **Requires `GROQ_API_KEY`** (understanding and
+keyword generation are LLM passes; there is no heuristic fallback here).
+It runs two ways:
+
+- **DB-driven** (like the other queues): the worker also polls
+  `seo_strategy_jobs` — queued from the admin panel's **Strategy** tab
+  (`/admin/leads/strategy`) — and writes the full report (master prompt
+  included) back onto the job row; the detail page renders it, embedded
+  audit and all. Run `supabase/seo_strategy_module.sql` once to create the
+  table. Lead scrapes, SEO research, and audits drain first.
+- **CLI** (ad-hoc, writes nothing to the DB, needs no Supabase creds):
 
 ```sh
 npm run seo:strategy -- kagusoftware.com

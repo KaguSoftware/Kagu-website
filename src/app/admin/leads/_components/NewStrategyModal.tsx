@@ -1,7 +1,7 @@
 "use client";
 
 /*
-  "New strategy" trigger + modal — the strategy analogue of NewAuditModal.
+  "New strategy" trigger + modal for the SEO tab.
   Submits createSeoStrategyJob, which only inserts a pending row; the crawler
   worker picks it up, runs the whole funnel (understand the site → SERP +
   autocomplete demand → winnability-graded page plan → embedded audit), and

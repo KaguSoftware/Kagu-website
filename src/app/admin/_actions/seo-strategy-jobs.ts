@@ -45,11 +45,11 @@ export const createSeoStrategyJob = withResult(
       requested_by: user.id,
     });
     if (error) throw new Error(error.message);
-    revalidatePath("/admin/leads/strategy", "layout");
+    revalidatePath("/admin/leads/seo", "layout");
   }
 );
 
-/* Cooperative cancellation — mirrors cancelSeoAuditJob. */
+/* Cooperative cancellation — the worker checks the status between steps. */
 export const cancelSeoStrategyJob = withResult(async (id: string) => {
   await requireAdmin();
   const jobId = z.uuid().parse(id);
@@ -63,7 +63,7 @@ export const cancelSeoStrategyJob = withResult(async (id: string) => {
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Job is not pending or running.");
-  revalidatePath("/admin/leads/strategy", "layout");
+  revalidatePath("/admin/leads/seo", "layout");
 });
 
 export const retrySeoStrategyJob = withResult(async (id: string) => {
@@ -89,5 +89,5 @@ export const retrySeoStrategyJob = withResult(async (id: string) => {
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Only failed jobs can be retried.");
-  revalidatePath("/admin/leads/strategy", "layout");
+  revalidatePath("/admin/leads/seo", "layout");
 });

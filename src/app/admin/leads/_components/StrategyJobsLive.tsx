@@ -75,7 +75,7 @@ function JobActions({ job }: { job: StrategyJob }) {
   if (job.status === "done") {
     return (
       <Link
-        href={`/admin/leads/strategy/${job.id}`}
+        href={`/admin/leads/seo/${job.id}`}
         className="text-xs font-mono uppercase tracking-[0.18em] text-mint-deep underline-offset-4 transition-colors hover:underline"
       >
         View →
@@ -134,7 +134,7 @@ export function StrategyJobsLive({
                 <td className="px-4 py-3">
                   {job.status === "done" ? (
                     <Link
-                      href={`/admin/leads/strategy/${job.id}`}
+                      href={`/admin/leads/seo/${job.id}`}
                       className="text-ink underline-offset-4 hover:underline"
                     >
                       {displayUrl(job.url)}

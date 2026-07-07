@@ -1,14 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
 import { Eyebrow } from "../../_components/ui";
-import { NewSeoModal } from "../_components/NewSeoModal";
-import { SeoJobsLive } from "../_components/SeoJobsLive";
+import { NewStrategyModal } from "../_components/NewStrategyModal";
+import { StrategyJobsLive } from "../_components/StrategyJobsLive";
 
-export const metadata = { title: "SEO keywords" };
+export const metadata = { title: "SEO" };
 
 export default async function SeoPage() {
   const supabase = await createClient();
   const { data: jobs } = await supabase
-    .from("seo_jobs")
+    .from("seo_strategy_jobs")
     .select("*")
     .order("created_at", { ascending: false })
     .limit(100);
@@ -17,18 +17,20 @@ export default async function SeoPage() {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-4 pb-6">
         <div>
-          <Eyebrow>SEO keyword research</Eyebrow>
+          <Eyebrow>SEO</Eyebrow>
           <p className="mt-2 max-w-prose text-sm text-slate-ink">
-            Queue a seed query and the crawler worker (see{" "}
-            <code className="text-ink">worker/</code>) scrapes the top organic
-            results — skipping sponsored ads — crawls them, and ranks the
-            keywords that got them there. If nothing moves, the worker
-            isn&apos;t running.
+            The whole funnel in one job: the worker (see{" "}
+            <code className="text-ink">worker/</code>) reads the site,
+            understands the business, checks real searches against the live
+            SERP plus autocomplete demand (and Search Console when connected),
+            grades each keyword&apos;s winnability, runs the technical audit,
+            and writes one master prompt to paste into a coding agent. If
+            nothing moves, the worker isn&apos;t running.
           </p>
         </div>
-        <NewSeoModal />
+        <NewStrategyModal />
       </div>
-      <SeoJobsLive initial={jobs ?? []} />
+      <StrategyJobsLive initial={jobs ?? []} />
     </div>
   );
 }

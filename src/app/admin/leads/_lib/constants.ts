@@ -146,38 +146,8 @@ export const PIPELINE_STATUSES = Object.keys(
 export const LEADS_PAGE_SIZE = 50;
 
 /* ------------------------------------------------------------------------ */
-/* SEO keyword research                                                      */
+/* SEO                                                                       */
 /* ------------------------------------------------------------------------ */
-
-/* Seed suggestions for the "New research" query <datalist> — free text ok. */
-export const SEO_SEED_SUGGESTIONS = [
-  "dentist istanbul",
-  "saç ekimi istanbul",
-  "diş kliniği kadıköy",
-  "web tasarım ajansı",
-  "hair transplant turkey",
-  "pilates studio istanbul",
-  "wedding photographer istanbul",
-  "real estate istanbul",
-] as const;
-
-/* Google `gl` region bias — country code → label. */
-export const SEO_REGION_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: "tr", label: "Turkey (tr)" },
-  { value: "us", label: "United States (us)" },
-  { value: "gb", label: "United Kingdom (gb)" },
-  { value: "de", label: "Germany (de)" },
-  { value: "ae", label: "UAE (ae)" },
-  { value: "sa", label: "Saudi Arabia (sa)" },
-];
-
-/* Google `hl` interface language — code → label. */
-export const SEO_LANGUAGE_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: "en", label: "English (en)" },
-  { value: "tr", label: "Turkish (tr)" },
-  { value: "ar", label: "Arabic (ar)" },
-  { value: "de", label: "German (de)" },
-];
 
 /* Search-intent badge styling (Groq labels keywords with these). Unknown /
    free-text intents fall back to the neutral style. */
@@ -188,21 +158,7 @@ export const SEO_INTENT_CLASSES: Record<string, string> = {
   navigational: "border-[#d9a13b] text-[#d9a13b]",
 };
 
-/* ------------------------------------------------------------------------ */
-/* SEO site audit                                                            */
-/* ------------------------------------------------------------------------ */
-
-/* Crawl-depth choices for the "New audit" form (each page = a full throttled
-   mobile render on the worker, ≈20s/page). */
-export const SEO_AUDIT_DEPTH_OPTIONS: Array<{ value: number; label: string }> = [
-  { value: 1, label: "1 page (just the URL)" },
-  { value: 5, label: "5 pages (quick)" },
-  { value: 12, label: "12 pages (standard)" },
-  { value: 20, label: "20 pages (deep)" },
-  { value: 30, label: "30 pages (max)" },
-];
-
-/* Finding-severity badge styling for the audit report. */
+/* Finding-severity badge styling for the embedded audit report. */
 export const SEO_AUDIT_SEVERITY_CLASSES: Record<string, string> = {
   error: "border-[#e5594e] text-[#e5594e]",
   warn: "border-[#d9a13b] text-[#d9a13b]",

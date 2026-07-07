@@ -28,7 +28,9 @@ import {
        or prior brand knowledge.
     2. GENERATE the searches its customers would type, across all four
        intents (informational / commercial / transactional / navigational),
-       in the site's own language(s).
+       in the site's own language(s) — anchored to the site's own
+       top-of-page wording (titles/headings), so what the site leads with
+       can't be paraphrased out of the plan.
     3. CHECK each search against the live SERP (same DuckDuckGo endpoint as
        seo.ts): who ranks, whether this site appears at all, and what shape
        the winning pages' content takes (their headings). Alongside each
@@ -189,20 +191,28 @@ export async function buildSeoStrategy(
   await tick();
 
   // The site's own Search Console data — the strongest demand evidence in
-  // the whole pipeline when configured, a one-line skip when not.
+  // the whole pipeline when configured, a one-line skip when not. Transient
+  // network failures happen under the LaunchAgent (seen live), so retry once.
   let gsc: GscRow[] | null = null;
-  try {
-    gsc = await fetchGscQueries(site.host);
-    if (gsc) {
-      console.log(
-        `[strategy] Search Console: ${gsc.length} real queries, ` +
-          `${strikingDistance(gsc).length} in striking distance (pos 8–30)`
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      gsc = await fetchGscQueries(site.host);
+      if (gsc) {
+        console.log(
+          `[strategy] Search Console: ${gsc.length} real queries, ` +
+            `${strikingDistance(gsc).length} in striking distance (pos 8–30)`
+        );
+      } else {
+        console.log("[strategy] Search Console not configured — skipping (worker/README.md shows setup)");
+      }
+      break;
+    } catch (err) {
+      console.warn(
+        `[strategy] Search Console fetch failed (attempt ${attempt}):`,
+        err instanceof Error ? err.message : err
       );
-    } else {
-      console.log("[strategy] Search Console not configured — skipping (worker/README.md shows setup)");
+      if (attempt === 1) await sleep(2000);
     }
-  } catch (err) {
-    console.warn("[strategy] Search Console fetch failed:", err instanceof Error ? err.message : err);
   }
 
   console.log(`[strategy] understanding ${site.host} from ${site.pages.length} page(s) …`);
@@ -213,7 +223,7 @@ export async function buildSeoStrategy(
       (understanding.subSector ? ` / ${understanding.subSector}` : "")
   );
 
-  const candidates = await proposeSearches(understanding);
+  const candidates = await proposeSearches(understanding, topOfPageCopy(site));
   const picked = pickBalanced(candidates, serpQueries);
   console.log(`[strategy] checking ${picked.length} searches against the SERP …`);
 
@@ -229,7 +239,11 @@ export async function buildSeoStrategy(
   }
 
   console.log("[strategy] building keyword strategy + page plan …");
-  const plan = await buildPlan(understanding, evidence, site.paths, opts.ownerNotes, gsc);
+  const plan = await buildPlan(understanding, evidence, site.paths, opts.ownerNotes, gsc, async () => {
+    // Same step re-reported: keeps DB progress fresh and cancellation live
+    // through the minutes-long, TPM-paced planning stage.
+    await opts.onProgress?.(step, totalSteps);
+  });
   const duplicatesRemoved = dedupePlan(plan.pages);
   if (duplicatesRemoved > 0) {
     console.log(`[strategy] pruned ${duplicatesRemoved} near-duplicate quer(y/ies)/page(s)`);
@@ -464,10 +478,42 @@ async function renderHomepageText(url: string): Promise<string> {
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
+/* Groq's on-demand tier caps llama-3.3-70b at 12k tokens per minute, counted
+   as prompt tokens + the completion cap (seen live as HTTP 413). Rather than
+   praying single calls fit, every call passes this gate: a rolling 60s
+   window that sleeps until the next window when the budget would overflow.
+   Combined with the chunked strategy pass below, big jobs simply spread over
+   two-or-so minutes instead of failing. */
+const GROQ_TPM_BUDGET = 10000; // margin under the 12k limit
+
+let tpmWindowStart = 0;
+let tpmWindowTokens = 0;
+
+function estimateTokens(prompt: string, maxTokens: number): number {
+  return Math.ceil(prompt.length / 3.5) + maxTokens;
+}
+
+async function tpmGate(cost: number): Promise<void> {
+  const now = Date.now();
+  if (now - tpmWindowStart >= 60_000) {
+    tpmWindowStart = now;
+    tpmWindowTokens = 0;
+  }
+  if (tpmWindowTokens + cost > GROQ_TPM_BUDGET) {
+    const wait = 60_000 - (now - tpmWindowStart) + 1000;
+    console.log(`[strategy] Groq TPM pacing — waiting ${Math.ceil(wait / 1000)}s before the next call`);
+    await sleep(wait);
+    tpmWindowStart = Date.now();
+    tpmWindowTokens = 0;
+  }
+  tpmWindowTokens += cost;
+}
+
 async function groqJson<T>(label: string, prompt: string, maxTokens: number): Promise<T> {
   let lastErr: unknown;
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
+      await tpmGate(estimateTokens(prompt, maxTokens));
       const res = await fetch(GROQ_URL, {
         method: "POST",
         headers: {
@@ -486,16 +532,22 @@ async function groqJson<T>(label: string, prompt: string, maxTokens: number): Pr
       if (!res.ok) throw new Error(`Groq API ${res.status}: ${(await res.text()).slice(0, 300)}`);
       const data = (await res.json()) as {
         choices?: Array<{ message?: { content?: string } }>;
+        usage?: { prompt_tokens?: number; completion_tokens?: number };
       };
+      if (data.usage) {
+        console.log(
+          `[strategy] Groq ${label}: ${data.usage.prompt_tokens ?? "?"} in / ${data.usage.completion_tokens ?? "?"} out tokens`
+        );
+      }
       const text = data.choices?.[0]?.message?.content;
       if (!text) throw new Error("Groq response had no message content");
       return JSON.parse(text) as T;
     } catch (err) {
       lastErr = err;
-      console.warn(
-        `[strategy] Groq ${label} attempt ${attempt} failed:`,
-        err instanceof Error ? err.message : err
-      );
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`[strategy] Groq ${label} attempt ${attempt} failed:`, msg);
+      // Rate-limited despite the gate (estimate ran low) — wait a window out.
+      if (attempt < 2 && /Groq API (413|429)/.test(msg)) await sleep(35_000);
     }
   }
   throw new Error(
@@ -574,18 +626,36 @@ Describe what this business actually is. Respond with STRICT JSON, nothing else:
   };
 }
 
-async function proposeSearches(u: SiteUnderstanding): Promise<CandidateSearch[]> {
+/* The site's own top-of-page copy (titles + headings, verbatim) — the words
+   the business itself leads with. understandSite abstracts these into a
+   category summary, and the searches pass then invents phrasing from that
+   abstraction — observed live: a site fronting custom websites with price
+   estimation produced zero searches containing "custom website". Feeding the
+   literal lines back in pins the generated searches to the site's own words. */
+function topOfPageCopy(site: SiteData): string {
+  return site.pages
+    .slice(0, 8)
+    .map((p) => {
+      const bits = [p.title, p.headings.slice(0, 300)].filter(Boolean).join(" | ");
+      return bits ? `${pathOf(p.url)}: ${bits}` : "";
+    })
+    .filter(Boolean)
+    .join("\n")
+    .slice(0, 2600);
+}
+
+async function proposeSearches(u: SiteUnderstanding, siteCopy: string): Promise<CandidateSearch[]> {
   const primary = u.languages[0] ?? "en";
   const prompt = `You are an SEO strategist. This business:
 ${JSON.stringify(u, null, 2)}
-
+${siteCopy ? `\nTHE SITE'S OWN TOP-OF-PAGE COPY (verbatim titles and headings — how it names what it sells):\n${siteCopy}\n` : ""}
 Generate the real searches its potential customers type into Google, in the site's primary language (${primary}${u.languages.length > 1 ? `, plus a few in ${u.languages.slice(1).join("/")}` : ""}). Cover all four intents with 4 searches each:
 - informational: researching the problem or topic
 - commercial: comparing providers/solutions ("best …", "… prices", "X vs Y")
 - transactional: ready to buy / book / hire right now
 - navigational: looking for this brand or its pages specifically
 
-Rules: realistic phrasing (what people actually type, including question forms); include the geographic market where a local searcher would (${u.locations}); do not invent competitor brand names.
+Rules: realistic phrasing (what people actually type, including question forms); include the geographic market where a local searcher would (${u.locations}); do not invent competitor brand names; ANCHOR to the site's own words — for each main offering named in the top-of-page copy above, at least one search must keep that exact naming (plus a buyer modifier like price/cost/quote or its ${primary} equivalent), e.g. a site leading with "custom website price estimation" must yield a search like "custom website price" — never swap the site's own term for a generic category word.
 
 Respond with STRICT JSON, nothing else:
 {"searches": [{"query": "...", "intent": "informational|commercial|transactional|navigational", "language": "${primary}", "why": "one short clause"}]}`;
@@ -767,13 +837,33 @@ async function checkSerp(search: CandidateSearch, host: string): Promise<SerpEvi
 const UGC_HOST =
   /(^|\.)(reddit|quora|stackexchange|stackoverflow|eksisozluk|uludagsozluk|sikayetvar|donanimhaber|technopat|r10|medium|blogspot|wordpress|tumblr|facebook|instagram|youtube|pinterest|linkedin)\.(com|net|org|co)$|forum/i;
 
-async function buildPlan(
+/*
+  The strategy pass is CHUNKED on purpose: one call plans the head topics and
+  assigns every verified query to exactly one cluster, then one small call
+  per page writes that page's plan from only its own cluster's evidence.
+  Compared to the old single mega-call this (a) keeps every request small
+  enough for Groq's on-demand TPM cap — the tpmGate spreads the calls over a
+  couple of minutes instead of failing with 413s; (b) makes query
+  exclusivity structural (a page call never even sees another cluster's
+  queries); and (c) turns a failed call into one skipped page, not a dead job.
+*/
+
+/* Pass 1 output: a head topic plus the structural decisions for its page. */
+interface PlannedHead extends HeadKeyword {
+  language: string;
+  action: "create" | "update";
+  slug: string;
+  pageType: string;
+  clusterQueries: string[]; // verified queries assigned exclusively to this head
+}
+
+async function planHeads(
   u: SiteUnderstanding,
   evidence: SerpEvidence[],
   existingPaths: string[],
   ownerNotes?: string,
   gsc?: GscRow[] | null
-): Promise<{ headKeywords: HeadKeyword[]; pages: PagePlan[] }> {
+): Promise<PlannedHead[]> {
   const serpLines = evidence
     .map((e) => {
       const ours = e.siteRank ? `we rank #${e.siteRank}` : "we are NOT in the top results";
@@ -785,19 +875,15 @@ async function buildPlan(
         )
         .join(" | ");
       const typed = e.suggestions.slice(0, 10).map((s) => `"${s}"`).join(", ");
-      const winners = e.winners
-        .map((w) => `#${w.rank} headings: ${w.headings.slice(0, 220)}`)
-        .join("\n    ");
       return (
-        `SEARCH "${e.query}" (${e.intent}) — ${ours}` +
+        `SEARCH "${e.query}" (${e.intent}, ${e.language}) — ${ours}` +
         (e.error ? ` [SERP check failed: ${e.error}]` : "") +
         (typed ? `\n  typed-in-Google (autocomplete — VERIFIED real searches): ${typed}` : "") +
-        (top ? `\n  top: ${top}` : "") +
-        (winners ? `\n    ${winners}` : "")
+        (top ? `\n  top: ${top}` : "")
       );
     })
     .join("\n")
-    .slice(0, 14000);
+    .slice(0, 11000);
 
   const gscRow = (r: GscRow) =>
     `"${r.query}" — ${r.impressions} impressions, ${r.clicks} clicks, avg position ${r.position}` +
@@ -805,7 +891,7 @@ async function buildPlan(
   const striking = gsc ? strikingDistance(gsc) : [];
   const gscBlock = gsc?.length
     ? `\nTHIS SITE'S OWN SEARCH CONSOLE DATA (last 90 days — PROVEN demand for this exact site, the strongest evidence here):\n${gsc
-        .slice(0, 40)
+        .slice(0, 30)
         .map(gscRow)
         .join("\n")}${
         striking.length
@@ -817,7 +903,7 @@ async function buildPlan(
       }\n`
     : "";
 
-  const prompt = `You are an SEO strategist building a page plan for ${u.brand} (${u.sector}${u.subSector ? ` — ${u.subSector}` : ""}).
+  const prompt = `You are an SEO strategist planning intent clusters for ${u.brand} (${u.sector}${u.subSector ? ` — ${u.subSector}` : ""}). Modern search retrieval is SEMANTIC — plan topic clusters a page can own, not strings to repeat.
 
 BUSINESS:
 ${JSON.stringify(u)}
@@ -828,97 +914,187 @@ ${serpLines || "(all SERP checks failed — plan from the business description a
 EXISTING SITE PATHS (never plan a duplicate of one of these — plan an "update" of it instead):
 ${existingPaths.join(", ")}
 
-Produce the keyword strategy and page plan. Modern search retrieval is SEMANTIC — Google and AI answer engines match passages by meaning, entities, and topical completeness, not by exact phrase matching. Plan intent CLUSTERS a page can own, not strings to repeat. Rules:
-- HEAD keywords: 5–10 short (1–3 word) TOPICS worth owning, grounded in the evidence above. Label each with its dominant intent. Each head must be a semantically distinct topic — never two heads that mean roughly the same thing (they would cannibalize each other).
-- WINNABILITY: assume this site is small with LOW domain authority. For each head keyword set "winnability": "easy" when the current top results include forums/UGC/directories/thin or off-topic pages (marked [forum/UGC — beatable] above); "hard" when the top 5 are all established brands with exact-topic pages; "medium" otherwise. Prefer easy/medium clusters for new pages — include a hard cluster only when it is the core money topic, and say so in its rationale.
-- Each PAGE owns ONE intent cluster: a head topic plus 4–8 representative queries people type (include question forms). These queries are DEMAND EVIDENCE for what the page must cover — not text to paste into it. A representative query belongs to exactly ONE page's cluster in the whole plan.
-- tailQueries: draw them FIRST from the Search Console queries (proven demand for THIS site), THEN from the "typed-in-Google" autocomplete lines (verified real searches). Invent a query only to fill an obvious gap in a cluster, and prefer the real phrasing whenever it covers the same need.${gsc?.length ? `\n- Search Console striking-distance queries are the cheapest traffic available: lifting an existing page from position ~12 to the top 5 beats creating a new page from nothing. Build clusters around them first, and use each query's "ranks via" page to choose "update" (that page) over "create".` : ""}
-- entities: for each page, list the concrete concepts a semantic index must see covered for the page to be retrievable across the whole cluster — the offering itself, its attributes (price factors, timeline, process steps, requirements), the audience, the location, alternatives/adjacent concepts. 5–10 per page.
+Plan 5–10 HEAD topics, each becoming exactly one page. Rules:
+- Each head is a short (1–3 word) semantically distinct topic grounded in the evidence — never two heads that mean roughly the same thing (they would cannibalize each other).
+- WINNABILITY: assume this site is small with LOW domain authority. "easy" = the current top results include forums/UGC/directories/thin or off-topic pages (marked [forum/UGC — beatable] above); "hard" = the top 5 are all established brands with exact-topic pages; "medium" otherwise. Prefer easy/medium heads — include a hard one only when it is the core money topic, and say so in its rationale.${gsc?.length ? `\n- Search Console striking-distance queries are the cheapest traffic available — build heads around them first, and use each query's "ranks via" page to choose "update" (that page) over "create".` : ""}
+- clusterQueries: assign the REAL queries above (the checked searches, the typed-in-Google lines, the Search Console queries) to the ONE head they belong to — a query must never appear under two heads. 3–8 per head, keep their exact phrasing.
 - action: "update" with the existing path when the site already covers that topic; "create" with a new slug otherwise.
-- slug: lowercase ASCII kebab-case ONLY. Romanize Turkish characters (ç→c, ş→s, ı→i, ğ→g, ö→o, ü→u) and write Arabic-language pages under a romanized or English slug (e.g. /ar/custom-software) — never put non-ASCII characters in a slug.
-- Cover all four intents across the plan: transactional/commercial money pages first, then informational guides/FAQ pages, and one navigational item for the homepage/brand.
-- Every page gets 2–6 FAQ entries: "question" as a searcher would naturally ask it, "answerGuidance" listing the facts the FIRST sentence of the answer must state.
-- outline: the page's H2 headings in order — several must directly ADDRESS the cluster's questions (clear natural phrasing; answering the question matters, echoing its exact words does not).
-- title ≤ 60 characters with the head topic at the front; metaDescription 70–160 characters, written like ad copy.
-- LANGUAGE: every text field of a page — title, metaDescription, tailQueries, entities, faq, outline — must be written in that page's "language". A language:tr page with English headings is a failure. Never mix Latin and Arabic letters inside one word.
-- 6–12 pages total. Fewer strong pages beat many thin ones.
+- slug: lowercase ASCII kebab-case ONLY. Romanize Turkish characters (ç→c, ş→s, ı→i, ğ→g, ö→o, ü→u) and give Arabic-language pages a romanized or English slug (e.g. /ar/custom-software) — never put non-ASCII characters in a slug.
+- Cover all four intents (informational / commercial / transactional / navigational) across the heads: money pages first, then guides, one navigational item for the homepage/brand.
+- language: the language of that head's searchers (${u.languages.join(" / ")}).
 
 Respond with STRICT JSON, nothing else:
-{
-  "headKeywords": [{"keyword": "...", "intent": "...", "winnability": "easy|medium|hard", "rationale": "one clause citing the evidence"}],
-  "pages": [{
-    "action": "create|update",
-    "slug": "/path",
-    "title": "...",
-    "metaDescription": "...",
-    "pageType": "landing|service|pricing|comparison|faq|guide|blog",
-    "intent": "informational|commercial|transactional|navigational",
-    "language": "${u.languages[0] ?? "en"}",
-    "headKeyword": "...",
-    "tailQueries": ["..."],
-    "entities": ["..."],
-    "faq": [{"question": "...", "answerGuidance": "..."}],
-    "outline": ["...", "..."]
-  }]
-}`;
+{"heads": [{
+  "keyword": "...",
+  "intent": "informational|commercial|transactional|navigational",
+  "winnability": "easy|medium|hard",
+  "rationale": "one clause citing the evidence",
+  "language": "${u.languages[0] ?? "en"}",
+  "action": "create|update",
+  "slug": "/path",
+  "pageType": "landing|service|pricing|comparison|faq|guide|blog",
+  "clusterQueries": ["..."]
+}]}`;
 
-  // The evidence-heavy prompt makes llama's JSON long — a tight cap truncates
-  // mid-object and fails JSON validation (seen live), so leave headroom.
-  const raw = await groqJson<{ headKeywords?: unknown; pages?: unknown }>("strategy", prompt, 16000);
+  const raw = await groqJson<{ heads?: unknown }>("heads", prompt, 2500);
 
-  const headKeywords: HeadKeyword[] = [];
-  for (const item of Array.isArray(raw.headKeywords) ? raw.headKeywords : []) {
+  const heads: PlannedHead[] = [];
+  for (const item of Array.isArray(raw.heads) ? raw.heads : []) {
     const k = item as Record<string, unknown>;
     const keyword = str(k.keyword);
     if (!keyword) continue;
+    // A head that near-duplicates an earlier one is cannibalization — drop it.
+    if (heads.some((h) => similarQuery(h.keyword, keyword))) continue;
     const w = str(k.winnability).toLowerCase();
-    headKeywords.push({
+    const action = str(k.action).toLowerCase() === "update" ? "update" : "create";
+    const slugRaw = str(k.slug);
+    const asIs = slugRaw.startsWith("/") ? slugRaw : `/${slugRaw}`;
+    heads.push({
       keyword,
       intent: asIntent(k.intent),
       winnability: w === "easy" || w === "hard" ? w : "medium",
       rationale: str(k.rationale),
+      language: str(k.language).toLowerCase() || u.languages[0] || "en",
+      action,
+      // An "update" of a path that really exists keeps it verbatim; anything
+      // else goes through the sanitizer (the LLM sometimes emits non-ASCII
+      // or mixed-script slugs despite the rules).
+      slug:
+        action === "update" && existingPaths.includes(asIs)
+          ? asIs
+          : sanitizeSlug(slugRaw || keyword, keyword, heads.length),
+      pageType: str(k.pageType) || "landing",
+      clusterQueries: strArr(k.clusterQueries).slice(0, 8),
     });
+    if (heads.length >= 10) break;
+  }
+  if (heads.length === 0) throw new Error("Groq returned no usable head topics");
+  return heads;
+}
+
+/* Pass 2: one small call per page, seeing ONLY its own cluster's evidence. */
+async function planPage(
+  u: SiteUnderstanding,
+  head: PlannedHead,
+  evidence: SerpEvidence[],
+  gsc: GscRow[] | null | undefined,
+  ownerNotes?: string
+): Promise<PagePlan | null> {
+  // This cluster's demand: the assigned queries plus autocomplete/GSC lines
+  // that clearly belong to this topic.
+  const related = evidence.filter(
+    (e) =>
+      head.clusterQueries.some((q) => similarQuery(q, e.query)) ||
+      tokenOverlap(head.keyword, e.query) >= 0.75
+  );
+  const realQueries = [
+    ...new Set(
+      [
+        ...head.clusterQueries,
+        ...related.flatMap((e) => e.suggestions.filter((s) => tokenOverlap(head.keyword, s) >= 0.5)),
+      ].slice(0, 14)
+    ),
+  ];
+  const gscLines = (gsc ?? [])
+    .filter((r) => tokenOverlap(head.keyword, r.query) >= 0.5)
+    .slice(0, 8)
+    .map((r) => `"${r.query}" — ${r.impressions} impressions, avg position ${r.position}`);
+  const winnerLines = related
+    .flatMap((e) => e.winners)
+    .slice(0, 3)
+    .map((w) => `#${w.rank} headings: ${w.headings.slice(0, 180)}`);
+
+  const brief = {
+    brand: u.brand,
+    sector: u.sector,
+    coreValueProposition: u.coreValueProposition,
+    audience: u.audience,
+    locations: u.locations,
+    offerings: u.offerings,
+    problemsSolved: u.problemsSolved,
+    differentiators: u.differentiators,
+  };
+
+  const prompt = `You are an SEO content strategist. Design ONE page. Every text field you write MUST be in the language "${head.language}" — no mixed-language output, and never mix Latin and Arabic letters inside one word.
+
+BUSINESS: ${JSON.stringify(brief)}
+${ownerNotes ? `OWNER CONTEXT (ground truth): ${ownerNotes}\n` : ""}
+THE PAGE: ${head.action.toUpperCase()} ${head.slug} — a ${head.pageType} page owning the topic "${head.keyword}" (${head.intent} intent).
+
+REAL QUERIES THIS PAGE MUST WIN (verified demand — build tailQueries from these first, keeping their natural phrasing):
+${realQueries.map((q) => `- "${q}"`).join("\n") || "- (none collected — infer realistic ones)"}
+${gscLines.length ? `\nTHIS SITE'S OWN SEARCH CONSOLE QUERIES FOR THIS TOPIC (proven demand):\n${gscLines.join("\n")}` : ""}${winnerLines.length ? `\nWHAT CURRENTLY WINS THIS TOPIC (top results' headings):\n${winnerLines.join("\n")}` : ""}
+
+Rules:
+- tailQueries: 4–8, drawn from the real queries above first; invent one only to fill an obvious gap.
+- entities: 5–10 concrete concepts the page must cover for full topical coverage — the offering, its attributes (price factors, timeline, process, requirements), the audience, the location, alternatives.
+- faq: 2–6 entries; "question" as a searcher would naturally ask it, "answerGuidance" listing the facts the FIRST sentence of the answer must state.
+- outline: the page's H2 headings in order — several must directly ADDRESS the cluster's questions (natural phrasing beats echoing exact words).
+- title ≤ 60 characters with the head topic at the front; metaDescription 70–160 characters, written like ad copy.
+
+Respond with STRICT JSON, nothing else:
+{"title": "...", "metaDescription": "...", "tailQueries": ["..."], "entities": ["..."], "faq": [{"question": "...", "answerGuidance": "..."}], "outline": ["..."]}`;
+
+  let raw: Record<string, unknown>;
+  try {
+    raw = await groqJson<Record<string, unknown>>(`page ${head.slug}`, prompt, 1200);
+  } catch (err) {
+    console.warn(
+      `[strategy] page ${head.slug} failed — skipping:`,
+      err instanceof Error ? err.message : err
+    );
+    return null;
   }
 
-  const pages: PagePlan[] = [];
-  for (const item of Array.isArray(raw.pages) ? raw.pages : []) {
-    const p = item as Record<string, unknown>;
-    const slugRaw = str(p.slug);
-    if (!slugRaw) continue;
-    const action = str(p.action).toLowerCase() === "update" ? "update" : "create";
-    // An "update" of a path that really exists must keep it verbatim; anything
-    // else goes through the sanitizer (the LLM sometimes emits non-ASCII or
-    // mixed-script slugs despite the rules).
-    const asIs = slugRaw.startsWith("/") ? slugRaw : `/${slugRaw}`;
-    const slug =
-      action === "update" && existingPaths.includes(asIs)
-        ? asIs
-        : sanitizeSlug(slugRaw, str(p.headKeyword), pages.length);
-    const faq: FaqItem[] = [];
-    for (const f of Array.isArray(p.faq) ? p.faq : []) {
-      const q = f as Record<string, unknown>;
-      const question = str(q.question);
-      if (!question) continue;
-      faq.push({ question, answerGuidance: str(q.answerGuidance) });
-    }
-    pages.push({
-      action,
-      slug,
-      title: str(p.title),
-      metaDescription: str(p.metaDescription),
-      pageType: str(p.pageType) || "landing",
-      intent: asIntent(p.intent),
-      language: str(p.language).toLowerCase() || u.languages[0] || "en",
-      headKeyword: str(p.headKeyword),
-      tailQueries: strArr(p.tailQueries).slice(0, 8),
-      entities: strArr(p.entities).slice(0, 10),
-      faq: faq.slice(0, 6),
-      outline: strArr(p.outline).slice(0, 10),
-    });
-    if (pages.length >= 12) break;
+  const faq: FaqItem[] = [];
+  for (const f of Array.isArray(raw.faq) ? raw.faq : []) {
+    const q = f as Record<string, unknown>;
+    const question = str(q.question);
+    if (!question) continue;
+    faq.push({ question, answerGuidance: str(q.answerGuidance) });
   }
-  if (pages.length === 0) throw new Error("Groq returned no usable page plan");
-  return { headKeywords: headKeywords.slice(0, 10), pages };
+  return {
+    action: head.action,
+    slug: head.slug,
+    title: str(raw.title),
+    metaDescription: str(raw.metaDescription),
+    pageType: head.pageType,
+    intent: head.intent,
+    language: head.language,
+    headKeyword: head.keyword,
+    tailQueries: strArr(raw.tailQueries).slice(0, 8),
+    entities: strArr(raw.entities).slice(0, 10),
+    faq: faq.slice(0, 6),
+    outline: strArr(raw.outline).slice(0, 10),
+  };
+}
+
+async function buildPlan(
+  u: SiteUnderstanding,
+  evidence: SerpEvidence[],
+  existingPaths: string[],
+  ownerNotes?: string,
+  gsc?: GscRow[] | null,
+  onStep?: () => Promise<void> | void
+): Promise<{ headKeywords: HeadKeyword[]; pages: PagePlan[] }> {
+  const heads = await planHeads(u, evidence, existingPaths, ownerNotes, gsc);
+  console.log(`[strategy] ${heads.length} head topics — planning one page per head (TPM-paced) …`);
+
+  const pages: PagePlan[] = [];
+  for (const head of heads) {
+    const page = await planPage(u, head, evidence, gsc, ownerNotes);
+    if (page) {
+      pages.push(page);
+      console.log(`[strategy]   ${page.action} ${page.slug} — ${page.tailQueries.length} tails, ${page.faq.length} FAQ`);
+    }
+    await onStep?.(); // lets a DB job report progress / abort on cancellation
+  }
+  if (pages.length === 0) throw new Error("No page plans produced");
+
+  const headKeywords: HeadKeyword[] = heads.map(
+    ({ keyword, intent, winnability, rationale }) => ({ keyword, intent, winnability, rationale })
+  );
+  return { headKeywords, pages };
 }
 
 /* Slugs must be lowercase ASCII kebab-case. Turkish romanizes cleanly via a
