@@ -215,3 +215,31 @@ export function seoAuditScoreClass(score: number): string {
   if (score >= 70) return "text-[#d9a13b]";
   return "text-[#e5594e]";
 }
+
+/* ------------------------------------------------------------------------ */
+/* SEO strategy                                                              */
+/* ------------------------------------------------------------------------ */
+
+/* Live SERP checks per run — each is a SERP fetch + autocomplete probes. */
+export const SEO_STRATEGY_SERP_OPTIONS: Array<{ value: number; label: string }> = [
+  { value: 4, label: "4 searches (quick)" },
+  { value: 6, label: "6 searches" },
+  { value: 10, label: "10 searches (standard)" },
+  { value: 16, label: "16 searches (deep)" },
+];
+
+/* Embedded audit depth (each page = full throttled mobile render, ≈20s). */
+export const SEO_STRATEGY_AUDIT_OPTIONS: Array<{ value: number; label: string }> = [
+  { value: 0, label: "Skip the audit" },
+  { value: 3, label: "3 pages (quick)" },
+  { value: 6, label: "6 pages (standard)" },
+  { value: 12, label: "12 pages (deep)" },
+];
+
+/* Winnability badge styling (graded against the current SERP, assuming a
+   low-authority domain). */
+export const SEO_STRATEGY_WINNABILITY_CLASSES: Record<string, string> = {
+  easy: "border-[#3fb27f] text-[#3fb27f]",
+  medium: "border-[#d9a13b] text-[#d9a13b]",
+  hard: "border-[#e5594e] text-[#e5594e]",
+};

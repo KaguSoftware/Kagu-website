@@ -39,7 +39,23 @@ import {
   requeueOrphanedSeoAuditJobs,
   updateSeoAuditJobProgress,
 } from "./seo-audit-jobs.js";
-import type { ScrapeJobRow, SeoAuditJobRow, SeoJobRow, SeoKeywordInsert } from "./types.js";
+import { buildSeoStrategy } from "./strategy.js";
+import {
+  claimNextSeoStrategyJob,
+  completeSeoStrategyJob,
+  failSeoStrategyJob,
+  isSeoStrategyCancelRequested,
+  markSeoStrategyCancelled,
+  requeueOrphanedSeoStrategyJobs,
+  updateSeoStrategyJobProgress,
+} from "./seo-strategy-jobs.js";
+import type {
+  ScrapeJobRow,
+  SeoAuditJobRow,
+  SeoJobRow,
+  SeoKeywordInsert,
+  SeoStrategyJobRow,
+} from "./types.js";
 
 const CANCEL_CHECK_EVERY = 3; // leads between cancellation checks
 // Progress is phase-weighted: visiting place pages (crawl) and processing
@@ -278,6 +294,44 @@ async function processSeoAuditJob(job: SeoAuditJobRow): Promise<void> {
 }
 
 /*
+  SEO strategy job: the whole funnel — read + understand the site, generate
+  searches, check SERP + autocomplete demand (+ Search Console when
+  configured), build the winnability-graded page plan, run the embedded
+  audit, compose the master prompt — and write it all back as one report.
+  Same cooperative-cancellation path as the other queues.
+*/
+async function processSeoStrategyJob(job: SeoStrategyJobRow): Promise<void> {
+  console.log(`[strategy-job ${job.id}] ${job.url} — building strategy…`);
+
+  let report;
+  try {
+    report = await buildSeoStrategy(job.url, {
+      serpQueries: job.serp_queries,
+      auditPages: job.audit_pages,
+      ownerNotes: job.context ?? undefined,
+      onProgress: async (done, total) => {
+        if (await isSeoStrategyCancelRequested(job.id)) throw new JobCancelled();
+        // The coarse steps own 3–97%; completion snaps to 100.
+        await updateSeoStrategyJobProgress(job.id, 3 + (done / total) * 94);
+      },
+    });
+  } catch (err) {
+    if (err instanceof JobCancelled) {
+      console.log(`[strategy-job ${job.id}] cancellation requested — stopping`);
+      await markSeoStrategyCancelled(job.id);
+      return;
+    }
+    throw err;
+  }
+
+  await completeSeoStrategyJob(job.id, report);
+  console.log(
+    `[strategy-job ${job.id}] done — ${report.pages.length} pages planned, ` +
+      `${report.headKeywords.length} head keywords, audit ${report.audit ? `${report.audit.score}/100` : "skipped"}`
+  );
+}
+
+/*
   Re-queue jobs orphaned in "running" by a previous worker process dying
   mid-job (deploy restart, crash, reboot). Safe with a single worker —
   re-processing is idempotent (leads upsert on place_id, drafting skips
@@ -303,10 +357,11 @@ async function main(): Promise<void> {
   await requeueOrphanedJobs();
   await requeueOrphanedSeoJobs();
   await requeueOrphanedSeoAuditJobs();
+  await requeueOrphanedSeoStrategyJobs();
 
   for (;;) {
-    // Lead scrapes take priority; SEO research then site-audit jobs drain
-    // when the lead queue is idle. One worker, three queues — same cadence.
+    // Lead scrapes take priority; SEO research, site-audit, then strategy
+    // jobs drain when the lead queue is idle. One worker, four queues.
     let scrapeJob: ScrapeJobRow | null = null;
     try {
       scrapeJob = await claimNextJob();
@@ -361,6 +416,25 @@ async function main(): Promise<void> {
         const message = err instanceof Error ? err.message : String(err);
         console.error(`[audit-job ${auditJob.id}] failed:`, message);
         await failSeoAuditJob(auditJob.id, message);
+      }
+      if (config.runOnce) break;
+      continue;
+    }
+
+    let strategyJob: SeoStrategyJobRow | null = null;
+    try {
+      strategyJob = await claimNextSeoStrategyJob();
+    } catch (err) {
+      console.error("Failed to poll for SEO strategy jobs:", err);
+    }
+
+    if (strategyJob) {
+      try {
+        await processSeoStrategyJob(strategyJob);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error(`[strategy-job ${strategyJob.id}] failed:`, message);
+        await failSeoStrategyJob(strategyJob.id, message);
       }
       if (config.runOnce) break;
       continue;

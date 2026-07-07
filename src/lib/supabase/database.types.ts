@@ -134,6 +134,87 @@ export type SeoAuditReport = {
   passed: string[];
 };
 
+// SEO strategy module (supabase/seo_strategy_module.sql). These mirror
+// worker/src/strategy.ts (StrategyReport et al.) — the worker writes the
+// whole report, master prompt included, as one jsonb blob on
+// seo_strategy_jobs.report. The embedded audit reuses SeoAuditReport.
+export type SeoStrategyIntent =
+  | "informational"
+  | "commercial"
+  | "transactional"
+  | "navigational";
+
+export type SeoStrategyUnderstanding = {
+  brand: string;
+  sector: string;
+  subSector: string;
+  coreValueProposition: string;
+  languages: string[];
+  audience: string;
+  locations: string;
+  offerings: string[];
+  problemsSolved: string[];
+  differentiators: string[];
+  intentNotes: Record<SeoStrategyIntent, string>;
+};
+
+export type SeoStrategyEvidence = {
+  query: string;
+  intent: SeoStrategyIntent;
+  language: string;
+  siteRank: number | null; // null = not in the top results
+  results: Array<{ rank: number; title: string; domain: string }>;
+  winners: Array<{ rank: number; title: string; headings: string }>;
+  suggestions: string[]; // real typed queries from autocomplete
+  error?: string;
+};
+
+export type SeoStrategyGscRow = {
+  query: string;
+  topPage: string;
+  clicks: number;
+  impressions: number;
+  position: number;
+};
+
+export type SeoStrategyHead = {
+  keyword: string;
+  intent: SeoStrategyIntent;
+  winnability: "easy" | "medium" | "hard";
+  rationale: string;
+};
+
+export type SeoStrategyFaq = { question: string; answerGuidance: string };
+
+export type SeoStrategyPage = {
+  action: "create" | "update";
+  slug: string;
+  title: string;
+  metaDescription: string;
+  pageType: string;
+  intent: SeoStrategyIntent;
+  language: string;
+  headKeyword: string;
+  tailQueries: string[];
+  entities: string[];
+  faq: SeoStrategyFaq[];
+  outline: string[];
+};
+
+export type SeoStrategyReport = {
+  url: string;
+  host: string;
+  fetchedAt: string;
+  understanding: SeoStrategyUnderstanding;
+  searchesChecked: SeoStrategyEvidence[];
+  gsc: SeoStrategyGscRow[] | null; // null = Search Console not configured
+  headKeywords: SeoStrategyHead[];
+  pages: SeoStrategyPage[];
+  duplicatesRemoved: number;
+  audit: SeoAuditReport | null; // null = skipped or failed
+  prompt: string; // the master prompt — the deliverable
+};
+
 export interface Database {
   public: {
     Tables: {
@@ -848,6 +929,63 @@ export interface Database {
           pages_audited?: number;
           issues_found?: number;
           report?: SeoAuditReport | null;
+          error?: string | null;
+          requested_by?: string | null;
+          started_at?: string | null;
+          finished_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      seo_strategy_jobs: {
+        Row: {
+          id: string;
+          url: string;
+          context: string | null;
+          serp_queries: number;
+          audit_pages: number;
+          status: JobStatus;
+          progress: number;
+          pages_planned: number;
+          demand_queries: number;
+          audit_score: number | null;
+          report: SeoStrategyReport | null;
+          error: string | null;
+          requested_by: string | null;
+          started_at: string | null;
+          finished_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          url: string;
+          context?: string | null;
+          serp_queries?: number;
+          audit_pages?: number;
+          status?: JobStatus;
+          progress?: number;
+          pages_planned?: number;
+          demand_queries?: number;
+          audit_score?: number | null;
+          report?: SeoStrategyReport | null;
+          error?: string | null;
+          requested_by?: string | null;
+          started_at?: string | null;
+          finished_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          url?: string;
+          context?: string | null;
+          serp_queries?: number;
+          audit_pages?: number;
+          status?: JobStatus;
+          progress?: number;
+          pages_planned?: number;
+          demand_queries?: number;
+          audit_score?: number | null;
+          report?: SeoStrategyReport | null;
           error?: string | null;
           requested_by?: string | null;
           started_at?: string | null;

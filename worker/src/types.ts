@@ -126,6 +126,29 @@ export interface SeoAuditJobRow {
   created_at: string;
 }
 
+/* ------------------------------------------------------------------------ */
+/* SEO strategy module (supabase/seo_strategy_module.sql)                    */
+/* ------------------------------------------------------------------------ */
+
+export interface SeoStrategyJobRow {
+  id: string;
+  url: string;
+  context: string | null; // owner ground truth (--context equivalent)
+  serp_queries: number;
+  audit_pages: number; // 0 = skip the embedded audit
+  status: JobStatus; // same lifecycle as scrape_jobs
+  progress: number;
+  pages_planned: number;
+  demand_queries: number;
+  audit_score: number | null;
+  report: unknown; // StrategyReport (jsonb), written on completion
+  error: string | null;
+  requested_by: string | null;
+  started_at: string | null;
+  finished_at: string | null;
+  created_at: string;
+}
+
 /* One row the worker inserts into seo_keywords (id/created_at are defaulted). */
 export interface SeoKeywordInsert {
   job_id: string;
