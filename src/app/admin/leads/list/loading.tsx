@@ -1,5 +1,5 @@
-import { TableSkeleton } from "../_components/Skeleton";
+import { BasicLoading } from "../_components/BasicLoading";
 
 export default function Loading() {
-  return <TableSkeleton rows={10} />;
+  return <BasicLoading />;
 }

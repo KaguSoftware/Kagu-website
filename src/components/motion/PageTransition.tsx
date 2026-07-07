@@ -87,7 +87,7 @@ function pickPhrase() {
   return PHRASES[Math.floor(Math.random() * PHRASES.length)];
 }
 
-export function PageTransition({ sessionKey }: { sessionKey: string }) {
+export function PageTransition() {
   const reduced = useReducedMotion() ?? false;
   const pathname = usePathname();
   const [show, setShow] = useState(false);
@@ -112,21 +112,6 @@ export function PageTransition({ sessionKey }: { sessionKey: string }) {
     setShow(true);
   }, []);
 
-  // First-visit curtain (session-gated). Reveal it after a short hold.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (sessionStorage.getItem(sessionKey)) return;
-    sessionStorage.setItem(sessionKey, "1");
-    setPhrase(pickPhrase());
-    setRunId((n) => n + 1);
-    coverStart.current = Date.now();
-    coverFromPath.current = null; // no nav to wait on — reveal on the timer
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setShow(true);
-    const t = setTimeout(() => setShow(false), reduced ? 700 : 2600);
-    return () => clearTimeout(t);
-  }, [reduced, sessionKey]);
-
   // Cover on internal-link clicks (capture phase, before Next router hijacks it).
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -150,6 +135,9 @@ export function PageTransition({ sessionKey }: { sessionKey: string }) {
       }
       if (url.origin !== window.location.origin) return;
       if (url.pathname === window.location.pathname) return;
+      // No funny overlay anywhere near the admin panel — the admin BootLoader
+      // owns that experience.
+      if (url.pathname.startsWith("/admin") || window.location.pathname.startsWith("/admin")) return;
 
       raise();
     };
@@ -162,7 +150,6 @@ export function PageTransition({ sessionKey }: { sessionKey: string }) {
   // from the one we covered), respecting the minimum cover time.
   useEffect(() => {
     if (!show) return;
-    if (coverFromPath.current === null) return; // first-visit case is timer-driven
     if (pathname === coverFromPath.current) return; // still loading — keep covered
 
     const elapsed = Date.now() - coverStart.current;
