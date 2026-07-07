@@ -44,10 +44,16 @@ cp .env.example .env   # then fill in the values
 | `SEO_REGION` | no | `tr` | SEO tool: Google `gl` region bias (country code) |
 | `SEO_LANGUAGE` | no | `en` | SEO tool: Google `hl` interface language |
 | `SEO_AUDIT_MAX_PAGES` | no | `12` | Site audit: page cap for the crawl (`--max-pages` overrides) |
+| `SEO_STRATEGY_SERP_QUERIES` | no | `10` | Strategy tool: candidate searches checked against the live SERP |
+| `SEO_STRATEGY_SITE_PAGES` | no | `6` | Strategy tool: site pages read to understand the business |
+| `SEO_STRATEGY_AUDIT_PAGES` | no | `6` | Strategy tool: page cap for its embedded audit (`--no-audit` skips) |
+| `GSC_KEY_FILE` | no | `gsc-key.json` | Search Console service-account key path (see setup below) |
+| `GSC_SITE_URL` | no | `sc-domain:<host>` | Search Console property name if not a domain property |
 
-Note: `tsx` does **not** load `.env` by itself — export the vars in your
-shell, use `env $(cat .env | xargs) npm start`, or point a process manager at
-it (systemd `EnvironmentFile`, see below).
+`worker/.env` is auto-loaded at startup (by `src/config.ts`) for the worker
+and every CLI tool — variables already present in the real environment win,
+so a process manager's env (LaunchAgent, systemd `EnvironmentFile`) still
+takes precedence.
 
 ## Run modes
 
@@ -141,6 +147,93 @@ Identical issues merge across pages ("no canonical — on 12 of 12 pages").
 If the browser pass fails the static checks still report — mobile/speed
 categories just drop out of the score. Page cap via `--max-pages` or
 `SEO_AUDIT_MAX_PAGES` (each page is a full throttled render, ≈20s/page).
+
+## SEO strategy tool
+
+The whole funnel in one command: **give it a URL, get back the master prompt
+that makes the site rank.** CLI-only, writes nothing to the DB, needs no
+Supabase creds — but **requires `GROQ_API_KEY`** (understanding and keyword
+generation are LLM passes; there is no heuristic fallback here).
+
+```sh
+npm run seo:strategy -- kagusoftware.com
+npm run seo:strategy -- --context "our highlight: fully custom sites/systems/apps per request" kagusoftware.com
+npm run seo:strategy -- --out brief.md example.com     # choose the output file
+npm run seo:strategy -- --serp 6 example.com           # fewer live SERP checks
+npm run seo:strategy -- --no-audit example.com         # skip the embedded audit
+npm run seo:strategy -- --json example.com             # full report as JSON
+npm run seo:strategy:mock -- example.com               # offline, deterministic
+```
+
+`--context` injects owner-supplied ground truth (what the business wants to
+be known for) into the understanding and strategy passes — use it when the
+site's own copy under-communicates the highlight.
+
+How it works (`src/strategy.ts`):
+
+1. **Reads the site itself** — homepage plus the most business-relevant
+   internal pages (about/services/pricing/FAQ path heuristics, plain fetch;
+   one unthrottled browser render as fallback for JS-only sites) — and has
+   Groq state what the business actually is from the on-page content:
+   sector, offerings, problems solved, audience, market, languages.
+2. **Generates the searches** its customers would type, across all four
+   intents (informational / commercial / transactional / navigational), in
+   the site's own language(s).
+3. **Checks each against the live SERP** (same DuckDuckGo endpoint as the
+   keyword tool): who ranks, whether the site appears at all, and what shape
+   the winners' content takes. Alongside each check it **pulls real typed
+   demand from Google Autocomplete** (query + shortened seed + question-word
+   expansions — the AnswerThePublic technique; true "People Also Ask" only
+   exists on Google's CAPTCHA'd SERP, and autocomplete yields the same class
+   of real typed questions for free).
+4. **Builds the strategy** — head topics worth owning plus a page plan where
+   every page owns one intent *cluster*: representative long-tail queries
+   (demand evidence, not strings to paste — modern retrieval is semantic)
+   plus the entities the page must cover for full topical coverage, mapped
+   to *update this existing path* or *create this slug*. Tail queries are
+   sourced from the autocomplete demand first (marked ✓ in the brief), each
+   head keyword gets a **winnability** grade (easy/medium/hard, judged from
+   who currently ranks — forums/UGC in the top results mark a cluster a
+   low-authority site can win), and a code-level near-duplicate pass
+   guarantees no query cluster is split across two pages.
+5. **Runs the technical audit** (`src/audit.ts`, capped smaller by default)
+   so every fix ships inside the same deliverable.
+6. **Writes one master prompt** (markdown) to hand to a coding agent: the
+   pages with titles/outlines/FAQs, answer-first writing rules that make
+   sentences liftable by Google AI Overviews and AI assistants, all audit
+   fixes, `robots.txt` / `llms.txt` / sitemap / JSON-LD setup, and
+   anti-duplication rules.
+
+Runtime is dominated by the SERP pacing (~2–3s between queries) and the
+audit (~20s/page): roughly 3–6 minutes at the defaults.
+
+### Search Console (free, strongly recommended)
+
+With Google Search Console connected, the strategy tool also pulls the
+site's **own real queries** — impressions, clicks, average position, and
+which page carries each query, for the last 90 days. That is *proven* demand
+for this exact site: the plan builds clusters around **striking-distance
+queries** (already ranking 8–30 — lifting an existing page a few positions
+is the cheapest traffic in SEO), and §4 tails backed by GSC are marked ✓✓
+with their impression counts. The API is free and no client library is used
+(`src/gsc.ts` signs the service-account JWT with `node:crypto` and makes one
+REST call).
+
+One-time setup (~5 minutes):
+
+1. [Google Cloud Console](https://console.cloud.google.com) → any project →
+   **APIs & Services → Enable APIs** → enable **Google Search Console API**.
+2. **IAM & Admin → Service accounts → Create service account** (no roles
+   needed) → **Keys → Add key → JSON** → save the file as
+   `worker/gsc-key.json` (already gitignored).
+3. [Search Console](https://search.google.com/search-console) → your
+   property → **Settings → Users and permissions → Add user** → the service
+   account's email (`…@….iam.gserviceaccount.com`), permission
+   **Restricted** is enough.
+4. If your property is URL-prefix rather than domain, set
+   `GSC_SITE_URL=https://example.com/` in `.env`.
+
+Without the key file the tool logs one skip line and works as before.
 
 ### systemd unit (VPS)
 

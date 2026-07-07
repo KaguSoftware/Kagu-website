@@ -33,8 +33,9 @@ export interface OrganicResult {
   domain: string;
 }
 
-/* On-page text pulled from one top-ranking page, split by SEO signal. */
-interface PageText {
+/* On-page text pulled from one fetched page, split by SEO signal.
+   Exported: strategy.ts reuses it to read the target site itself. */
+export interface PageText {
   url: string;
   title: string;
   metaDescription: string;
@@ -135,7 +136,8 @@ export async function researchKeywords(
 /* 1. Google SERP — organic results only                                    */
 /* ------------------------------------------------------------------------ */
 
-async function scrapeOrganicResults(
+/* Exported: strategy.ts reuses the SERP scrape for its per-query checks. */
+export async function scrapeOrganicResults(
   query: string,
   region: string,
   language: string
@@ -209,7 +211,8 @@ async function scrapeOrganicResults(
 /* 2. Fetch one top page and split its text by SEO signal                   */
 /* ------------------------------------------------------------------------ */
 
-async function fetchPageText(url: string): Promise<PageText | null> {
+/* Exported: strategy.ts reuses this to digest site + winner pages. */
+export async function fetchPageText(url: string): Promise<PageText | null> {
   try {
     const res = await fetch(url, {
       redirect: "follow",

@@ -1,5 +1,27 @@
 /* Fail-fast env validation — a worker with a bad config should die loudly. */
 
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+/* tsx does NOT load .env by itself. The leads worker gets its env from the
+   LaunchAgent/systemd unit, but every ad-hoc CLI run (`npm run seo`,
+   `seo:audit`, `seo:strategy`) was starting keyless even though worker/.env
+   holds GROQ_API_KEY. Load it here once, at import time — variables already
+   present in the real environment always win over the file. */
+try {
+  const envPath = join(dirname(fileURLToPath(import.meta.url)), "..", ".env");
+  for (const line of readFileSync(envPath, "utf8").split(/\r?\n/)) {
+    if (line.trim().startsWith("#")) continue;
+    const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/);
+    if (!m) continue;
+    const value = m[2].replace(/^(["'])(.*)\1$/, "$2");
+    if (!(m[1] in process.env)) process.env[m[1]] = value;
+  }
+} catch {
+  /* no .env file — env must come from the shell or a process manager */
+}
+
 function required(name: string): string {
   const value = process.env[name];
   if (!value) {
@@ -53,4 +75,22 @@ export const config = {
   // Page cap for the site crawl; each page gets a full throttled mobile
   // render, so runtime is roughly maxPages × ~20s.
   seoAuditMaxPages: Number(process.env.SEO_AUDIT_MAX_PAGES) || 12,
+
+  // --- Google Search Console (worker/src/gsc.ts, used by seo:strategy) ---
+  // Path to a service-account JSON key (absolute, or relative to worker/).
+  // Optional — unset falls back to worker/gsc-key.json, and if that file
+  // doesn't exist the strategy tool simply skips the GSC evidence.
+  gscKeyFile: process.env.GSC_KEY_FILE ?? "",
+  // Search Console property: "sc-domain:example.com" (domain property) or
+  // "https://example.com/" (URL-prefix property). Unset = sc-domain:<host>.
+  gscSiteUrl: process.env.GSC_SITE_URL ?? "",
+
+  // --- SEO strategy tool (worker/src/strategy.ts, run via `npm run seo:strategy`) ---
+  // Candidate searches actually run against the SERP (each ≈ one DDG fetch
+  // plus two winner-page fetches, with pacing between queries).
+  seoStrategySerpQueries: Number(process.env.SEO_STRATEGY_SERP_QUERIES) || 10,
+  // Site pages read (plain fetch) to understand what the business does.
+  seoStrategySitePages: Number(process.env.SEO_STRATEGY_SITE_PAGES) || 6,
+  // Page cap for the embedded technical audit (`--no-audit` skips it).
+  seoStrategyAuditPages: Number(process.env.SEO_STRATEGY_AUDIT_PAGES) || 6,
 };

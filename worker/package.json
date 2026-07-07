@@ -11,6 +11,8 @@
     "seo": "tsx src/seo-cli.ts",
     "seo:mock": "MOCK_MODE=1 tsx src/seo-cli.ts",
     "seo:audit": "tsx src/audit-cli.ts",
+    "seo:strategy": "tsx src/strategy-cli.ts",
+    "seo:strategy:mock": "MOCK_MODE=1 tsx src/strategy-cli.ts",
     "typecheck": "tsc --noEmit",
     "deploy:mac": "rsync -a --delete --exclude worker.log ./ ~/kagu-worker/ && launchctl kickstart -k gui/$(id -u)/com.kagu.leads-worker && echo 'worker resynced + restarted'"
   },
