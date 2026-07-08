@@ -59,7 +59,7 @@ function FindingCard({ finding }: { finding: SeoAuditFinding }) {
           {finding.pages.length > 6 ? ` +${finding.pages.length - 6} more` : ""}
         </p>
       )}
-      <p className="mt-2 border-l-2 border-mint-deep pl-3 text-xs leading-relaxed text-ink">
+      <p className="mt-3 bg-mint-pale px-3 py-2 text-xs leading-relaxed text-ink">
         <span className="font-mono uppercase tracking-[0.14em] text-mint-deep">
           Fix ·{" "}
         </span>

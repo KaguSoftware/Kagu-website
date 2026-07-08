@@ -49,6 +49,85 @@ export const createSeoStrategyJob = withResult(
   }
 );
 
+/*
+  The lead drawer's SEO block: the newest strategy job for a lead's website,
+  matched by host, so outreach can quote real numbers ("your site audits
+  61/100") and link the full report.
+*/
+export const getLeadSeoStrategy = withResult(
+  async (websiteUrl: string) => {
+    await requireAdmin();
+    let host: string;
+    try {
+      host = new URL(
+        /^https?:\/\//i.test(websiteUrl) ? websiteUrl : `https://${websiteUrl}`
+      ).hostname.replace(/^www\./, "");
+    } catch {
+      throw new Error("Lead has no valid website URL.");
+    }
+    const db = createAdminClient();
+    const { data, error } = await db
+      .from("seo_strategy_jobs")
+      .select("id, status, audit_score, pages_planned, created_at")
+      .ilike("url", `%${host}%`)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return data;
+  }
+);
+
+/*
+  "Did the agent actually ship everything?" — fetch every planned slug on the
+  live site and store which ones answer 2xx, inside the report jsonb (so a
+  worker re-run, which rewrites the report, naturally resets the check).
+*/
+export const verifySeoStrategyPages = withResult(async (id: string) => {
+  await requireAdmin();
+  const jobId = z.uuid().parse(id);
+  const db = createAdminClient();
+  const { data: job, error } = await db
+    .from("seo_strategy_jobs")
+    .select("report")
+    .eq("id", jobId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!job?.report) throw new Error("This job has no report to verify.");
+
+  const report = job.report;
+  const results: Array<{ slug: string; ok: boolean; status: number | null }> = [];
+  for (const page of report.pages) {
+    let ok = false;
+    let status: number | null = null;
+    try {
+      const res = await fetch(`https://${report.host}${page.slug}`, {
+        redirect: "follow",
+        signal: AbortSignal.timeout(8000),
+        headers: { "user-agent": "kagu-admin-page-check" },
+        cache: "no-store",
+      });
+      ok = res.ok;
+      status = res.status;
+    } catch {
+      /* unreachable — ok stays false, status null */
+    }
+    results.push({ slug: page.slug, ok, status });
+  }
+
+  const { error: updateError } = await db
+    .from("seo_strategy_jobs")
+    .update({
+      report: {
+        ...report,
+        pageCheck: { checkedAt: new Date().toISOString(), results },
+      },
+    })
+    .eq("id", jobId);
+  if (updateError) throw new Error(updateError.message);
+  revalidatePath("/admin/leads/seo", "layout");
+});
+
 /* Cooperative cancellation — the worker checks the status between steps. */
 export const cancelSeoStrategyJob = withResult(async (id: string) => {
   await requireAdmin();

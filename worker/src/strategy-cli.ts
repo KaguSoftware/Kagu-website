@@ -126,6 +126,22 @@ function printSummary(r: StrategyReport, file: string): void {
     }
   }
 
+  if (r.competitors.length) {
+    const scans = r.market?.scanQueries.length ?? 0;
+    console.log(
+      `\nMARKET (${r.competitors.length} competitor(s) crawled — money SERPs${scans ? ` + ${scans} provider scan(s)` : ""})`
+    );
+    for (const c of r.competitors) {
+      console.log(`  ${c.domain} (#${c.bestRank}, ${c.pagesRead} pages) — ${c.summary}`);
+      if (c.gaps.length) console.log(`    gaps: ${c.gaps.join("; ")}`);
+    }
+    if (r.market) {
+      console.log(`  read: ${r.market.summary}`);
+      if (r.market.tableStakes.length) console.log(`  table stakes: ${r.market.tableStakes.join("; ")}`);
+      if (r.market.openings.length) console.log(`  openings: ${r.market.openings.join("; ")}`);
+    }
+  }
+
   if (r.headKeywords.length) {
     console.log(`\nHEAD KEYWORDS (${r.headKeywords.length})`);
     for (const h of r.headKeywords) {

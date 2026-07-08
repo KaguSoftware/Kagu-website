@@ -201,6 +201,38 @@ export type SeoStrategyPage = {
   outline: string[];
 };
 
+/* A business ranking for the commercial/transactional searches — crawled
+   and profiled by the worker. Absent on reports from before the feature. */
+export type SeoStrategyCompetitor = {
+  domain: string;
+  bestRank: number;
+  appearsFor: string[];
+  pagesRead: number;
+  summary: string;
+  keywordsTargeted: string[];
+  angles: string[];
+  gaps: string[];
+};
+
+/* The market read across every crawled competitor — money SERPs plus
+   dedicated provider-finding scans. Absent on reports from before the
+   feature. */
+export type SeoStrategyMarket = {
+  scanQueries: string[];
+  summary: string;
+  tableStakes: string[];
+  standardAngles: string[];
+  openings: string[];
+};
+
+/* Written by the "Verify pages" server action, not the worker: which planned
+   slugs answer 2xx on the live site. Reset whenever the worker rewrites the
+   report (a re-run replaces the whole jsonb blob). */
+export type SeoStrategyPageCheck = {
+  checkedAt: string;
+  results: Array<{ slug: string; ok: boolean; status: number | null }>;
+};
+
 export type SeoStrategyReport = {
   url: string;
   host: string;
@@ -208,11 +240,14 @@ export type SeoStrategyReport = {
   understanding: SeoStrategyUnderstanding;
   searchesChecked: SeoStrategyEvidence[];
   gsc: SeoStrategyGscRow[] | null; // null = Search Console not configured
+  competitors?: SeoStrategyCompetitor[];
+  market?: SeoStrategyMarket | null; // null = stage failed or found nothing
   headKeywords: SeoStrategyHead[];
   pages: SeoStrategyPage[];
   duplicatesRemoved: number;
   audit: SeoAuditReport | null; // null = skipped or failed
   prompt: string; // the master prompt — the deliverable
+  pageCheck?: SeoStrategyPageCheck; // added by the admin's "Verify pages" action
 };
 
 export interface Database {
@@ -993,6 +1028,62 @@ export interface Database {
           created_at?: string;
         };
         Relationships: [];
+      };
+      seo_tracked_keywords: {
+        Row: {
+          id: string;
+          host: string;
+          keyword: string;
+          language: string;
+          active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          host: string;
+          keyword: string;
+          language?: string;
+          active?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          host?: string;
+          keyword?: string;
+          language?: string;
+          active?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      seo_rank_snapshots: {
+        Row: {
+          id: string;
+          tracked_id: string;
+          rank: number | null;
+          checked_at: string;
+        };
+        Insert: {
+          id?: string;
+          tracked_id: string;
+          rank?: number | null;
+          checked_at?: string;
+        };
+        Update: {
+          id?: string;
+          tracked_id?: string;
+          rank?: number | null;
+          checked_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "seo_rank_snapshots_tracked_id_fkey";
+            columns: ["tracked_id"];
+            isOneToOne: false;
+            referencedRelation: "seo_tracked_keywords";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       contact_requests: {
         Row: {

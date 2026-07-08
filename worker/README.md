@@ -156,11 +156,17 @@ keyword generation are LLM passes; there is no heuristic fallback here).
 It runs two ways:
 
 - **DB-driven** (like the other queues): the worker also polls
-  `seo_strategy_jobs` — queued from the admin panel's **Strategy** tab
-  (`/admin/leads/strategy`) — and writes the full report (master prompt
+  `seo_strategy_jobs` — queued from the admin panel's **SEO** tab
+  (`/admin/leads/seo`) — and writes the full report (master prompt
   included) back onto the job row; the detail page renders it, embedded
   audit and all. Run `supabase/seo_strategy_module.sql` once to create the
   table. Lead scrapes, SEO research, and audits drain first.
+
+  Completed strategies also seed their head keywords into weekly **rank
+  tracking** (`src/rank-tracking.ts`): when all queues are idle the worker
+  re-checks each host's keywords against the live SERP and the SEO tab
+  charts movement. Run `supabase/seo_rank_module.sql` once to create its
+  tables — until then the feature stays dormant (one log line, no errors).
 - **CLI** (ad-hoc, writes nothing to the DB, needs no Supabase creds):
 
 ```sh

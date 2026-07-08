@@ -17,6 +17,7 @@ import {
   PIPELINE_STATUS_LABELS,
 } from "../_lib/constants";
 import { LeadMessagesPanel } from "./LeadMessagesPanel";
+import { LeadSeoAction } from "./LeadSeoAction";
 
 type Lead = Tables<"leads">;
 
@@ -260,6 +261,8 @@ function DrawerBody({ lead, onClose }: { lead: Lead; onClose: () => void }) {
                     </DetailRow>
                   )}
                 </div>
+
+                <LeadSeoAction lead={lead} />
 
                 {lead.audit_flags.length > 0 && (
                   <div>

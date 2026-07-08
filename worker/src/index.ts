@@ -5,6 +5,7 @@
   offers Retry).
 */
 
+import { spawn, type ChildProcess } from "node:child_process";
 import { config } from "./config.js";
 import { db } from "./db.js";
 import { crawlMaps } from "./crawl.js";
@@ -40,6 +41,7 @@ import {
   updateSeoAuditJobProgress,
 } from "./seo-audit-jobs.js";
 import { buildSeoStrategy } from "./strategy.js";
+import { runDueRankChecks, seedTrackedKeywords } from "./rank-tracking.js";
 import {
   claimNextSeoStrategyJob,
   completeSeoStrategyJob,
@@ -70,6 +72,53 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /* Thrown from inside the crawl progress callback to abort on cancellation. */
 class JobCancelled extends Error {}
+
+/*
+  macOS idle-sleep guard: a claimed job dies half-done when the Mac dozes
+  off mid-crawl, so hold a caffeinate assertion for exactly as long as a job
+  is processing (idle polling never keeps the machine awake). `-i` blocks
+  idle sleep only — closing the lid still sleeps. No-op off macOS.
+*/
+let caffeinateProc: ChildProcess | null = null;
+function stayAwake(): void {
+  if (process.platform !== "darwin" || caffeinateProc) return;
+  try {
+    caffeinateProc = spawn("caffeinate", ["-i", "-w", String(process.pid)], {
+      stdio: "ignore",
+    });
+    caffeinateProc.on("error", () => {
+      caffeinateProc = null; // caffeinate missing — degrade silently
+    });
+  } catch {
+    caffeinateProc = null;
+  }
+}
+function allowSleep(): void {
+  caffeinateProc?.kill();
+  caffeinateProc = null;
+}
+
+/* Run one claimed job with the sleep guard held and errors funneled to the
+   queue's fail handler — the shared shape of all four queue branches. */
+async function runClaimed<T extends { id: string }>(
+  job: T,
+  label: string,
+  handler: (job: T) => Promise<void>,
+  fail: (id: string, message: string) => Promise<void>,
+  cleanup?: () => Promise<void>
+): Promise<void> {
+  stayAwake();
+  try {
+    await handler(job);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`[${label} ${job.id}] failed:`, message);
+    await fail(job.id, message);
+  } finally {
+    allowSleep();
+    await cleanup?.();
+  }
+}
 
 async function processJob(job: ScrapeJobRow): Promise<void> {
   console.log(`[job ${job.id}] ${job.category} / ${job.district} — crawling…`);
@@ -325,6 +374,7 @@ async function processSeoStrategyJob(job: SeoStrategyJobRow): Promise<void> {
   }
 
   await completeSeoStrategyJob(job.id, report);
+  await seedTrackedKeywords(report); // head keywords enter weekly rank tracking
   console.log(
     `[strategy-job ${job.id}] done — ${report.pages.length} pages planned, ` +
       `${report.headKeywords.length} head keywords, audit ${report.audit ? `${report.audit.score}/100` : "skipped"}`
@@ -370,15 +420,8 @@ async function main(): Promise<void> {
     }
 
     if (scrapeJob) {
-      try {
-        await processJob(scrapeJob);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        console.error(`[job ${scrapeJob.id}] failed:`, message);
-        await failJob(scrapeJob.id, message);
-      } finally {
-        await closeEnrichBrowser(); // don't keep Chromium alive between jobs
-      }
+      // closeEnrichBrowser: don't keep Chromium alive between jobs.
+      await runClaimed(scrapeJob, "job", processJob, failJob, closeEnrichBrowser);
       if (config.runOnce) break;
       continue; // look for the next job immediately
     }
@@ -391,13 +434,7 @@ async function main(): Promise<void> {
     }
 
     if (seoJob) {
-      try {
-        await processSeoJob(seoJob);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        console.error(`[seo-job ${seoJob.id}] failed:`, message);
-        await failSeoJob(seoJob.id, message);
-      }
+      await runClaimed(seoJob, "seo-job", processSeoJob, failSeoJob);
       if (config.runOnce) break;
       continue;
     }
@@ -410,13 +447,7 @@ async function main(): Promise<void> {
     }
 
     if (auditJob) {
-      try {
-        await processSeoAuditJob(auditJob);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        console.error(`[audit-job ${auditJob.id}] failed:`, message);
-        await failSeoAuditJob(auditJob.id, message);
-      }
+      await runClaimed(auditJob, "audit-job", processSeoAuditJob, failSeoAuditJob);
       if (config.runOnce) break;
       continue;
     }
@@ -429,13 +460,7 @@ async function main(): Promise<void> {
     }
 
     if (strategyJob) {
-      try {
-        await processSeoStrategyJob(strategyJob);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        console.error(`[strategy-job ${strategyJob.id}] failed:`, message);
-        await failSeoStrategyJob(strategyJob.id, message);
-      }
+      await runClaimed(strategyJob, "strategy-job", processSeoStrategyJob, failSeoStrategyJob);
       if (config.runOnce) break;
       continue;
     }
@@ -443,6 +468,13 @@ async function main(): Promise<void> {
     if (config.runOnce) {
       console.log("No pending jobs. Exiting (RUN_ONCE=1).");
       break;
+    }
+    // All four queues idle — spend the quiet time on weekly rank checks
+    // (self-throttled to one attempt per hour, one host per attempt).
+    try {
+      await runDueRankChecks();
+    } catch (err) {
+      console.warn("[rank] pass failed:", err instanceof Error ? err.message : err);
     }
     await sleep(config.pollIntervalMs);
   }

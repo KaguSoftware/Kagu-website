@@ -131,6 +131,33 @@ export interface PagePlan {
   outline: string[]; // H2s, several directly addressing the cluster's questions
 }
 
+/* A business ranking for the money searches — its site crawled and profiled
+   so the plan can respond to what it targets and where it is thin. Sourced
+   from commercial/transactional SERPs only: informational winners are
+   content sites and the navigational SERP is the brand itself, neither is
+   "the same business". */
+export interface CompetitorProfile {
+  domain: string;
+  bestRank: number;
+  appearsFor: string[]; // the money searches it ranked for
+  pagesRead: number; // homepage + priority internal pages crawled
+  summary: string; // what it sells and to whom, from its own pages
+  keywordsTargeted: string[]; // topics its titles/headings visibly target
+  angles: string[]; // the selling points it leads with
+  gaps: string[]; // what it does NOT cover — openings the target can own
+}
+
+/* The market read across every crawled competitor — built from the money
+   SERPs PLUS dedicated market-scan searches, so it maps the market rather
+   than just whoever happened to rank for the checked queries. */
+export interface MarketOverview {
+  scanQueries: string[]; // extra provider-finding searches swept for discovery
+  summary: string; // one-paragraph read of the market
+  tableStakes: string[]; // what everyone in the market offers/claims
+  standardAngles: string[]; // selling points that repeat across the market
+  openings: string[]; // underserved needs the target can own
+}
+
 export interface StrategyReport {
   url: string;
   host: string;
@@ -138,6 +165,8 @@ export interface StrategyReport {
   understanding: SiteUnderstanding;
   searchesChecked: SerpEvidence[];
   gsc: GscRow[] | null; // the site's own Search Console queries; null = not configured
+  competitors: CompetitorProfile[];
+  market: MarketOverview | null; // null = stage failed or found nothing
   headKeywords: HeadKeyword[];
   pages: PagePlan[];
   duplicatesRemoved: number; // near-duplicate queries/pages pruned after the LLM pass
@@ -178,7 +207,7 @@ export async function buildSeoStrategy(
   const sitePages = opts.sitePages ?? config.seoStrategySitePages;
   const auditPages = opts.auditPages ?? config.seoStrategyAuditPages;
 
-  const totalSteps = 2 + serpQueries + 1 + auditPages;
+  const totalSteps = 2 + serpQueries + 2 + auditPages; // + competitor stage + plan
   let step = 0;
   const tick = async () => {
     step = Math.min(step + 1, totalSteps);
@@ -238,8 +267,28 @@ export async function buildSeoStrategy(
     await sleep(rand(1500, 3500)); // pace SERP queries — DDG rate-limits bursts
   }
 
+  // Map the market: money-SERP domains + dedicated provider-finding scans,
+  // deep-crawled and profiled. Never fatal: a run without market intel is
+  // still a full strategy.
+  let competitors: CompetitorProfile[] = [];
+  let market: MarketOverview | null = null;
+  try {
+    console.log("[strategy] mapping the market (money SERPs + provider scans) …");
+    const mapped = await mapMarket(site.host, understanding, evidence, async () => {
+      await opts.onProgress?.(step, totalSteps); // keeps cancellation live mid-crawl
+    });
+    competitors = mapped.competitors;
+    market = mapped.market;
+  } catch (err) {
+    console.warn(
+      "[strategy] market mapping failed — continuing without it:",
+      err instanceof Error ? err.message : err
+    );
+  }
+  await tick();
+
   console.log("[strategy] building keyword strategy + page plan …");
-  const plan = await buildPlan(understanding, evidence, site.paths, opts.ownerNotes, gsc, async () => {
+  const plan = await buildPlan(understanding, evidence, site.paths, competitors, market, opts.ownerNotes, gsc, async () => {
     // Same step re-reported: keeps DB progress fresh and cancellation live
     // through the minutes-long, TPM-paced planning stage.
     await opts.onProgress?.(step, totalSteps);
@@ -279,6 +328,8 @@ export async function buildSeoStrategy(
     host: site.host,
     u: understanding,
     evidence,
+    competitors,
+    market,
     heads: plan.headKeywords,
     pages: plan.pages,
     audit,
@@ -293,6 +344,8 @@ export async function buildSeoStrategy(
     understanding,
     searchesChecked: evidence,
     gsc,
+    competitors,
+    market,
     headKeywords: plan.headKeywords,
     pages: plan.pages,
     duplicatesRemoved,
@@ -828,7 +881,7 @@ async function checkSerp(search: CandidateSearch, host: string): Promise<SerpEvi
 }
 
 /* ------------------------------------------------------------------------ */
-/* 4. Strategy pass: head keywords + page plan                              */
+/* 3b. Market map — competitors from the money SERPs + provider scans       */
 /* ------------------------------------------------------------------------ */
 
 /* Hosts a small site can realistically outrank — forums, UGC, social, free
@@ -836,6 +889,270 @@ async function checkSerp(search: CandidateSearch, host: string): Promise<SerpEvi
    for a low-authority domain. */
 const UGC_HOST =
   /(^|\.)(reddit|quora|stackexchange|stackoverflow|eksisozluk|uludagsozluk|sikayetvar|donanimhaber|technopat|r10|medium|blogspot|wordpress|tumblr|facebook|instagram|youtube|pinterest|linkedin)\.(com|net|org|co)$|forum/i;
+
+/* Directories and marketplaces rank for money searches without being the
+   same business. This regex saves crawl budget on the obvious ones; the LLM
+   filter below drops the rest. */
+const AGGREGATOR_HOST =
+  /(^|\.)(yelp|yellowpages|tripadvisor|armut|sahibinden|hepsiburada|trendyol|n11|amazon|etsy|alibaba|fiverr|upwork|freelancer|clutch|goodfirms|sortlist|designrush|trustpilot|foursquare|glassdoor|indeed|kariyer|wikipedia|wikihow|g2|capterra)\.(com|net|org|co|io)/i;
+
+interface CompetitorSource {
+  domain: string;
+  bestRank: number;
+  appearsFor: string[];
+}
+
+/* One SERP result folded into the domain map — self, UGC, and aggregator
+   hosts skipped. */
+function addCompetitorSource(
+  byDomain: Map<string, CompetitorSource>,
+  host: string,
+  rawDomain: string,
+  rank: number,
+  query: string
+): void {
+  const d = rawDomain.replace(/^www\./, "");
+  if (d === host || d.endsWith(`.${host}`)) return;
+  if (UGC_HOST.test(d) || AGGREGATOR_HOST.test(d)) return;
+  const cur = byDomain.get(d) ?? { domain: d, bestRank: rank, appearsFor: [] };
+  cur.bestRank = Math.min(cur.bestRank, rank);
+  if (!cur.appearsFor.includes(query)) cur.appearsFor.push(query);
+  byDomain.set(d, cur);
+}
+
+/* Searches a buyer would use to FIND providers ("best X companies istanbul",
+   "X firmaları") — swept purely for competitor discovery, so the market map
+   isn't limited to the domains behind the already-checked searches. */
+async function proposeMarketScanQueries(u: SiteUnderstanding): Promise<string[]> {
+  const prompt = `This business:
+${JSON.stringify(u)}
+
+Generate 6 searches a buyer would type into Google to FIND AND COMPARE providers of what this business sells, in its market (${u.locations}). Provider-list searches only — "best <offering> companies <city>", "<offering> firmaları", "top <sector> agencies" and the like. No how-to/informational queries, no invented brand names. Write them in the site's language(s) (${u.languages.join(", ")}), at least half in the primary language.
+
+Respond with STRICT JSON, nothing else:
+{"queries": ["..."]}`;
+  const raw = await groqJson<{ queries?: unknown }>("market-scan", prompt, 600);
+  return strArr(raw.queries).slice(0, 6);
+}
+
+/* Homepage plus up to two priority internal pages (services/pricing/about —
+   the same path heuristics readSite uses on the target). Plain fetch, no JS
+   render: a competitor worth beating in organic search has crawlable HTML. */
+async function readCompetitorPages(domain: string): Promise<PageText[]> {
+  let html = "";
+  let finalUrl = `https://${domain}/`;
+  try {
+    const res = await fetch(finalUrl, {
+      redirect: "follow",
+      signal: AbortSignal.timeout(15000),
+      headers: { "user-agent": DESKTOP_UA, "accept-language": "en;q=0.9" },
+    });
+    if (!res.ok) return [];
+    finalUrl = res.url || finalUrl;
+    html = (await res.text()).slice(0, 1_000_000);
+  } catch {
+    return [];
+  }
+
+  const pages: PageText[] = [
+    {
+      url: finalUrl,
+      title: stripTags(firstMatch(html, /<title[^>]*>([\s\S]*?)<\/title>/i)),
+      metaDescription: metaContent(html, "description"),
+      metaKeywords: metaContent(html, "keywords"),
+      headings: allMatches(html, /<h[1-3][^>]*>([\s\S]*?)<\/h[1-3]>/gi)
+        .map(stripTags)
+        .join(" . "),
+      body: visibleText(html),
+    },
+  ];
+
+  const internal = extractLinks(html, finalUrl, domain)
+    .map((u) => {
+      try {
+        return { u, path: new URL(u).pathname.replace(/\/$/, "") || "/" };
+      } catch {
+        return null;
+      }
+    })
+    .filter((x): x is { u: string; path: string } => x !== null && x.path !== "/")
+    .sort((a, b) => pageScore(b.path) - pageScore(a.path))
+    .slice(0, 2);
+  for (const { u } of internal) {
+    const p = await fetchPageText(u);
+    if (p && (p.body.length > 80 || p.headings)) pages.push(p);
+    await sleep(rand(400, 900));
+  }
+  return pages;
+}
+
+async function mapMarket(
+  host: string,
+  u: SiteUnderstanding,
+  evidence: SerpEvidence[],
+  onStep?: () => Promise<void> | void
+): Promise<{ competitors: CompetitorProfile[]; market: MarketOverview | null }> {
+  // Seed the domain map from the money searches already checked …
+  const byDomain = new Map<string, CompetitorSource>();
+  for (const e of evidence) {
+    if (e.intent !== "commercial" && e.intent !== "transactional") continue;
+    for (const r of e.results.slice(0, 5)) {
+      addCompetitorSource(byDomain, host, r.domain, r.rank, e.query);
+    }
+  }
+
+  // … then sweep dedicated provider-finding searches so the map covers the
+  // market, not just whoever ranked for the checked queries. Best-effort:
+  // a failed scan costs coverage, never the run.
+  let scanQueries: string[] = [];
+  try {
+    scanQueries = await proposeMarketScanQueries(u);
+  } catch (err) {
+    console.warn(
+      "[strategy] market-scan query generation failed — using checked SERPs only:",
+      err instanceof Error ? err.message : err
+    );
+  }
+  const scanned: string[] = [];
+  for (const q of scanQueries) {
+    try {
+      const { results } = await scrapeOrganicResults(
+        q,
+        config.seoRegion,
+        u.languages[0] ?? config.seoLanguage
+      );
+      for (const r of results.slice(0, 8)) {
+        addCompetitorSource(byDomain, host, r.domain, r.rank, q);
+      }
+      scanned.push(q);
+      console.log(`[strategy]   market scan "${q}" — ${results.length} results`);
+    } catch (err) {
+      console.warn(
+        `[strategy]   market scan "${q}" failed:`,
+        err instanceof Error ? err.message : err
+      );
+    }
+    await onStep?.(); // progress heartbeat + cancellation point
+    await sleep(rand(1500, 3500)); // same SERP pacing as the checks
+  }
+
+  const sources = [...byDomain.values()]
+    .sort((a, b) => b.appearsFor.length - a.appearsFor.length || a.bestRank - b.bestRank)
+    .slice(0, 6);
+  if (sources.length === 0) {
+    console.log("[strategy] no crawlable competitors found across the money SERPs + market scans");
+    return { competitors: [], market: null };
+  }
+  console.log(
+    `[strategy] deep-diving ${sources.length} competitor site(s): ${sources.map((s) => s.domain).join(", ")} …`
+  );
+
+  const crawled: Array<{ src: CompetitorSource; pages: PageText[] }> = [];
+  for (const src of sources) {
+    const pages = await readCompetitorPages(src.domain);
+    if (pages.length > 0) {
+      crawled.push({ src, pages });
+      console.log(`[strategy]   ${src.domain} — ${pages.length} page(s) read`);
+    } else {
+      console.log(`[strategy]   ${src.domain} — unreachable, skipped`);
+    }
+    await onStep?.(); // progress heartbeat + cancellation point between crawls
+    await sleep(rand(500, 1200));
+  }
+  if (crawled.length === 0) return { competitors: [], market: null };
+
+  const digests = crawled
+    .map(({ src, pages }) => {
+      const pageLines = pages
+        .map((p) =>
+          [
+            `  PAGE ${pathOf(p.url)}`,
+            p.title && `  title: ${p.title}`,
+            p.metaDescription && `  meta: ${p.metaDescription}`,
+            p.headings && `  headings: ${p.headings.slice(0, 400)}`,
+            p.body && `  text: ${p.body.slice(0, 700)}`,
+          ]
+            .filter(Boolean)
+            .join("\n")
+        )
+        .join("\n");
+      return `COMPETITOR ${src.domain} (best rank #${src.bestRank}; found via: ${src.appearsFor
+        .map((q) => `"${q}"`)
+        .join(", ")})\n${pageLines}`;
+    })
+    .join("\n\n")
+    .slice(0, 13000);
+
+  const prompt = `You are a competitive analyst for ${u.brand} (${u.sector}${u.subSector ? ` — ${u.subSector}` : ""}), which sells: ${u.offerings.join("; ") || u.sector}.
+
+Below are pages crawled from the sites found through the commercial/transactional searches ${u.brand} wants to win, plus provider-finding market scans. Work ONLY from this content.
+
+${digests}
+
+Two tasks. FIRST, for each domain decide whether it is a DIRECT competitor — a business selling substantially the same thing to the same buyers (not a directory, marketplace, news site, or unrelated business) — and profile it. SECOND, read the MARKET across the direct competitors: what everyone offers (table stakes), the selling points that repeat, and what nobody covers well (openings). Respond with STRICT JSON, nothing else:
+{"competitors": [{
+  "domain": "...",
+  "direct": true,
+  "summary": "what this business sells and to whom — one sentence",
+  "keywordsTargeted": ["the topics its titles/headings visibly target, in its own words — 5-10 items"],
+  "angles": ["the selling points it leads with (pricing model, speed, guarantees, niche) — 2-5 items"],
+  "gaps": ["what buyers ask for that it does NOT cover or say — concrete openings ${u.brand} can own — 2-4 items"]
+}],
+"market": {
+  "summary": "one short paragraph: what this market looks like, who competes how, and where ${u.brand} fits",
+  "tableStakes": ["what every direct competitor offers or claims — a page missing these loses by default — 3-6 items"],
+  "standardAngles": ["selling points repeated across the market (they no longer differentiate) — 2-5 items"],
+  "openings": ["needs no direct competitor covers well — the differentiation ${u.brand} should lead with — 2-5 items"]
+}}`;
+
+  const raw = await groqJson<{ competitors?: unknown; market?: unknown }>(
+    "market",
+    prompt,
+    3600
+  );
+  const out: CompetitorProfile[] = [];
+  for (const item of Array.isArray(raw.competitors) ? raw.competitors : []) {
+    const c = item as Record<string, unknown>;
+    const domain = str(c.domain).replace(/^www\./, "");
+    const entry = crawled.find((x) => x.src.domain === domain);
+    if (!entry) continue;
+    if (c.direct === false) {
+      console.log(`[strategy]   ${domain} — not a direct competitor, dropped`);
+      continue;
+    }
+    out.push({
+      domain,
+      bestRank: entry.src.bestRank,
+      appearsFor: entry.src.appearsFor,
+      pagesRead: entry.pages.length,
+      summary: str(c.summary),
+      keywordsTargeted: strArr(c.keywordsTargeted).slice(0, 10),
+      angles: strArr(c.angles).slice(0, 5),
+      gaps: strArr(c.gaps).slice(0, 4),
+    });
+  }
+
+  const m = (raw.market ?? {}) as Record<string, unknown>;
+  const market: MarketOverview | null =
+    out.length > 0
+      ? {
+          scanQueries: scanned,
+          summary: str(m.summary),
+          tableStakes: strArr(m.tableStakes).slice(0, 6),
+          standardAngles: strArr(m.standardAngles).slice(0, 5),
+          openings: strArr(m.openings).slice(0, 5),
+        }
+      : null;
+
+  console.log(
+    `[strategy] market mapped — ${out.length} direct competitor profile(s), ${scanned.length} scan quer(y/ies) swept`
+  );
+  return { competitors: out, market };
+}
+
+/* ------------------------------------------------------------------------ */
+/* 4. Strategy pass: head keywords + page plan                              */
+/* ------------------------------------------------------------------------ */
 
 /*
   The strategy pass is CHUNKED on purpose: one call plans the head topics and
@@ -861,6 +1178,8 @@ async function planHeads(
   u: SiteUnderstanding,
   evidence: SerpEvidence[],
   existingPaths: string[],
+  competitors: CompetitorProfile[],
+  market: MarketOverview | null,
   ownerNotes?: string,
   gsc?: GscRow[] | null
 ): Promise<PlannedHead[]> {
@@ -903,11 +1222,24 @@ async function planHeads(
       }\n`
     : "";
 
+  const competitorBlock = competitors.length
+    ? `\nDIRECT COMPETITORS (their sites were crawled — found via the commercial/transactional SERPs plus provider-finding market scans):\n${competitors
+        .map(
+          (c) =>
+            `${c.domain} (best rank #${c.bestRank}) — ${c.summary}\n  targets: ${c.keywordsTargeted.join("; ")}\n  leads with: ${c.angles.join("; ")}\n  gaps: ${c.gaps.join("; ")}`
+        )
+        .join("\n")}\n${
+        market
+          ? `\nMARKET OVERVIEW (across all crawled competitors):\n${market.summary}\n  table stakes (everyone offers — a money page missing these loses by default): ${market.tableStakes.join("; ")}\n  standard angles (repeated everywhere — no longer differentiating): ${market.standardAngles.join("; ")}\n  openings (nobody covers well — lead with these): ${market.openings.join("; ")}\n`
+          : ""
+      }`
+    : "";
+
   const prompt = `You are an SEO strategist planning intent clusters for ${u.brand} (${u.sector}${u.subSector ? ` — ${u.subSector}` : ""}). Modern search retrieval is SEMANTIC — plan topic clusters a page can own, not strings to repeat.
 
 BUSINESS:
 ${JSON.stringify(u)}
-${ownerNotes ? `\nOWNER CONTEXT (ground truth — the plan must foreground this): ${ownerNotes}\n` : ""}${gscBlock}
+${ownerNotes ? `\nOWNER CONTEXT (ground truth — the plan must foreground this): ${ownerNotes}\n` : ""}${gscBlock}${competitorBlock}
 LIVE SERP + DEMAND EVIDENCE (who currently ranks, and what people actually type):
 ${serpLines || "(all SERP checks failed — plan from the business description alone)"}
 
@@ -920,7 +1252,7 @@ Plan 5–10 HEAD topics, each becoming exactly one page. Rules:
 - clusterQueries: assign the REAL queries above (the checked searches, the typed-in-Google lines, the Search Console queries) to the ONE head they belong to — a query must never appear under two heads. 3–8 per head, keep their exact phrasing.
 - action: "update" with the existing path when the site already covers that topic; "create" with a new slug otherwise.
 - slug: lowercase ASCII kebab-case ONLY. Romanize Turkish characters (ç→c, ş→s, ı→i, ğ→g, ö→o, ü→u) and give Arabic-language pages a romanized or English slug (e.g. /ar/custom-software) — never put non-ASCII characters in a slug.
-- Cover all four intents (informational / commercial / transactional / navigational) across the heads: money pages first, then guides, one navigational item for the homepage/brand.
+- Cover all four intents (informational / commercial / transactional / navigational) across the heads: money pages first, then guides, one navigational item for the homepage/brand.${competitors.length ? `\n- COMPETITORS: a topic several direct competitors target is table stakes for the money searches — the plan must cover it at least as completely. Their listed gaps${market ? ` and the market overview's openings` : ""} are the cheapest differentiation — work them into the relevant heads, and cite the competitor in that head's rationale.` : ""}
 - language: the language of that head's searchers (${u.languages.join(" / ")}).
 
 Respond with STRICT JSON, nothing else:
@@ -1073,11 +1405,13 @@ async function buildPlan(
   u: SiteUnderstanding,
   evidence: SerpEvidence[],
   existingPaths: string[],
+  competitors: CompetitorProfile[],
+  market: MarketOverview | null,
   ownerNotes?: string,
   gsc?: GscRow[] | null,
   onStep?: () => Promise<void> | void
 ): Promise<{ headKeywords: HeadKeyword[]; pages: PagePlan[] }> {
-  const heads = await planHeads(u, evidence, existingPaths, ownerNotes, gsc);
+  const heads = await planHeads(u, evidence, existingPaths, competitors, market, ownerNotes, gsc);
   console.log(`[strategy] ${heads.length} head topics — planning one page per head (TPM-paced) …`);
 
   const pages: PagePlan[] = [];
@@ -1271,6 +1605,8 @@ function composePrompt(args: {
   host: string;
   u: SiteUnderstanding;
   evidence: SerpEvidence[];
+  competitors?: CompetitorProfile[];
+  market?: MarketOverview | null;
   heads: HeadKeyword[];
   pages: PagePlan[];
   audit: AuditReport | null;
@@ -1278,6 +1614,8 @@ function composePrompt(args: {
   gsc?: GscRow[] | null;
 }): string {
   const { url, host, u, evidence, heads, pages, audit, ownerNotes, gsc } = args;
+  const competitors = args.competitors ?? [];
+  const market = args.market ?? null;
   const multilingual = u.languages.length > 1;
 
   const serpBlock = evidence.length
@@ -1302,6 +1640,30 @@ function composePrompt(args: {
         .map((h) => `| ${h.keyword} | ${h.intent} | ${h.winnability} | ${h.rationale || "—"} |`)
         .join("\n")
     : "| — | — | — | — |";
+
+  // The market map — lands inside §2 so the executing agent sees who the
+  // pages must beat and what the market expects.
+  const competitorsBlock = competitors.length
+    ? `\n### The market (competitor sites were crawled)\n
+Found via the commercial/transactional searches above plus ${market?.scanQueries.length ? `${market.scanQueries.length} provider-finding market scans (${market.scanQueries.map((q) => `\`${q}\``).join(", ")})` : "provider-finding market scans"} — informational and navigational SERPs excluded, those winners aren't the same business:\n
+${competitors
+  .map(
+    (c) =>
+      `**${c.domain}** (best rank #${c.bestRank}; found via ${c.appearsFor.map((q) => `\`${q}\``).join(", ")}) — ${c.summary}
+- Targets: ${c.keywordsTargeted.join("; ")}
+- Leads with: ${c.angles.join("; ")}
+- Gaps to exploit: ${c.gaps.join("; ")}`
+  )
+  .join("\n\n")}\n${
+        market
+          ? `\n**Market read:** ${market.summary}\n
+- **Table stakes** (every competitor offers these — a money page missing them loses by default): ${market.tableStakes.join("; ")}
+- **Standard angles** (repeated across the market — claiming them no longer differentiates): ${market.standardAngles.join("; ")}
+- **Openings** (nobody covers these well — lead with them): ${market.openings.join("; ")}\n`
+          : ""
+      }
+A topic several competitors target is table stakes — the matching §4 page must cover it at least as completely as they do. Their gaps and the market openings are the differentiation: work each one into the relevant §4 page's copy and FAQ.\n`
+    : "";
 
   // Demand provenance per tail: the site's own GSC data beats autocomplete,
   // which beats the strategist's inference. Marked visibly so the executing
@@ -1433,7 +1795,7 @@ Top queries by impressions:
 ${gsc.slice(0, 12).map(row).join("\n")}`
 }`;
 })()}
-
+${competitorsBlock}
 ## 3. Head keywords to own
 
 Winnability assumes a small, low-authority domain: "easy" means the current top results include forums/UGC/thin pages a new page can outrank; "hard" means established brands own the SERP — win those through the easier clusters first.
@@ -1512,7 +1874,16 @@ ${FENCE}
 - Every page with a visible FAQ section: \`FAQPage\` mirroring the on-page Q&A verbatim.
 - Pages deeper than one level: \`BreadcrumbList\`.
 
-## 8. Anti-duplication rules
+## 8. Off-page authority — owner checklist (append to the TODO list you output)
+
+On-page work alone rarely beats established domains: most "hard" keywords in §3 are hard because of domain authority, which is built off-page. These are OWNER actions, not code — append each as \`TODO(owner): …\` to the final TODO list so nothing is lost:
+
+1. **Google Business Profile**${u.locations !== "global" ? ` (critical for ${u.locations} searches with local intent)` : ""}: claim/create the profile, set the primary category to match §1, add photos, list the §1 offerings as services, and keep name/address/phone identical to the site. Ask every satisfied client for a review with a direct review link; reply to all of them.
+2. **Citations**: list the business (with identical name/address/phone and a link) in the market's relevant directories — the general ones plus the sector's own${u.languages[0] && u.languages[0] !== "en" ? `, in ${u.languages[0]} where the directory supports it` : ""}. Consistency matters more than volume.
+3. **Starter backlinks**: links from real, related sites — clients ("built by" credit), partners and suppliers, local chambers/associations, event or community sponsorships, and profile pages (GitHub/portfolio/social) pointing at the site. Never buy bulk links; a handful of real ones beats hundreds of junk ones.
+4. **Review velocity**: a repeatable ask-for-review step in the delivery process (email/WhatsApp template with the direct link) so reviews accumulate steadily instead of in bursts.
+
+## 9. Anti-duplication rules
 
 1. Each intent cluster in §4 belongs to exactly one page — the assignment is final. Never create a second page whose *meaning* overlaps an existing cluster, even with different wording; semantic retrieval treats them as duplicates competing against each other.
 2. Before creating any §4 "create" page, search the codebase for existing pages/sections already covering its head topic. If one exists, upgrade it in place (treat it as "update") instead of shipping a competitor to your own page.
@@ -1520,7 +1891,7 @@ ${FENCE}
 4. One canonical page per topic × intent × language. Language variants cross-reference via hreflang, never via duplicated same-language content.
 5. Every page's title and meta description must be unique across the site.
 
-## 9. Acceptance checklist
+## 10. Acceptance checklist
 
 - [ ] Every §4 page is live, in the sitemap, and reachable through at least two internal links with descriptive anchors.
 - [ ] Every §4 page: exactly one \`<h1>\`, title ≤ 60 chars, meta description 70–160 chars, self-referencing canonical.
@@ -1528,7 +1899,8 @@ ${FENCE}
 - [ ] FAQPage JSON-LD matches the visible FAQ text verbatim on every page that has one.
 - [ ] robots, sitemap, and llms.txt are deployed and reachable at their URLs.
 - [ ] All §6 audit fixes are applied and none of the "already passing" checks regressed.
-- [ ] No two pages target the same query; no duplicated titles/descriptions (§8).
+- [ ] No two pages target the same query; no duplicated titles/descriptions (§9).
+- [ ] Every §8 off-page item appears as a TODO(owner) line in the final TODO list.
 - [ ] All remaining \`TODO(owner):\` markers are collected in a list for the owner to fill in.
 `;
 }
@@ -1652,11 +2024,35 @@ function mockStrategy(inputUrl: string): StrategyReport {
     { query: "example studio", topPage: url, clicks: 25, impressions: 60, position: 1.2 },
   ];
 
+  const competitors: CompetitorProfile[] = [
+    {
+      domain: "rakip-a.com",
+      bestRank: 1,
+      appearsFor: ["web tasarım istanbul"],
+      pagesRead: 3,
+      summary: "An Istanbul web agency selling package-priced sites to small businesses.",
+      keywordsTargeted: ["web tasarım istanbul", "kurumsal web sitesi", "e-ticaret paketi"],
+      angles: ["package pricing", "15 years in business"],
+      gaps: ["no delivery-time promise", "no visible pricing page"],
+    },
+  ];
+
+  const market: MarketOverview = {
+    scanQueries: ["en iyi web tasarım firmaları istanbul"],
+    summary:
+      "A crowded local market of package-priced agencies competing on portfolio breadth; nobody promises delivery time or publishes prices.",
+    tableStakes: ["portfolio page", "e-commerce packages", "responsive design"],
+    standardAngles: ["years in business", "package pricing"],
+    openings: ["fixed delivery time", "transparent public pricing"],
+  };
+
   const prompt = composePrompt({
     url,
     host,
     u: understanding,
     evidence,
+    competitors,
+    market,
     heads: headKeywords,
     pages,
     audit: null,
@@ -1670,6 +2066,8 @@ function mockStrategy(inputUrl: string): StrategyReport {
     understanding,
     searchesChecked: evidence,
     gsc,
+    competitors,
+    market,
     headKeywords,
     pages,
     duplicatesRemoved: 0,
