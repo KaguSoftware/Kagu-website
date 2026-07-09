@@ -39,9 +39,14 @@ import {
   parts (heading texts, image files, CSS-selector-ish descriptions of the
   tiny-font / overflow / tap-target culprits, the LCP element, broken URLs).
 
-  Checks land in nine weighted categories; a check scores full credit (pass),
+  Checks land in ten weighted categories; a check scores full credit (pass),
   half (warn) or zero (fail), a category is the weighted average of its
   applicable checks, and a page score is the category-weight average.
+  The tenth category — AEO (answer-engine optimization) — measures whether
+  the page can be read and cited by AI assistants: raw-HTML availability
+  (AI crawlers never execute JS), robots.txt access for GPTBot / ClaudeBot /
+  PerplexityBot, llms.txt, answer-first passages under question-style
+  headings, and FAQ structured data.
   Inapplicable checks (images on a page without images) are excluded rather
   than counted as passes. The site report averages page scores and merges
   identical findings across pages, listing which pages each issue affects.
@@ -67,7 +72,8 @@ export type CategoryId =
   | "images"
   | "indexability"
   | "links"
-  | "schema";
+  | "schema"
+  | "aeo";
 
 const CATEGORIES: Record<CategoryId, { label: string; weight: number }> = {
   headings: { label: "Headings", weight: 15 },
@@ -79,6 +85,7 @@ const CATEGORIES: Record<CategoryId, { label: string; weight: number }> = {
   indexability: { label: "Indexability", weight: 15 },
   links: { label: "Links", weight: 5 },
   schema: { label: "Structured data", weight: 5 },
+  aeo: { label: "Answer engines (AEO)", weight: 10 },
 };
 
 export interface Finding {
@@ -204,6 +211,7 @@ interface SiteContext {
   browser: Browser | null;
   robots: RobotsData;
   sitemaps: SitemapData;
+  llmsTxt: LlmsTxtStatus;
   alpn: string | null;
   linkStatus: Map<string, number | null>; // HEAD-status cache, site-wide
 }
@@ -225,18 +233,20 @@ export async function auditSite(inputUrl: string, opts: AuditOptions = {}): Prom
   }
   const site = new URL(startNav.finalUrl);
 
-  console.log(`[audit] probing robots.txt / sitemap / ALPN for ${site.hostname} …`);
+  console.log(`[audit] probing robots.txt / sitemap / llms.txt / ALPN for ${site.hostname} …`);
   const robots = await fetchRobots(site.origin);
   const alpn = site.protocol === "https:" ? await checkAlpn(site.hostname) : null;
   const sitemaps = await loadSitemaps(
     robots.sitemaps.length ? robots.sitemaps : [`${site.origin}/sitemap.xml`]
   );
+  const llmsTxt = await probeLlmsTxt(site.origin);
 
   const ctx: SiteContext = {
     host: site.hostname,
     browser: null,
     robots,
     sitemaps,
+    llmsTxt,
     alpn,
     linkStatus: new Map(),
   };
@@ -327,7 +337,7 @@ async function auditPage(url: string, ctx: SiteContext, preNav?: Navigation): Pr
 
   const links = rendered?.links?.length ? rendered.links : staticLinks(html, finalUrl);
   const broken = await checkInternalLinks(links, final, finalUrl, ctx.linkStatus);
-  const robotsVerdict = robotsBlockVerdict(ctx.robots, final.pathname + final.search);
+  const robotsVerdict = rulesBlockVerdict(ctx.robots.rules, final.pathname + final.search);
   const sitemapStatus = sitemapStatusFor(ctx.sitemaps, finalUrl);
 
   const c = new Checks();
@@ -340,6 +350,7 @@ async function auditPage(url: string, ctx: SiteContext, preNav?: Navigation): Pr
   runIndexabilityChecks(c, html, headers, nav, final, ctx.robots, robotsVerdict, sitemapStatus, ctx.alpn);
   runLinkChecks(c, html, links, final, broken);
   runSchemaChecks(c, html);
+  runAeoChecks(c, html, rendered, ctx.robots, ctx.llmsTxt, final.pathname + final.search);
 
   return {
     result: assemblePage(url, finalUrl, nav.status, rendered, resources, c),
@@ -481,9 +492,20 @@ function metaProperty(html: string, prop: string): string {
 /* Site-level probes: robots.txt / sitemap / ALPN / link statuses           */
 /* ------------------------------------------------------------------------ */
 
+interface RobotsRule {
+  allow: boolean;
+  pattern: string;
+}
+
+interface RobotsGroup {
+  agents: string[];
+  rules: RobotsRule[];
+}
+
 interface RobotsData {
   fetched: boolean;
-  rules: Array<{ allow: boolean; pattern: string }> | null; // group Googlebot obeys
+  rules: RobotsRule[] | null; // group Googlebot obeys
+  groups: RobotsGroup[]; // all groups — AEO checks look up AI crawlers here
   sitemaps: string[];
 }
 
@@ -494,14 +516,14 @@ async function fetchRobots(origin: string): Promise<RobotsData> {
       signal: AbortSignal.timeout(10000),
       headers: { "user-agent": UA },
     });
-    if (!res.ok) return { fetched: false, rules: null, sitemaps: [] };
+    if (!res.ok) return { fetched: false, rules: null, groups: [], sitemaps: [] };
     text = (await res.text()).slice(0, 500_000);
   } catch {
-    return { fetched: false, rules: null, sitemaps: [] };
+    return { fetched: false, rules: null, groups: [], sitemaps: [] };
   }
 
   // Parse groups: consecutive User-agent lines share the rules that follow.
-  const groups: Array<{ agents: string[]; rules: Array<{ allow: boolean; pattern: string }> }> = [];
+  const groups: RobotsGroup[] = [];
   let current: (typeof groups)[number] | null = null;
   let collectingAgents = false;
   const sitemaps: string[] = [];
@@ -534,17 +556,25 @@ async function fetchRobots(origin: string): Promise<RobotsData> {
   const group =
     groups.find((g) => g.agents.some((a) => a.includes("googlebot"))) ??
     groups.find((g) => g.agents.includes("*"));
-  return { fetched: true, rules: group?.rules ?? null, sitemaps };
+  return { fetched: true, rules: group?.rules ?? null, groups, sitemaps };
+}
+
+/* Rules a given crawler token obeys: its own group when present, else *. */
+function agentRules(robots: RobotsData, token: string): RobotsRule[] | null {
+  const group =
+    robots.groups.find((g) => g.agents.some((a) => a.includes(token))) ??
+    robots.groups.find((g) => g.agents.includes("*"));
+  return group?.rules ?? null;
 }
 
 /* Longest matching pattern wins; Allow wins ties (RFC 9309, simplified). */
-function robotsBlockVerdict(
-  robots: RobotsData,
+function rulesBlockVerdict(
+  rules: RobotsRule[] | null,
   path: string
 ): { blocked: boolean; rule: string } {
-  if (!robots.rules) return { blocked: false, rule: "" };
+  if (!rules) return { blocked: false, rule: "" };
   let best: { allow: boolean; pattern: string } | null = null;
-  for (const rule of robots.rules) {
+  for (const rule of rules) {
     if (!robotsPatternMatches(rule.pattern, path)) continue;
     if (
       !best ||
@@ -617,6 +647,27 @@ function sitemapStatusFor(sitemaps: SitemapData, url: string): "found" | "absent
   return sitemaps.texts.some((t) => t.includes(noSlash) || t.includes(withSlash))
     ? "found"
     : "absent";
+}
+
+type LlmsTxtStatus = "found" | "html" | "absent";
+
+/* One probe per crawl. "html" = the URL answers 200 but with an HTML page —
+   almost always a SPA/router fallback, not a real llms.txt. */
+async function probeLlmsTxt(origin: string): Promise<LlmsTxtStatus> {
+  try {
+    const res = await fetch(`${origin}/llms.txt`, {
+      signal: AbortSignal.timeout(10000),
+      headers: { "user-agent": UA },
+    });
+    if (!res.ok) return "absent";
+    const text = (await res.text()).slice(0, 20_000).trim();
+    if (!text) return "absent";
+    const contentType = res.headers.get("content-type") ?? "";
+    if (text.startsWith("<") || /text\/html/i.test(contentType)) return "html";
+    return "found";
+  } catch {
+    return "absent";
+  }
 }
 
 /* Negotiated protocol for the origin — h2 vs http/1.1. */
@@ -1582,6 +1633,208 @@ function runSchemaChecks(c: Checks, html: string): void {
       fix: "Fix the JSON (validate at search.google.com/test/rich-results).",
       specifics: errors,
     });
+}
+
+/* ------------------------------------------------------------------------ */
+/* AEO — answer-engine optimization                                         */
+/* ------------------------------------------------------------------------ */
+
+/* The crawlers behind the major answer engines. None of them execute
+   JavaScript, and each obeys its own robots.txt user-agent token. */
+const AI_CRAWLERS: Array<{ token: string; name: string; engine: string }> = [
+  { token: "gptbot", name: "GPTBot", engine: "ChatGPT" },
+  { token: "oai-searchbot", name: "OAI-SearchBot", engine: "ChatGPT Search" },
+  { token: "claudebot", name: "ClaudeBot", engine: "Claude" },
+  { token: "perplexitybot", name: "PerplexityBot", engine: "Perplexity" },
+];
+
+const QUESTION_EN =
+  /^(what|how|why|when|where|which|who|whose|can|could|should|would|will|is|are|am|do|does|did|has|have)\b/i;
+const QUESTION_TR =
+  /(^|\s)(nasıl|neden|niçin|niye|nedir|ne kadar|kaç|hangi|kim|kimler|nerede|nereden|ne zaman)(\s|$)/i;
+const QUESTION_TR_PARTICLE = /\b(mı|mi|mu|mü|mıdır|midir|mudur|müdür)\s*\??$/i;
+/* Openers that lean on surrounding context — the lifted sentence won't stand
+   alone in an AI answer. */
+const CONTEXT_OPENER =
+  /^(it|its|this|that|these|those|we|our|they|their|bu|bunlar|şu|biz|bizim|onlar)\b/i;
+
+function isQuestionHeading(text: string): boolean {
+  const t = text.trim();
+  if (!t) return false;
+  return (
+    t.includes("?") || QUESTION_EN.test(t) || QUESTION_TR.test(t) || QUESTION_TR_PARTICLE.test(t)
+  );
+}
+
+/* Question-style h2–h4 headings plus the visible text that follows each one
+   (up to the next heading) — parsed from the raw HTML, because that's what
+   AI crawlers read. */
+function questionSections(html: string): Array<{ heading: string; text: string }> {
+  const body = html.match(/<body[\s\S]*$/i)?.[0] ?? html;
+  const matches = [...body.matchAll(/<h([1-6])[^>]*>([\s\S]*?)<\/h\1>/gi)].slice(0, 120);
+  const out: Array<{ heading: string; text: string }> = [];
+  for (let i = 0; i < matches.length && out.length < 40; i++) {
+    const level = Number(matches[i][1]);
+    if (level < 2 || level > 4) continue;
+    const heading = stripTags(matches[i][2]).slice(0, 120);
+    if (!heading || !isQuestionHeading(heading)) continue;
+    const start = matches[i].index! + matches[i][0].length;
+    const end = i + 1 < matches.length ? matches[i + 1].index! : body.length;
+    out.push({ heading, text: visibleText(body.slice(start, Math.min(end, start + 20_000))) });
+  }
+  return out;
+}
+
+function firstSentence(text: string): string {
+  const m = text.match(/^[\s\S]*?[.!?…](?=\s|$)/u);
+  return (m ? m[0] : text).trim().slice(0, 400);
+}
+
+/* Every @type in the page's JSON-LD, @graph nesting included. */
+function jsonLdTypes(html: string): string[] {
+  const types: string[] = [];
+  const visit = (node: unknown, depth: number): void => {
+    if (depth > 4 || node === null || typeof node !== "object") return;
+    if (Array.isArray(node)) {
+      for (const item of node.slice(0, 20)) visit(item, depth + 1);
+      return;
+    }
+    const t = (node as Record<string, unknown>)["@type"];
+    if (typeof t === "string") types.push(t);
+    else if (Array.isArray(t)) types.push(...t.filter((x): x is string => typeof x === "string"));
+    visit((node as Record<string, unknown>)["@graph"], depth + 1);
+  };
+  for (const block of allMatches(
+    html,
+    /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi
+  )) {
+    try {
+      visit(JSON.parse(block.trim()), 0);
+    } catch {
+      /* invalid JSON already flagged by the schema checks */
+    }
+  }
+  return types;
+}
+
+function runAeoChecks(
+  c: Checks,
+  html: string,
+  rendered: RenderedData | null,
+  robots: RobotsData,
+  llmsTxt: LlmsTxtStatus,
+  pagePath: string
+): void {
+  // 1. Raw-HTML availability. Googlebot renders JS in a second wave; AI
+  //    crawlers never do — JS-only content simply doesn't exist for them.
+  if (rendered && rendered.bodyTextLength > 500) {
+    const ratio = visibleText(html).length / rendered.bodyTextLength;
+    if (ratio >= 0.6) c.pass("aeo", "Content readable without JavaScript", 3);
+    else
+      c.flag("aeo", "Content readable without JavaScript", 3, ratio < 0.3 ? "fail" : "warn", {
+        issue: `Only ~${Math.round(ratio * 100)}% of the page's text exists in the raw HTML — the rest is built by JavaScript.`,
+        why: "AI crawlers (GPTBot, ClaudeBot, PerplexityBot) fetch raw HTML and never execute JavaScript — there is no second render wave like Googlebot's. Text that only exists after render can never be quoted or cited by an answer engine.",
+        fix: "Server-render (SSR/SSG) the main copy — answer passages and FAQs above all — so it's in the initial HTML response.",
+      });
+  }
+
+  // 2. robots.txt access for the answer-engine crawlers, path-aware.
+  const blockedBots = AI_CRAWLERS.map((bot) => ({
+    bot,
+    verdict: rulesBlockVerdict(agentRules(robots, bot.token), pagePath),
+  })).filter((b) => b.verdict.blocked);
+  if (blockedBots.length === 0) c.pass("aeo", "AI crawlers allowed", 3);
+  else
+    c.flag("aeo", "AI crawlers allowed", 3, blockedBots.length >= 2 ? "fail" : "warn", {
+      issue: `robots.txt blocks ${blockedBots.length} of ${AI_CRAWLERS.length} answer-engine crawlers on this URL.`,
+      why: "These crawlers are how ChatGPT, Claude and Perplexity read the web — a blocked crawler means that assistant can never quote, cite, or recommend the site.",
+      fix: "Remove (or narrow) the robots.txt rules blocking these user-agents — unless excluding AI assistants is a deliberate choice.",
+      specifics: blockedBots.map((b) => `${b.bot.name} (${b.bot.engine}) — ${b.verdict.rule}`),
+    });
+
+  const gext = rulesBlockVerdict(agentRules(robots, "google-extended"), pagePath);
+  if (gext.blocked)
+    c.info("aeo", "Google-Extended access", {
+      issue: "robots.txt blocks Google-Extended.",
+      why: "Google-Extended controls whether Gemini and Google's AI grounding may use the site. Blocking it is a legitimate opt-out — just confirm it's intentional, since it removes the site from Gemini's answers.",
+      fix: "If unintentional, remove the Google-Extended disallow rule from robots.txt.",
+      specifics: [gext.rule],
+    });
+
+  // 3. Answer-first passages: the first sentence under a question-style
+  //    heading is what answer engines lift verbatim.
+  const sections = questionSections(html);
+  if (sections.length > 0) {
+    const problems: string[] = [];
+    for (const s of sections) {
+      if (s.text.length < 20) {
+        problems.push(`"${s.heading}" — no answer text directly under the heading`);
+        continue;
+      }
+      const first = firstSentence(s.text);
+      const words = first.split(/\s+/).length;
+      if (words > 45)
+        problems.push(`"${s.heading}" — first sentence is ${words} words (keep it ≤ ~40 and fully answering)`);
+      else if (CONTEXT_OPENER.test(first))
+        problems.push(
+          `"${s.heading}" — answer opens with "${first.split(/\s+/)[0]}", which doesn't stand alone out of context`
+        );
+    }
+    if (problems.length === 0) c.pass("aeo", "Answer-first passages under question headings", 3);
+    else
+      c.flag("aeo", "Answer-first passages under question headings", 3, "warn", {
+        issue: `${problems.length} of ${sections.length} question-style heading(s) lack a liftable, answer-first passage.`,
+        why: "Answer engines lift the first self-contained sentence after a question heading. If that sentence is long, vague, or leans on context ('It…', 'We…'), the citation goes to a page that answers plainly.",
+        fix: "Under each question heading, make the FIRST sentence fully answer the question and stand alone: name the subject explicitly, make one claim, stay under ~40 words. Elaborate after, never before.",
+        specifics: problems.slice(0, 6),
+      });
+  } else if ((rendered?.wordCount ?? 0) >= 300) {
+    c.info("aeo", "Question-style content exists", {
+      issue: "No question-style headings (FAQ-like sections) found on the page.",
+      why: "Answer engines match real user questions to pages that pose and answer the same question — pages with zero question-form sections rarely get cited.",
+      fix: "Add a short FAQ section: 2–5 real customer questions as <h2>/<h3>, each answered in the first sentence below it.",
+    });
+  }
+
+  // 4. Q&A structured data where the page actually answers questions.
+  if (sections.length >= 2) {
+    const hasQaSchema = jsonLdTypes(html).some((t) => /^(FAQPage|QAPage|HowTo)$/i.test(t));
+    if (hasQaSchema) c.pass("aeo", "FAQ/Q&A structured data", 2);
+    else
+      c.flag("aeo", "FAQ/Q&A structured data", 2, "warn", {
+        issue: `The page answers ${sections.length} questions but carries no FAQPage/QAPage/HowTo JSON-LD.`,
+        why: "FAQPage markup hands the question–answer pairs to search and answer engines in machine-readable form — it feeds rich results and makes the answers trivially liftable.",
+        fix: "Add a FAQPage JSON-LD block mirroring the on-page questions and answers (it must match the visible content).",
+      });
+  }
+
+  // 5. llms.txt — the curated site map AI assistants read.
+  if (llmsTxt === "found") c.pass("aeo", "llms.txt present", 1);
+  else
+    c.flag("aeo", "llms.txt present", 1, "warn", {
+      issue:
+        llmsTxt === "html"
+          ? "/llms.txt responds but returns an HTML page (likely a SPA/router fallback), not a plain-text llms.txt."
+          : "No llms.txt found for the site.",
+      why: "llms.txt is the emerging convention AI assistants use as a curated map of the site — a short markdown index telling answer engines what exists and what matters.",
+      fix: "Serve a plain-text/markdown llms.txt at the site root: one line per key page — `- [Title](https://…): what it answers`.",
+      severity: "info",
+    });
+
+  // 6. Dateable content — only where the page is positioned to be cited.
+  if (sections.length >= 2 || (rendered?.wordCount ?? 0) >= 600) {
+    const dateable =
+      /"date(Published|Modified)"\s*:/.test(html) ||
+      !!metaProperty(html, "article:published_time") ||
+      !!metaProperty(html, "article:modified_time") ||
+      /<time[^>]+datetime=/i.test(html);
+    if (!dateable)
+      c.info("aeo", "Content is dateable", {
+        issue: "No machine-readable dates (JSON-LD datePublished/dateModified, article:* meta, or <time datetime>) on a content-heavy page.",
+        why: "Answer engines prefer sources they can date — undatable content loses citations to pages that visibly show when they were written or updated.",
+        fix: "Add dateModified/datePublished to the page's JSON-LD (or a visible <time datetime=\"…\"> near the content).",
+      });
+  }
 }
 
 /* ------------------------------------------------------------------------ */

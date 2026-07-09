@@ -140,9 +140,21 @@ How it works (`src/audit.ts`) — two passes per page:
    browser serves the crawl; each page gets a fresh context so metrics are
    cold-cache honest.
 
-Nine weighted categories (headings, title & meta, content, mobile, speed,
-images, indexability, links, structured data); checks score full/half/zero
-credit and inapplicable checks are excluded rather than counted as passes.
+Ten weighted categories (headings, title & meta, content, mobile, speed,
+images, indexability, links, structured data, **answer engines / AEO**);
+checks score full/half/zero credit and inapplicable checks are excluded
+rather than counted as passes.
+
+The AEO category measures whether the page can be read and **cited by AI
+assistants** (ChatGPT, Claude, Perplexity, Google AI Overviews): content
+available in the raw HTML (AI crawlers never execute JS), robots.txt access
+for GPTBot / OAI-SearchBot / ClaudeBot / PerplexityBot (path-aware, with an
+info note when Google-Extended is blocked), an `llms.txt` at the site root
+(SPA fallbacks that return HTML are caught), answer-first passages under
+question-style headings (EN + TR question detection; flags first sentences
+that are overlong or open with context-dependent words like "It"/"Bu"),
+FAQPage/QAPage JSON-LD on pages that answer questions, and machine-readable
+dates on content-heavy pages.
 Identical issues merge across pages ("no canonical — on 12 of 12 pages").
 If the browser pass fails the static checks still report — mobile/speed
 categories just drop out of the score. Page cap via `--max-pages` or

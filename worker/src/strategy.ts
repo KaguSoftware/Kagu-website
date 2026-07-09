@@ -45,8 +45,9 @@ import {
        this existing path" or "create this slug". A code-level
        near-duplicate pass then guarantees no query is targeted by two pages
        (LLMs love repeating themselves).
-    5. AUDIT the site with audit.ts (throttled mobile render, all nine
-       categories) so every technical fix ships inside the same deliverable.
+    5. AUDIT the site with audit.ts (throttled mobile render, all ten
+       categories, AEO included) so every technical fix ships inside the
+       same deliverable.
     6. COMPOSE the deliverable: one self-contained master prompt (markdown)
        for a coding agent — pages to build with titles/outlines/FAQs,
        AI-Overview-friendly writing rules (answer-first, liftable
