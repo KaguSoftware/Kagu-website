@@ -36,7 +36,7 @@ export const duration = {
   base: 0.6,
   reveal: 1.0,
   mask: 1.3,
-  loader: 2.2,
+  loader: 0.95,
 } as const;
 
 export const stagger = {

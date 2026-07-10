@@ -35,9 +35,9 @@ const WING = "M 1078 0 L 778 0 Q 741 0 719 19 L 345 368 L 677 368 Z";
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 // Minimum time the cover stays up so fast navigations still read as a deliberate
-// transition — long enough for the logo draw-on (~1.9s) to finish and to read
-// the phrase.
-const MIN_COVER_MS = 2400;
+// transition (just past the swipe-in). The curtain must never make the user wait
+// on an already-loaded page — it reveals as soon as the route lands.
+const MIN_COVER_MS = 650;
 
 // Playful, studio/software-flavored loading lines — picked at random per swipe.
 const PHRASES = [
@@ -169,7 +169,7 @@ export function PageTransition() {
           initial={reduced ? { opacity: 0 } : { x: "-100%" }}
           animate={reduced ? { opacity: 1 } : { x: "0%" }}
           exit={reduced ? { opacity: 0 } : { x: "100%" }}
-          transition={{ duration: reduced ? 0.3 : 0.9, ease: EASE }}
+          transition={{ duration: reduced ? 0.2 : 0.45, ease: EASE }}
         >
           <div className="kagu-swipe__inner">
             <div className="kagu-swipe__mark">
@@ -189,9 +189,9 @@ export function PageTransition() {
                     initial={{ pathLength: 0, opacity: 0.9 }}
                     animate={{ pathLength: 1, opacity: 0.9 }}
                     transition={{
-                      duration: 1.1,
+                      duration: 0.5,
                       ease: EASE,
-                      delay: 0.25 + i * 0.18,
+                      delay: 0.1 + i * 0.08,
                     }}
                   />
                 ))}
@@ -201,21 +201,21 @@ export function PageTransition() {
                   fill="var(--ink)"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 0.57 }}
-                  transition={{ duration: 0.6, delay: 1.25 }}
+                  transition={{ duration: 0.3, delay: 0.5 }}
                 />
                 <motion.path
                   d={FOLD}
                   fill="var(--ink)"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 0.47 }}
-                  transition={{ duration: 0.6, delay: 1.25 }}
+                  transition={{ duration: 0.3, delay: 0.5 }}
                 />
                 <motion.path
                   d={WING}
                   fill="var(--ink)"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 0.95 }}
-                  transition={{ duration: 0.6, delay: 1.35 }}
+                  transition={{ duration: 0.3, delay: 0.56 }}
                 />
               </svg>
 
@@ -225,7 +225,7 @@ export function PageTransition() {
                 aria-hidden
                 initial={{ x: "-130%" }}
                 animate={{ x: "130%" }}
-                transition={{ duration: 1.1, ease: EASE, delay: 1.0 }}
+                transition={{ duration: 0.6, ease: EASE, delay: 0.4 }}
               />
             </div>
             <span className="kagu-swipe__phrase">{phrase}</span>

@@ -50,7 +50,10 @@ export function BootLoader({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setShow(true);
 
-    const total = reduced ? 600 : 2300;
+    // Kept short on purpose: the loader is a fixed overlay — the page renders
+    // and hydrates behind it — but it still hides content, so it must never
+    // outstay the draw-on.
+    const total = reduced ? 300 : 950;
     const t = setTimeout(() => setShow(false), total);
     return () => clearTimeout(t);
   }, [reduced, sessionKey]);
@@ -77,7 +80,7 @@ export function BootLoaderView({ tag }: { tag?: string }) {
               ? { opacity: 0 }
               : { clipPath: "inset(0 0 100% 0)", opacity: 1 }
           }
-          transition={{ duration: reduced ? 0.3 : 0.7, ease: EASE }}
+          transition={{ duration: reduced ? 0.2 : 0.45, ease: EASE }}
         >
           <div className="kagu-bootloader__mark">
             <svg viewBox={VIEWBOX} className="kagu-bootloader__svg" aria-hidden>
@@ -94,9 +97,9 @@ export function BootLoaderView({ tag }: { tag?: string }) {
                   initial={reduced ? { pathLength: 1 } : { pathLength: 0, opacity: 0.9 }}
                   animate={{ pathLength: 1, opacity: 0.9 }}
                   transition={{
-                    duration: reduced ? 0 : 1.1,
+                    duration: reduced ? 0 : 0.5,
                     ease: EASE,
-                    delay: reduced ? 0 : i * 0.18,
+                    delay: reduced ? 0 : i * 0.08,
                   }}
                 />
               ))}
@@ -107,21 +110,21 @@ export function BootLoaderView({ tag }: { tag?: string }) {
                 fill="var(--ink)"
                 initial={reduced ? { opacity: 0.57 } : { opacity: 0 }}
                 animate={{ opacity: 0.57 }}
-                transition={{ duration: reduced ? 0 : 0.6, delay: reduced ? 0 : 1.15 }}
+                transition={{ duration: reduced ? 0 : 0.3, delay: reduced ? 0 : 0.45 }}
               />
               <motion.path
                 d={FOLD}
                 fill="var(--ink)"
                 initial={reduced ? { opacity: 0.47 } : { opacity: 0 }}
                 animate={{ opacity: 0.47 }}
-                transition={{ duration: reduced ? 0 : 0.6, delay: reduced ? 0 : 1.15 }}
+                transition={{ duration: reduced ? 0 : 0.3, delay: reduced ? 0 : 0.45 }}
               />
               <motion.path
                 d={WING}
                 fill="var(--ink)"
                 initial={reduced ? { opacity: 0.95 } : { opacity: 0 }}
                 animate={{ opacity: 0.95 }}
-                transition={{ duration: reduced ? 0 : 0.6, delay: reduced ? 0 : 1.25 }}
+                transition={{ duration: reduced ? 0 : 0.3, delay: reduced ? 0 : 0.52 }}
               />
             </svg>
 
@@ -132,7 +135,7 @@ export function BootLoaderView({ tag }: { tag?: string }) {
                 aria-hidden
                 initial={{ x: "-130%" }}
                 animate={{ x: "130%" }}
-                transition={{ duration: 1.1, ease: EASE, delay: 0.9 }}
+                transition={{ duration: 0.55, ease: EASE, delay: 0.35 }}
               />
             )}
           </div>
@@ -142,7 +145,7 @@ export function BootLoaderView({ tag }: { tag?: string }) {
             className="kagu-bootloader__meta"
             initial={reduced ? false : { opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: EASE, delay: reduced ? 0 : 1.3 }}
+            transition={{ duration: 0.35, ease: EASE, delay: reduced ? 0 : 0.4 }}
           >
             <span className="kagu-bootloader__word">kagu</span>
             {tag ? <span className="kagu-bootloader__tag">{tag}</span> : null}
@@ -153,7 +156,7 @@ export function BootLoaderView({ tag }: { tag?: string }) {
               className="kagu-bootloader__fill"
               initial={{ scaleX: 0 }}
               animate={{ scaleX: 1 }}
-              transition={{ duration: reduced ? 0.3 : 2.1, ease: [0.4, 0, 0.2, 1] }}
+              transition={{ duration: reduced ? 0.2 : 0.85, ease: [0.4, 0, 0.2, 1] }}
             />
           </span>
 
