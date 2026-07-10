@@ -12,21 +12,31 @@
   the tabs tile across to fit with two-line labels and the browser frame narrows.
 */
 
+import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { getCases, type Case } from "@/lib/content";
+import { publicImageSize } from "@/lib/imageSize";
 import { rampColor, inkFor, rgba } from "@/lib/caseRamp";
+import { pageMetadata, webPageJsonLd } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { TabLink } from "./TabLink";
 import { WorkStackFit } from "./WorkStackFit";
 
-export const metadata = {
-    title: "Work · Kagu",
-    description: "Selected work from Kagu Software.",
-};
+const TITLE = "Work — Software Built for Boutique Operators · Kagu";
+const DESCRIPTION =
+    "Shipped projects from Kagu: custom websites, admin systems and full-stack platforms for boutique operators in hospitality and service — all in production.";
+
+export const metadata: Metadata = pageMetadata({
+    title: TITLE,
+    description: DESCRIPTION,
+    path: "/work",
+    lang: "en",
+});
 
 /* --------------------------- framed thumbnail --------------------------- */
 
-function Thumb({ c }: { c: Case }) {
+async function Thumb({ c }: { c: Case }) {
     if (!c.thumbnail) return null;
     const alt = `${c.client} preview`;
 
@@ -52,6 +62,10 @@ function Thumb({ c }: { c: Case }) {
     }
 
     const url = (c.url || "").replace(/^https?:\/\//, "").replace(/\/$/, "");
+    // Local /public screenshots: probe the intrinsic size so next/image can
+    // keep the natural aspect (width/height props + auto sizing) while the
+    // optimizer serves a resized WebP/AVIF instead of the raw PNG.
+    const dims = await publicImageSize(c.thumbnail);
     return (
         <div className="kagu-thumb kagu-thumb--browser">
             <figure className="kagu-win">
@@ -64,13 +78,25 @@ function Thumb({ c }: { c: Case }) {
                     <span className="kagu-win__url">{url || c.client}</span>
                 </div>
                 <div className="kagu-win__screen">
-                    {/* eslint-disable-next-line @next/next/no-img-element -- frame width must follow the screenshot's natural aspect; next/image fill would force a fixed-ratio crop */}
-                    <img
-                        src={c.thumbnail}
-                        alt={alt}
-                        loading="lazy"
-                        decoding="async"
-                    />
+                    {dims ? (
+                        <Image
+                            src={c.thumbnail}
+                            alt={alt}
+                            width={dims.width}
+                            height={dims.height}
+                            sizes="(max-width: 760px) 74vw, 44rem"
+                            loading="lazy"
+                            style={{ width: "auto", height: "auto" }}
+                        />
+                    ) : (
+                        // eslint-disable-next-line @next/next/no-img-element -- remote thumbnail with unknown dimensions; frame width must follow the screenshot's natural aspect
+                        <img
+                            src={c.thumbnail}
+                            alt={alt}
+                            loading="lazy"
+                            decoding="async"
+                        />
+                    )}
                 </div>
             </figure>
         </div>
@@ -83,6 +109,14 @@ export default async function WorkIndexPage() {
 
     return (
         <div className="kagu-work">
+            <JsonLd
+                data={webPageJsonLd({
+                    title: TITLE,
+                    description: DESCRIPTION,
+                    path: "/work",
+                    lang: "en",
+                })}
+            />
             {/* Header */}
             <div className="w-full max-w-(--container-max) mx-auto px-(--container-x)">
                 <header className="kagu-work__header">
@@ -91,6 +125,27 @@ export default async function WorkIndexPage() {
                     <p className="kagu-work__intro">
                         A working archive. Every file is a project that shipped;
                         pull one from the stack.
+                    </p>
+                    <p className="kagu-work__intro">
+                        Each project here is custom-built software for a boutique
+                        operator in hospitality or services: a customer-facing
+                        website and an operator-facing admin, built against the
+                        same database and running in production. The stack is
+                        Next.js and Supabase, and every build ships with the
+                        languages the operator&apos;s customers actually speak.
+                        If you want the same for your own operation, see{" "}
+                        <Link href="/custom-website-pricing" className="kagu-work__intro-link">
+                            custom website pricing
+                        </Link>
+                        , read how our{" "}
+                        <Link href="/admin-systems" className="kagu-work__intro-link">
+                            admin systems for boutique operators
+                        </Link>{" "}
+                        work, or{" "}
+                        <Link href="/start-project" className="kagu-work__intro-link">
+                            start a project
+                        </Link>{" "}
+                        and get an instant estimate.
                     </p>
                 </header>
             </div>
@@ -222,6 +277,15 @@ export default async function WorkIndexPage() {
                     font-size: var(--type-lg);
                     color: var(--slate-ink);
                     line-height: var(--leading-normal);
+                }
+                .kagu-work__intro + .kagu-work__intro {
+                    margin-top: var(--space-4);
+                    max-width: 58ch;
+                    font-size: var(--type-base);
+                }
+                .kagu-work__intro-link {
+                    color: var(--ink);
+                    border-bottom: 1px solid var(--mint-deep);
                 }
 
                 .kagu-folders {
@@ -524,7 +588,7 @@ export default async function WorkIndexPage() {
                     border-radius: 0.35rem;
                     background: rgba(255, 255, 255, 0.07);
                     font-family: var(--font-mono);
-                    font-size: 0.66rem;
+                    font-size: 0.75rem;
                     letter-spacing: 0.03em;
                     color: rgba(255, 255, 255, 0.55);
                     text-align: center;
@@ -605,9 +669,9 @@ export default async function WorkIndexPage() {
                         padding-inline: clamp(0.3rem, 1.4vw, 0.7rem);
                         gap: 0.05em;
                     }
-                    .kagu-folder__tab-no { font-size: 0.6rem; }
+                    .kagu-folder__tab-no { font-size: 0.75rem; }
                     .kagu-folder__tab-name {
-                        font-size: clamp(0.58rem, 2.7vw, 0.78rem);
+                        font-size: clamp(0.75rem, 2.7vw, 0.78rem);
                         letter-spacing: 0.01em;
                         white-space: normal;
                         display: -webkit-box;

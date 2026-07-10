@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { StartProjectBuilder } from "@/components/start-project/StartProjectBuilder";
+import { pageMetadata } from "@/lib/seo";
+import { StartProjectSeoContent } from "./StartProjectSeoContent";
 import {
   BRANDING_ID,
   DEFAULT_CUSTOM_PALETTE,
@@ -16,11 +18,15 @@ import {
   type ZoneChoices,
 } from "@/components/start-project/catalog";
 
-export const metadata: Metadata = {
-  title: "Start a project · Kagu",
+export const metadata: Metadata = pageMetadata({
+  title: "Start a Project · Kagu",
   description:
-    "Assemble your website package — pick a starting point, add the components you need, and get a live preview with an instant estimate.",
-};
+    "Begin your custom software project with Kagu, experts in boutique operator solutions. Assemble your package and get a live preview with an instant estimate.",
+  path: "/start-project",
+  lang: "en",
+  enPath: "/start-project",
+  trPath: "/proje-baslat",
+});
 
 type StartProjectParams = {
   type?: string;
@@ -100,6 +106,7 @@ export default async function StartProjectPage({
         initialAnimation={initialAnimation}
         initialNavHover={initialNavHover}
       />
+      <StartProjectSeoContent />
       <SiteFooter />
     </>
   );

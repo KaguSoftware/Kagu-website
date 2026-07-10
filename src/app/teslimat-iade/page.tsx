@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Teslimat ve İade Şartları · Kagu",
   description:
     "Kagu dijital/yazılım hizmetleri için teslimat, iptal ve iade koşulları. Delivery, cancellation and refund terms for Kagu's digital/software services.",
+  alternates: { canonical: "/teslimat-iade" },
 };
 
 const tr: LegalDocument = {

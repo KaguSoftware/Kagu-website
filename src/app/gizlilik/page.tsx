@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Gizlilik Sözleşmesi · Kagu",
   description:
     "Kagu gizlilik ve kişisel verilerin korunması (KVKK) politikası. Kagu's privacy and personal data protection policy.",
+  alternates: { canonical: "/gizlilik" },
 };
 
 const NAME = orPlaceholder(seller.legalName, "Ad Soyad / Ünvan");

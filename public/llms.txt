@@ -1,0 +1,21 @@
+# Kagu
+> Kagu — Software (Boutique Operator Software). Custom websites, digital tools, full-stack platforms, admin systems — with multilingual support. Serving Istanbul, global. Founded 2025.
+
+## Pages
+- [Home](https://kagusoftware.com/): what Kagu does and who it serves — custom-built software for boutique operators, streamlining operations and improving customer experience
+- [Butik Operatör Yazılımı](https://kagusoftware.com/butik-operator-yazilimi): butik operatörler için özel yazılım — Türkçe genel bakış
+- [Start a Project](https://kagusoftware.com/start-project): begin a custom software project — package builder with a live preview and instant estimate
+- [Proje Başlat](https://kagusoftware.com/proje-baslat): Kagu ile proje başlatma süreci, zaman çizelgesi ve fiyat faktörleri
+- [Custom Website Fiyatı](https://kagusoftware.com/custom-website-fiyati): özel web sitesi fiyatları — paket bazlı gerçek fiyatlar ve süreç
+- [Custom Website Pricing](https://kagusoftware.com/custom-website-pricing): real package-based prices for a custom website and how the process works
+- [Full Stack Platform Maliyeti](https://kagusoftware.com/full-stack-platform-maliyeti): full-stack platform nedir, maliyeti neye göre değişir
+- [Full-Stack Platform Cost](https://kagusoftware.com/full-stack-platform-cost): what a full-stack platform is and what drives its cost
+- [Multilingual Support Fiyatı](https://kagusoftware.com/multilingual-support-fiyat): çok dilli (multilingual) web sitesi desteği fiyatları ve teklif süreci
+- [Multilingual Support Pricing](https://kagusoftware.com/multilingual-support-pricing): multilingual website support prices and how to get a quote
+- [Butik Operatörler için Dijital Araçlar](https://kagusoftware.com/butik-operatoler-dijital-arac): İstanbul'da butik operatörler için dijital araçlar rehberi
+- [Digital Tools for Boutique Operators](https://kagusoftware.com/digital-tools-for-boutique-operators): guide to digital tools for boutique operators in Istanbul and beyond
+- [Admin Sistemleri](https://kagusoftware.com/admin-sistemleri): butik operatörler için admin sistemleri rehberi
+- [Admin Systems](https://kagusoftware.com/admin-systems): guide to admin systems for boutique operators
+- [Work](https://kagusoftware.com/work): shipped projects — production case studies from hospitality and service businesses
+- [About](https://kagusoftware.com/about): the team and how Kagu works
+- [Contact](https://kagusoftware.com/contact): start a conversation — response within 24 hours in Turkish, English, Arabic, Persian or Russian

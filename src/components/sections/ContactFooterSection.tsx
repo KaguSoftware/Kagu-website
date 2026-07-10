@@ -98,7 +98,7 @@ export function ContactFooterSection({ studio }: { studio: Studio }) {
           className="grid grid-cols-1 md:grid-cols-12 gap-8 mb-(--space-32) items-end"
         >
           <div className="md:col-span-9">
-            <Eyebrow number="07">
+            <Eyebrow number="09">
               <span style={{ color: "var(--mint-deep)" }}>Get in touch</span>
             </Eyebrow>
             <h2

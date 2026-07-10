@@ -166,7 +166,9 @@ function MemberCard({
               {member.role}
             </span>
           </div>
-          <h3
+          {/* h2, not h3 — member names sit directly under the page h1, and a
+              skipped heading level fails the document-outline audit. */}
+          <h2
             className="display"
             style={{
               fontSize: "var(--type-2xl)",
@@ -175,7 +177,7 @@ function MemberCard({
             }}
           >
             {member.name}
-          </h3>
+          </h2>
         </div>
         {member.bio ? (
           <div className="kagu-profile-bio">

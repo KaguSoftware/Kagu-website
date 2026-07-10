@@ -162,7 +162,7 @@ function IdeaInput({
               {idea}
               <span
                 className="font-mono"
-                style={{ color: "var(--slate-ink)", fontSize: 10 }}
+                style={{ color: "var(--slate-ink)", fontSize: 12 }}
               >
                 we’ll quote
               </span>
@@ -171,18 +171,22 @@ function IdeaInput({
                 aria-label={`Remove "${idea}"`}
                 onClick={() => onChange(ideas.filter((i) => i !== idea))}
                 style={{
+                  position: "relative",
                   width: 18,
                   height: 18,
                   borderRadius: 999,
                   border: 0,
                   background: "color-mix(in oklab, var(--neutral) 60%, transparent)",
                   color: "var(--ink)",
-                  fontSize: 11,
+                  fontSize: 12,
                   lineHeight: 1,
                   cursor: "pointer",
                 }}
               >
                 ×
+                {/* invisible halo: ~42×42 touch target around the 18px chip ×
+                    (mobile tap-target audit) */}
+                <span aria-hidden style={{ position: "absolute", inset: -12 }} />
               </button>
             </li>
           ))}

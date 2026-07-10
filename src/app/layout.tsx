@@ -8,6 +8,8 @@ import { SmoothScrollProvider } from "@/components/providers/SmoothScrollProvide
 import { NavigationEvents } from "@/components/providers/NavigationEvents";
 import { SiteHeaderGate } from "@/components/layout/SiteHeaderGate";
 import { PageTransition } from "@/components/motion/PageTransition";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { organizationJsonLd, SITE_URL } from "@/lib/seo";
 
 const spaceMono = Space_Mono({
   variable: "--font-space-mono",
@@ -26,7 +28,14 @@ export const metadata: Metadata = {
   title: "Kagu · Software for boutique operators",
   description:
     "Kagu builds Next.js + Supabase platforms for hospitality and service businesses. Founded 2025, Istanbul.",
-  metadataBase: new URL("https://kagusoftware.com"),
+  metadataBase: new URL(SITE_URL),
+  openGraph: {
+    siteName: "Kagu",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
 };
 
 export const viewport: Viewport = {
@@ -43,6 +52,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${spaceMono.variable} ${publicSans.variable}`}>
       <body className="min-h-svh antialiased">
+        <JsonLd data={organizationJsonLd()} />
         <a href="#main" className="skip-link">
           Skip to content
         </a>

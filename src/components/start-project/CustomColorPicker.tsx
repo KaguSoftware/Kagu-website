@@ -438,6 +438,7 @@ export function CustomColorPicker({
                 data-cursor="view"
                 onClick={() => applyHex(hex)}
                 style={{
+                  position: "relative",
                   width: 22,
                   height: 22,
                   borderRadius: 999,
@@ -451,7 +452,11 @@ export function CustomColorPicker({
                   transition:
                     "transform var(--dur-quick) var(--ease-out-quint), border-color var(--dur-quick) var(--ease-out-quint)",
                 }}
-              />
+              >
+                {/* invisible halo: grows the touch target to ~42×42 without
+                    changing the 22px swatch visual (mobile tap-target audit) */}
+                <span aria-hidden style={{ position: "absolute", inset: -10 }} />
+              </button>
             );
           })}
         </div>

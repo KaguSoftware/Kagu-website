@@ -4,13 +4,20 @@ import { getStudio, getTeam, type TeamMember } from "@/lib/content";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { WordMaskReveal } from "@/components/motion/WordMaskReveal";
 import { Eyebrow } from "@/components/layout/Eyebrow";
+import { pageMetadata, webPageJsonLd } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { TeamRoster, type RosterMember } from "./TeamRoster";
 
-const BASE_META = {
-  title: "About · Kagu",
-  description:
-    "The people behind Kagu and how we work — a small studio building software for boutique operators.",
-};
+const TITLE = "About Kagu — The People Behind the Work";
+const DESCRIPTION =
+  "The people behind Kagu and how we work — a small Istanbul studio building custom software for boutique operators in hospitality and service.";
+
+const BASE_META = pageMetadata({
+  title: TITLE,
+  description: DESCRIPTION,
+  path: "/about",
+  lang: "en",
+});
 
 /** Readable, URL-safe slug from a name (e.g. "Majed Ahdab" → "majed-ahdab"). */
 function slugify(name: string) {
@@ -57,8 +64,9 @@ export async function generateMetadata({
   const found = withSlugs(await getTeam()).find((m) => m.slug === member);
   if (!found) return BASE_META;
   return {
+    ...BASE_META,
     title: `${found.name} · Kagu`,
-    description: found.bio || BASE_META.description,
+    description: found.bio || DESCRIPTION,
   };
 }
 
@@ -74,6 +82,14 @@ export default async function AboutPage({ searchParams }: AboutPageProps) {
 
   return (
     <>
+      <JsonLd
+        data={webPageJsonLd({
+          title: TITLE,
+          description: DESCRIPTION,
+          path: "/about",
+          lang: "en",
+        })}
+      />
       {/* Hero — people-forward, the team is the first thing you meet. */}
       <section
         style={{ background: "var(--paper)" }}
@@ -206,6 +222,22 @@ export default async function AboutPage({ searchParams }: AboutPageProps) {
           >
             How we work.
           </h2>
+          {/* Answer-first passage: the first sentence under the heading must
+              answer it on its own (liftable into AI Overviews). */}
+          <p
+            style={{
+              fontSize: "var(--type-md)",
+              lineHeight: 1.7,
+              color: "var(--ink)",
+              maxWidth: "58ch",
+              margin: "calc(-1 * var(--space-12)) 0 var(--space-24)",
+            }}
+          >
+            Kagu works by listening to what a boutique operator is trying to
+            make easier, mapping the smallest system that solves it, and
+            shipping it to production in weeks. The principles below are how
+            that plays out day to day.
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-(--space-16)">
             {studio.principles.map((p, i) => (
               <article

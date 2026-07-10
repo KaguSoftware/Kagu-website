@@ -385,7 +385,7 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                         borderRadius: "0.5cqw",
                         background: "color-mix(in oklab, var(--slate-ink) 10%, transparent)",
                         fontFamily: "var(--font-mono)",
-                        fontSize: "1.4cqw",
+                        fontSize: "max(0.75rem, 1.4cqw)",
                         letterSpacing: "0.04em",
                         color: "var(--slate-ink)",
                         textAlign: "center",
@@ -557,7 +557,7 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                               className="font-mono"
                               style={{
                                 position: "relative",
-                                fontSize: "clamp(9px, 1.6%, 11px)",
+                                fontSize: "12px",
                                 letterSpacing: "var(--tracking-eyebrow)",
                                 textTransform: "uppercase",
                                 opacity: 0.7,
@@ -611,7 +611,7 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                               className="font-mono"
                               style={{
                                 position: "relative",
-                                fontSize: "clamp(9px, 1.6%, 11px)",
+                                fontSize: "12px",
                                 letterSpacing: "var(--tracking-eyebrow)",
                                 textTransform: "uppercase",
                                 opacity: 0.7,

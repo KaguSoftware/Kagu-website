@@ -5,7 +5,8 @@ import { seller, orPlaceholder } from "@/lib/legal";
 export const metadata: Metadata = {
   title: "Mesafeli Satış Sözleşmesi · Kagu",
   description:
-    "Kagu üzerinden sunulan dijital/yazılım hizmetlerinin satışına ilişkin mesafeli satış sözleşmesi. Distance sales agreement for digital/software services sold via Kagu.",
+    "Kagu üzerinden sunulan dijital ve yazılım hizmetlerinin satışına ilişkin mesafeli satış sözleşmesi — taraflar, ödeme, ifa ve cayma hakkı koşulları.",
+  alternates: { canonical: "/mesafeli-satis" },
 };
 
 const NAME = orPlaceholder(seller.legalName, "Ad Soyad / Ünvan");

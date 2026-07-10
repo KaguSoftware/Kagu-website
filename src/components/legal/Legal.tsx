@@ -186,7 +186,9 @@ export function LegalShell({
       >
         <div className="w-full max-w-(--container-max) mx-auto">
           <span className="eyebrow block" style={{ marginBottom: "var(--space-6)" }}>
-            Yasal · Legal · Güncelleme {formatLegalDate(LEGAL_UPDATED, "tr-TR")}
+            Yasal · Legal · Güncelleme{" "}
+            {/* machine-readable date for the "content is dateable" audit */}
+            <time dateTime={LEGAL_UPDATED}>{formatLegalDate(LEGAL_UPDATED, "tr-TR")}</time>
           </span>
           <h1
             className="display"

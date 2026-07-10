@@ -334,7 +334,7 @@ export function Hero3D({
           font-weight: 500;
         }
         .kagu-hero__meta-sep {
-          font-size: 0.72rem;
+          font-size: 0.75rem;
           letter-spacing: 0.18em;
           text-transform: uppercase;
           color: rgba(234, 244, 255, 0.6);
@@ -344,7 +344,7 @@ export function Hero3D({
           align-items: center;
           gap: 0.55rem;
           font-family: var(--font-mono, ui-monospace, monospace);
-          font-size: 0.72rem;
+          font-size: 0.75rem;
           letter-spacing: 0.18em;
           text-transform: uppercase;
           color: rgba(234, 244, 255, 0.64);
