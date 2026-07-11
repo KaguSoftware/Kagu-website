@@ -22,6 +22,9 @@ export const metadata: Metadata = pageMetadata({
   lang: "en",
 });
 
+// Static + hourly ISR; admin edits bust this instantly via revalidatePublic().
+export const revalidate = 3600;
+
 export default async function ContactPage() {
   const studio = await getStudio();
 

@@ -10,6 +10,15 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
+// Static + hourly ISR; admin edits bust this instantly via revalidatePublic().
+export const revalidate = 3600;
+
+// Prebuild every case page so first visits get CDN hits, not a server render.
+export async function generateStaticParams() {
+  const cases = await getCases();
+  return cases.map((c) => ({ slug: c.slug }));
+}
+
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params;
   const cases = await getCases();

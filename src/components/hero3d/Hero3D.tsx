@@ -190,10 +190,15 @@ export function Hero3D({
         <div className="kagu-hero__meta">
           {greeting && (
             <span className="kagu-hero__greeting">
-              <GreetingCycle className="kagu-hero__greeting-word" />
               {location ? (
-                <span className="kagu-hero__meta-sep">· {location}</span>
+                <span className="kagu-hero__meta-sep">
+                  {location}{" "}
+                  <span className="kagu-hero__meta-dot" aria-hidden>
+                    ·
+                  </span>
+                </span>
               ) : null}
+              <GreetingCycle className="kagu-hero__greeting-word" />
             </span>
           )}
           {availability ? (
@@ -339,6 +344,9 @@ export function Hero3D({
           max-width: 46rem;
           padding-bottom: clamp(2rem, 8vh, 6rem);
         }
+        /* The separator sits BEFORE the cycling word: GreetingCycle animates
+           its own width every swap, so nothing may follow it in flow or it
+           gets shoved sideways on every cycle (real CLS, not transform). */
         .kagu-hero__greeting {
           display: inline-flex;
           align-items: baseline;
@@ -358,6 +366,18 @@ export function Hero3D({
           letter-spacing: 0.18em;
           text-transform: uppercase;
           color: rgba(234, 244, 255, 0.6);
+        }
+        @media (max-width: 767px) {
+          /* Phones can't reliably fit separator + longest greeting on one
+             line, and a re-wrap as the word cycles is a layout shift too —
+             pin the separator to its own line so the word never jumps rows
+             (and drop the now-dangling middot). */
+          .kagu-hero__meta-sep {
+            flex-basis: 100%;
+          }
+          .kagu-hero__meta-dot {
+            display: none;
+          }
         }
         .kagu-hero__status {
           display: inline-flex;

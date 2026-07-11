@@ -160,6 +160,41 @@ If the browser pass fails the static checks still report — mobile/speed
 categories just drop out of the score. Page cap via `--max-pages` or
 `SEO_AUDIT_MAX_PAGES` (each page is a full throttled render, ≈20s/page).
 
+## Speed insights
+
+Page speed via **Google's PageSpeed Insights API** — the exact engine behind
+pagespeed.web.dev. Each run executes Lighthouse on Google's own
+infrastructure (a standardized throttled load, not this machine's network)
+and, when the site has enough Chrome traffic, attaches **CrUX field data**:
+the real-user Core Web Vitals that actually feed Google's ranking signal.
+CLI-only, writes nothing to the DB, needs no Supabase creds:
+
+```sh
+npm run seo:speed -- kagusoftware.com
+npm run seo:speed -- --mobile example.com/pricing   # one strategy only
+npm run seo:speed -- --json example.com             # machine-readable
+```
+
+Per strategy (mobile + desktop by default) the report prints:
+
+- the Lighthouse **performance score** (0–100),
+- **lab metrics** (FCP / LCP / TBT / CLS / Speed Index / TTFB) graded
+  against Google's official good / needs-improvement / poor thresholds,
+- **field data** (28-day CrUX p75: LCP / INP / CLS / FCP / TTFB) —
+  page-level when available, origin-level as fallback, or a clear "not
+  enough traffic yet" note,
+- every **opportunity** with estimated ms/bytes savings and the exact
+  offending resources, sorted biggest-win first,
+- **diagnostics** — the LCP element, layout-shift culprits, main-thread and
+  third-party cost.
+
+The API is free. Anonymous calls are fine for occasional use (per-IP rate
+limit); set `PSI_API_KEY` in `.env` (plain Google Cloud API key with the
+PageSpeed Insights API enabled) for 25k requests/day. Lab differs from the
+`seo:audit` vitals because Google's reference hardware differs from this
+machine — treat `seo:speed` as the canonical number and the audit's as a
+directional cross-check.
+
 ## SEO strategy tool
 
 The whole funnel in one command: **give it a URL, get back the master prompt

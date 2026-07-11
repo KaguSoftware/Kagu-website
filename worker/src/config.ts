@@ -71,6 +71,12 @@ export const config = {
   seoRegion: process.env.SEO_REGION ?? "tr",
   seoLanguage: process.env.SEO_LANGUAGE ?? "en",
 
+  // --- Speed insights (worker/src/speed.ts, run via `npm run seo:speed`) ---
+  // Optional Google API key for the PageSpeed Insights API. Anonymous calls
+  // work for occasional use (per-IP rate limit); a key raises the quota to
+  // 25k/day. Plain API key — no OAuth/service account needed.
+  psiApiKey: process.env.PSI_API_KEY ?? "",
+
   // --- SEO site audit (worker/src/audit.ts, run via `npm run seo:audit`) ---
   // Page cap for the site crawl; each page gets a full throttled mobile
   // render, so runtime is roughly maxPages × ~20s.

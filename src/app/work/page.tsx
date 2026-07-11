@@ -34,6 +34,9 @@ export const metadata: Metadata = pageMetadata({
     lang: "en",
 });
 
+// Static + hourly ISR; admin edits bust this instantly via revalidatePublic().
+export const revalidate = 3600;
+
 /* --------------------------- framed thumbnail --------------------------- */
 
 async function Thumb({ c }: { c: Case }) {

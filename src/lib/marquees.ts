@@ -1,5 +1,5 @@
 import "server-only";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 
 export type MarqueeItem = { label: string; href: string | null };
 
@@ -7,7 +7,7 @@ export async function getStackTokens(): Promise<{
   hero: MarqueeItem[];
   lineage: MarqueeItem[];
 }> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data } = await supabase
     .from("stack_tokens")
     .select("label, href, placement, sort_order")

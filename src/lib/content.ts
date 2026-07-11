@@ -1,5 +1,5 @@
 import "server-only";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 import type {
   CoverBg,
   DeviceKind,
@@ -133,7 +133,7 @@ function toCase(p: ProjectJoinRow): Case {
 }
 
 export async function getCases(): Promise<Case[]> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data } = await supabase
     .from("projects")
     .select(PROJECT_SELECT)
@@ -144,7 +144,7 @@ export async function getCases(): Promise<Case[]> {
 
 /** Featured projects for the homepage Selected Work section. */
 export async function getFeaturedCases(): Promise<Case[]> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data } = await supabase
     .from("projects")
     .select(PROJECT_SELECT)
@@ -155,7 +155,7 @@ export async function getFeaturedCases(): Promise<Case[]> {
 }
 
 export async function getCase(slug: string): Promise<Case | undefined> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data } = await supabase
     .from("projects")
     .select(PROJECT_SELECT)
@@ -166,7 +166,7 @@ export async function getCase(slug: string): Promise<Case | undefined> {
 }
 
 export async function getCapabilities(): Promise<Capability[]> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data } = await supabase
     .from("capabilities")
     .select("*")
@@ -180,7 +180,7 @@ export async function getCapabilities(): Promise<Capability[]> {
 }
 
 export async function getApproach(): Promise<ApproachStep[]> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data } = await supabase
     .from("approach_steps")
     .select("*")
@@ -193,7 +193,7 @@ export async function getApproach(): Promise<ApproachStep[]> {
 }
 
 export async function getAwards(): Promise<Award[]> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data } = await supabase.from("awards").select("*").order("sort_order");
   return (data ?? []).map((a) => ({
     id: a.id,
@@ -205,7 +205,7 @@ export async function getAwards(): Promise<Award[]> {
 }
 
 export async function getStudio(): Promise<Studio> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const [{ data: settings }, { data: blocks }] = await Promise.all([
     supabase.from("site_settings").select("*").eq("singleton", true).single(),
     supabase.from("about_blocks").select("*").order("sort_order"),
@@ -234,7 +234,7 @@ export async function getStudio(): Promise<Studio> {
 }
 
 export async function getTeam(): Promise<TeamMember[]> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   const { data } = await supabase
     .from("team_members")
     .select("*")

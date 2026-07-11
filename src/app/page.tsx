@@ -41,6 +41,11 @@ export const metadata: Metadata = pageMetadata({
   trPath: "/butik-operator-yazilimi",
 });
 
+// Statically prerendered (content.ts reads Supabase without cookies) so the
+// homepage serves from the CDN instead of paying dynamic TTFB. Hourly ISR is
+// a safety net — admin edits already bust this via revalidatePublic().
+export const revalidate = 3600;
+
 export default async function Home() {
   const [featured, capabilities, approach, studio, allCases, marquees] =
     await Promise.all([
