@@ -44,6 +44,8 @@ cp .env.example .env   # then fill in the values
 | `SEO_REGION` | no | `tr` | SEO tool: Google `gl` region bias (country code) |
 | `SEO_LANGUAGE` | no | `en` | SEO tool: Google `hl` interface language |
 | `SEO_AUDIT_MAX_PAGES` | no | `12` | Site audit: page cap for the crawl (`--max-pages` overrides) |
+| `PSI_API_KEY` | no | — | Speed insights: Google API key for a 25k/day quota (anonymous works, but sparsely) |
+| `SEO_SPEED_RUNS` | no | `3` | Speed insights: Lighthouse runs per strategy, judged by the median (`--runs` overrides) |
 | `SEO_STRATEGY_SERP_QUERIES` | no | `10` | Strategy tool: candidate searches checked against the live SERP |
 | `SEO_STRATEGY_SITE_PAGES` | no | `6` | Strategy tool: site pages read to understand the business |
 | `SEO_STRATEGY_AUDIT_PAGES` | no | `6` | Strategy tool: page cap for its embedded audit (`--no-audit` skips) |
@@ -172,21 +174,35 @@ CLI-only, writes nothing to the DB, needs no Supabase creds:
 ```sh
 npm run seo:speed -- kagusoftware.com
 npm run seo:speed -- --mobile example.com/pricing   # one strategy only
+npm run seo:speed -- --runs 5 example.com           # bigger sample (default 3)
 npm run seo:speed -- --json example.com             # machine-readable
 ```
 
+Lighthouse is noisy — identical back-to-back runs can swing the performance
+score by ±10. Each strategy therefore runs `SEO_SPEED_RUNS` times (default
+3, `--runs` overrides; keep it odd) and the report **judges by the median**:
+scores and lab metrics are per-item medians with the observed min–max spread
+printed beside each metric, while the evidence (opportunities, diagnostics,
+failed audits, field data) comes from the median run so its numbers stay
+internally consistent. A failed run shrinks the sample instead of sinking
+the report. Runtime and API quota scale with runs × strategies (~30s per
+run).
+
 Per strategy (mobile + desktop by default) the report prints:
 
-- the Lighthouse **performance score** (0–100),
+- all four Lighthouse scores (0–100): **performance, accessibility, best
+  practices, SEO**,
 - **lab metrics** (FCP / LCP / TBT / CLS / Speed Index / TTFB) graded
   against Google's official good / needs-improvement / poor thresholds,
 - **field data** (28-day CrUX p75: LCP / INP / CLS / FCP / TTFB) —
   page-level when available, origin-level as fallback, or a clear "not
   enough traffic yet" note,
-- every **opportunity** with estimated ms/bytes savings and the exact
-  offending resources, sorted biggest-win first,
+- every performance **opportunity** with estimated ms/bytes savings and the
+  exact offending resources, sorted biggest-win first,
 - **diagnostics** — the LCP element, layout-shift culprits, main-thread and
-  third-party cost.
+  third-party cost,
+- every failed **accessibility / best-practices / SEO audit** with the
+  offending elements, sorted by score impact — each one directly fixable.
 
 The API is free. Anonymous calls are fine for occasional use (per-IP rate
 limit); set `PSI_API_KEY` in `.env` (plain Google Cloud API key with the

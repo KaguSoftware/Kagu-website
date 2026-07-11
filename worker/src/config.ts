@@ -76,6 +76,10 @@ export const config = {
   // work for occasional use (per-IP rate limit); a key raises the quota to
   // 25k/day. Plain API key — no OAuth/service account needed.
   psiApiKey: process.env.PSI_API_KEY ?? "",
+  // Lighthouse runs per strategy; the report judges by the median (use odd
+  // counts — 3 is the speed/stability sweet spot, 5 when it really matters).
+  // `--runs` overrides per invocation. Each run ≈ 30s per strategy.
+  seoSpeedRuns: Number(process.env.SEO_SPEED_RUNS) || 3,
 
   // --- SEO site audit (worker/src/audit.ts, run via `npm run seo:audit`) ---
   // Page cap for the site crawl; each page gets a full throttled mobile

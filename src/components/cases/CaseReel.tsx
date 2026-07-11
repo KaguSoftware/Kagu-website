@@ -27,6 +27,11 @@ interface CaseReelProps {
   /** Preview mode: a single pinned frame with the thumbnail + lede + "View details" CTA.
    *  Used on the homepage so visitors get the pin/scroll feel without seeing the full feature reel. */
   preview?: boolean;
+  /** Preload the first frame's image (next/image priority). Only for reels
+   *  that sit above the fold — on the case page the reel IS the hero, but on
+   *  the homepage the strip is ~4000px down and each preload would compete
+   *  with the hero's fonts/CSS on the critical path (measured +1s LCP). */
+  eager?: boolean;
 }
 
 type Frame = {
@@ -62,7 +67,13 @@ const CTA_FG: Record<NonNullable<Frame["ctaBg"]>, string> = {
   paper: "var(--slate-ink)",
 };
 
-export function CaseReel({ caseData, index, size = "default", preview = false }: CaseReelProps) {
+export function CaseReel({
+  caseData,
+  index,
+  size = "default",
+  preview = false,
+  eager = false,
+}: CaseReelProps) {
   const isLarge = size === "large";
   // Alternate sides per index in the homepage strip (even = image left,
   // odd = image right). Case-page reel ignores this (single component).
@@ -860,8 +871,8 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                                   src={f.image}
                                   alt={f.title}
                                   fill
-                                  sizes="(max-width: 768px) 60vw, 280px"
-                                  priority={i === 0}
+                                  sizes="(max-width: 768px) 45vw, 280px"
+                                  priority={eager && i === 0}
                                   style={{
                                     objectFit: "cover",
                                     objectPosition: "top center",
@@ -907,7 +918,7 @@ export function CaseReel({ caseData, index, size = "default", preview = false }:
                               alt={f.title}
                               fill
                               sizes="(max-width: 768px) 100vw, 66vw"
-                              priority={i === 0}
+                              priority={eager && i === 0}
                               onLoadingComplete={(img) => {
                                 if (img.naturalWidth && img.naturalHeight) {
                                   setRatios((r) =>

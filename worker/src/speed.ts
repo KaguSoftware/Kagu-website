@@ -1,7 +1,7 @@
 import { config } from "./config.js";
 
 /*
-  speed.ts — page speed insights via Google's PageSpeed Insights API v5.
+  speed.ts — full Lighthouse insights via Google's PageSpeed Insights API v5.
 
   This is the exact engine behind pagespeed.web.dev: each call runs Lighthouse
   on Google's own infrastructure (a real throttled load, not our machine's
@@ -9,15 +9,27 @@ import { config } from "./config.js";
   data — the real-user Core Web Vitals that actually feed Google's ranking
   signal. One report per strategy (mobile / desktop), each with:
 
-    - the Lighthouse performance score (0–100)
+    - all four Lighthouse scores (0–100): performance, accessibility,
+      best practices, SEO
     - lab metrics: FCP, LCP, TBT, CLS, Speed Index, TTFB
     - field data (28-day CrUX): LCP, INP, CLS, FCP, TTFB percentiles with
       Google's own good / needs-improvement / poor grading, page-level when
       available, origin-level as fallback
-    - opportunities: every failed audit with estimated ms/bytes savings and
-      the top offending resources (the "ways to speed it up")
+    - opportunities: every failed performance audit with estimated ms/bytes
+      savings and the top offending resources (the "ways to speed it up")
     - diagnostics: the LCP element, layout-shift culprits, main-thread and
       third-party cost — context that explains WHERE the time goes
+    - findings: every failed accessibility / best-practices / SEO audit with
+      the exact offending elements, so each one is directly fixable
+
+  Lighthouse is noisy — back-to-back runs of the same page can swing the
+  performance score by ±10 (network jitter, server variance, throttling
+  simulation). So each strategy is run SEO_SPEED_RUNS times (default 3,
+  `--runs` overrides; use odd counts) and judged by the median: category
+  scores and lab metrics are per-item medians across runs (with the observed
+  min–max spread kept), while opportunities / diagnostics / findings / field
+  data come from the representative run — the one with the median performance
+  score — so that evidence stays internally consistent.
 
   The API is free. Anonymous calls work for occasional use but are rate
   limited per IP; set PSI_API_KEY (a plain Google Cloud API key with the
@@ -35,13 +47,42 @@ export type Strategy = "mobile" | "desktop";
 
 export type MetricGrade = "good" | "needs-improvement" | "poor";
 
+export type CategoryId = "performance" | "accessibility" | "best-practices" | "seo";
+
+export interface CategoryScore {
+  id: CategoryId;
+  label: string;
+  score: number;
+}
+
+/** A failed audit in a non-performance category, with its exact culprits. */
+export interface Finding {
+  id: string;
+  title: string;
+  description: string;
+  displayValue: string;
+  /** How much this audit counts toward its category score. */
+  weight: number;
+  items: string[];
+}
+
+export interface CategoryFindings {
+  id: CategoryId;
+  label: string;
+  score: number;
+  findings: Finding[];
+}
+
 export interface LabMetric {
   id: string;
   label: string;
-  /** ms for timings, unitless for CLS */
+  /** ms for timings, unitless for CLS. Median across runs when runs > 1. */
   value: number;
   display: string;
   grade: MetricGrade;
+  /** Observed spread across runs (absent on single-run reports). */
+  min?: number;
+  max?: number;
 }
 
 export interface FieldMetric {
@@ -73,13 +114,22 @@ export interface Diagnostic {
 
 export interface StrategyReport {
   strategy: Strategy;
-  /** Lighthouse performance score, 0–100. */
+  /** How many Lighthouse runs this report is the median of. */
+  runs: number;
+  /** Performance score of every run, in run order. */
+  runScores: number[];
+  /** All four Lighthouse scores, 0–100, in PERFORMANCE..SEO order.
+   *  Per-category medians across runs. */
+  scores: CategoryScore[];
+  /** Median performance score, 0–100 (also present in `scores`). */
   score: number;
   lab: LabMetric[];
   /** null = site has too little Chrome traffic for CrUX. */
   field: { source: "page" | "origin"; overall: MetricGrade | null; metrics: FieldMetric[] } | null;
   opportunities: Opportunity[];
   diagnostics: Diagnostic[];
+  /** Failed accessibility / best-practices / SEO audits, worst first. */
+  categories: CategoryFindings[];
   lighthouseVersion: string;
 }
 
@@ -115,6 +165,7 @@ interface PsiAudit {
   title?: string;
   description?: string;
   score?: number | null;
+  scoreDisplayMode?: string;
   numericValue?: number;
   displayValue?: string;
   metricSavings?: Record<string, number>;
@@ -124,6 +175,12 @@ interface PsiAudit {
     overallSavingsBytes?: number;
     items?: PsiAuditItem[];
   };
+}
+
+interface PsiCategory {
+  title?: string;
+  score?: number | null;
+  auditRefs?: { id?: string; weight?: number }[];
 }
 
 interface PsiCruxMetric {
@@ -142,13 +199,20 @@ interface PsiResponse {
     finalDisplayedUrl?: string;
     finalUrl?: string;
     lighthouseVersion?: string;
-    categories?: { performance?: { score?: number | null } };
+    categories?: Partial<Record<CategoryId, PsiCategory>>;
     audits?: Record<string, PsiAudit>;
   };
   loadingExperience?: PsiLoadingExperience;
   originLoadingExperience?: PsiLoadingExperience;
   error?: { message?: string };
 }
+
+const CATEGORY_ORDER: { id: CategoryId; label: string; param: string }[] = [
+  { id: "performance", label: "Performance", param: "PERFORMANCE" },
+  { id: "accessibility", label: "Accessibility", param: "ACCESSIBILITY" },
+  { id: "best-practices", label: "Best Practices", param: "BEST_PRACTICES" },
+  { id: "seo", label: "SEO", param: "SEO" },
+];
 
 /* ------------------------------------------------------------------------ */
 /* Metric definitions — Google's official good / poor thresholds            */
@@ -197,29 +261,64 @@ const PSI_ENDPOINT = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed
 
 export async function runSpeedInsights(
   rawUrl: string,
-  strategies: Strategy[] = ["mobile", "desktop"]
+  strategies: Strategy[] = ["mobile", "desktop"],
+  runs?: number
 ): Promise<SpeedReport> {
   const url = normalizeUrl(rawUrl);
+  const runCount = clampRuns(runs ?? config.seoSpeedRuns);
   const reports: StrategyReport[] = [];
   let finalUrl = url;
 
   // Sequential on purpose: two parallel anonymous calls trip the per-IP
   // burst limit far more often than back-to-back ones.
   for (const strategy of strategies) {
-    const psi = await fetchPsi(url, strategy);
-    const report = parseStrategy(psi, strategy);
-    finalUrl = psi.lighthouseResult?.finalDisplayedUrl ?? psi.lighthouseResult?.finalUrl ?? finalUrl;
-    reports.push(report);
+    const parsed: StrategyReport[] = [];
+    let firstError: unknown;
+    for (let i = 1; i <= runCount; i++) {
+      try {
+        const psi = await fetchPsi(url, strategy, i, runCount);
+        finalUrl =
+          psi.lighthouseResult?.finalDisplayedUrl ?? psi.lighthouseResult?.finalUrl ?? finalUrl;
+        parsed.push(parseStrategy(psi, strategy));
+      } catch (err) {
+        // A failed run (quota blip, timeout) shrinks the sample instead of
+        // sinking the report — unless every run failed.
+        firstError ??= err;
+        console.log(
+          `[speed] ${strategy} run ${i}/${runCount} failed: ${err instanceof Error ? err.message : err}`
+        );
+      }
+    }
+    if (parsed.length === 0) {
+      throw firstError instanceof Error
+        ? firstError
+        : new Error(`all ${runCount} ${strategy} runs failed`);
+    }
+    if (parsed.length < runCount) {
+      console.log(`[speed] ${strategy}: judging by ${parsed.length} of ${runCount} runs`);
+    }
+    reports.push(mergeRuns(parsed));
   }
 
   return { url, finalUrl, fetchedAt: new Date().toISOString(), reports };
 }
 
-async function fetchPsi(url: string, strategy: Strategy): Promise<PsiResponse> {
-  const params = new URLSearchParams({ url, strategy, category: "PERFORMANCE" });
+function clampRuns(n: number): number {
+  return Math.max(1, Math.min(9, Math.round(n) || 1));
+}
+
+async function fetchPsi(
+  url: string,
+  strategy: Strategy,
+  run: number,
+  runCount: number
+): Promise<PsiResponse> {
+  const params = new URLSearchParams({ url, strategy });
+  for (const cat of CATEGORY_ORDER) params.append("category", cat.param);
   if (config.psiApiKey) params.set("key", config.psiApiKey);
 
-  console.log(`[speed] running Lighthouse (${strategy}) on Google's infra — ~30s…`);
+  const runLabel = runCount > 1 ? `, run ${run}/${runCount}` : "";
+  console.log(`[speed] running Lighthouse (${strategy}${runLabel}) on Google's infra — ~30s…`);
   const res = await fetch(`${PSI_ENDPOINT}?${params}`, {
     signal: AbortSignal.timeout(120_000),
   });
@@ -242,7 +341,14 @@ async function fetchPsi(url: string, strategy: Strategy): Promise<PsiResponse> {
 function parseStrategy(psi: PsiResponse, strategy: Strategy): StrategyReport {
   const lhr = psi.lighthouseResult!;
   const audits = lhr.audits ?? {};
-  const score = Math.round((lhr.categories?.performance?.score ?? 0) * 100);
+
+  const scores: CategoryScore[] = [];
+  for (const cat of CATEGORY_ORDER) {
+    const c = lhr.categories?.[cat.id];
+    if (typeof c?.score !== "number") continue;
+    scores.push({ id: cat.id, label: cat.label, score: Math.round(c.score * 100) });
+  }
+  const score = scores.find((s) => s.id === "performance")?.score ?? 0;
 
   const lab: LabMetric[] = [];
   for (const def of LAB_METRICS) {
@@ -259,13 +365,104 @@ function parseStrategy(psi: PsiResponse, strategy: Strategy): StrategyReport {
 
   return {
     strategy,
+    runs: 1,
+    runScores: [score],
+    scores,
     score,
     lab,
     field: parseField(psi),
     opportunities: parseOpportunities(audits),
     diagnostics: parseDiagnostics(audits),
+    categories: parseCategoryFindings(lhr.categories, audits),
     lighthouseVersion: lhr.lighthouseVersion ?? "?",
   };
+}
+
+/* Judge by the median. Category scores and lab metrics become per-item
+   medians across runs (a metric absent from some runs uses the runs that
+   have it); everything evidential — opportunities, diagnostics, findings,
+   field data — comes from the representative run (median performance score,
+   lower-middle on even counts) so its numbers stay internally consistent. */
+function mergeRuns(runs: StrategyReport[]): StrategyReport {
+  if (runs.length === 1) return runs[0];
+
+  const byScore = [...runs].sort((a, b) => a.score - b.score);
+  const rep = byScore[Math.floor((byScore.length - 1) / 2)];
+
+  const scores: CategoryScore[] = rep.scores.map((c) => ({
+    ...c,
+    score: Math.round(
+      median(runs.flatMap((r) => r.scores.filter((s) => s.id === c.id).map((s) => s.score)))
+    ),
+  }));
+
+  const lab: LabMetric[] = rep.lab.map((m) => {
+    const def = LAB_METRICS.find((d) => d.id === m.id);
+    const values = runs.flatMap((r) => r.lab.filter((x) => x.id === m.id).map((x) => x.value));
+    const mid = median(values);
+    return {
+      ...m,
+      value: mid,
+      display: formatMetric(m.id, mid),
+      grade: def ? gradeOf(mid, def.good, def.poor) : m.grade,
+      min: Math.min(...values),
+      max: Math.max(...values),
+    };
+  });
+
+  return {
+    ...rep,
+    runs: runs.length,
+    runScores: runs.map((r) => r.score),
+    scores,
+    score: scores.find((s) => s.id === "performance")?.score ?? rep.score,
+    lab,
+  };
+}
+
+function median(values: number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+/** Failed audits per non-performance category — each one a concrete fix. */
+function parseCategoryFindings(
+  categories: Partial<Record<CategoryId, PsiCategory>> | undefined,
+  audits: Record<string, PsiAudit>
+): CategoryFindings[] {
+  const out: CategoryFindings[] = [];
+  for (const cat of CATEGORY_ORDER) {
+    if (cat.id === "performance") continue; // covered by opportunities/diagnostics
+    const c = categories?.[cat.id];
+    if (!c) continue;
+
+    const findings: Finding[] = [];
+    for (const ref of c.auditRefs ?? []) {
+      const a = ref.id ? audits[ref.id] : undefined;
+      if (!a) continue;
+      // Binary/numeric audits that failed. Manual, notApplicable and
+      // informative audits have score null and are review items, not failures.
+      if (a.score === null || a.score === undefined || a.score >= 1) continue;
+      findings.push({
+        id: ref.id!,
+        title: a.title ?? ref.id!,
+        description: cleanDescription(a.description),
+        displayValue: a.displayValue ?? "",
+        weight: ref.weight ?? 0,
+        items: itemLabels(a.details?.items ?? [], 8),
+      });
+    }
+    // Heaviest-weighted (biggest score impact) first, worst score breaks ties.
+    findings.sort((x, y) => y.weight - x.weight);
+    out.push({
+      id: cat.id,
+      label: cat.label,
+      score: Math.round((c.score ?? 0) * 100),
+      findings,
+    });
+  }
+  return out;
 }
 
 function parseField(psi: PsiResponse): StrategyReport["field"] {
@@ -392,6 +589,11 @@ function shortUrl(url: string | undefined): string | undefined {
 
 export function formatMs(ms: number): string {
   return ms >= 1000 ? `${(ms / 1000).toFixed(2)}s` : `${Math.round(ms)}ms`;
+}
+
+/** Lab metric formatter — CLS is unitless, everything else is ms. */
+export function formatMetric(id: string, value: number): string {
+  return id === "cumulative-layout-shift" ? value.toFixed(3) : formatMs(value);
 }
 
 export function formatKb(bytes: number): string {

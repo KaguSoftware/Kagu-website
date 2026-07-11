@@ -67,7 +67,7 @@ export default async function CaseStudyPage({ params }: PageProps) {
       {/* Feature reel — sits where the static cover used to. If a case has no
           features or thumbnail yet, fall back to the color-block CaseCover. */}
       {caseData.thumbnail || (caseData.features && caseData.features.length > 0) ? (
-        <CaseReel caseData={caseData} index={idx} size="large" />
+        <CaseReel caseData={caseData} index={idx} size="large" eager />
       ) : (
         <section
           style={{ background: "var(--paper)" }}

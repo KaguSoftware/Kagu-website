@@ -10,7 +10,7 @@ export function Eyebrow({ children, number, className = "" }: EyebrowProps) {
   return (
     <span className={`eyebrow inline-flex items-baseline gap-3 ${className}`}>
       {number ? (
-        <span aria-hidden style={{ color: "var(--mint-deep)" }}>
+        <span aria-hidden style={{ color: "var(--mint-text)" }}>
           {number}
         </span>
       ) : null}

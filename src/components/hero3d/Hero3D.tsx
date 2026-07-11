@@ -427,7 +427,13 @@ export function Hero3D({
         }
         .kagu-hero__subtitle {
           margin: 0;
-          max-width: 30ch;
+          /* em, not ch: ch is the width of "0" in the CURRENT font, so the
+             box narrows when Public Sans swaps in and the rewrap shifts the
+             whole bottom-anchored block (the 0.11 CLS spike Lighthouse
+             intermittently catches). 18.4em = the measured 30ch in loaded
+             Public Sans, but em is identical in the fallback, so the swap
+             can't rewrap. */
+          max-width: 18.4em;
           /* min stays ~17px on phones; the vw term only adds size on wider screens */
           font-size: clamp(1.0625rem, 1.0125rem + 0.6vw, 1.4rem);
           line-height: 1.5;
