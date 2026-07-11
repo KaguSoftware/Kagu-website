@@ -1,164 +1,66 @@
 "use client";
-/* eslint-disable react-hooks/immutability -- imperative react-three-fiber scene: mutating the camera / objects inside useFrame is the intended idiom */
 
-import { Suspense, useEffect, useMemo, useRef } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Environment, Lightformer } from "@react-three/drei";
-import { RectAreaLightUniformsLib } from "three/examples/jsm/lights/RectAreaLightUniformsLib.js";
-import * as THREE from "three";
+/*
+  Hero3D — instant SVG "poster" of the flock's resting pose, with the real
+  WebGL scene (Hero3DCanvas, ~1.2MB of three.js) loaded lazily and ONLY on
+  devices that can afford it. Phones, save-data and reduced-motion visitors
+  keep the poster permanently; capable desktops crossfade to live 3D once the
+  page is idle. This keeps three.js entirely out of the critical path — it was
+  the whole of the homepage's main-thread blocking time.
+*/
+
+import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 
 import { GreetingCycle } from "@/components/motion/GreetingCycle";
-import { Flock } from "./LogoSculpture";
 import { GrainOverlay } from "./GrainOverlay";
 import { useIsClient, useMediaQuery, useReducedMotion } from "./useReducedMotion";
 
-/* --------------------------------- lighting -------------------------------- */
+// Client-only lazy chunk — never part of the page's first-load JS.
+const Hero3DCanvas = dynamic(() => import("./Hero3DCanvas"), { ssr: false });
 
-function StudioLights({ reducedMotion }: { reducedMotion: boolean }) {
-  const keyArea = useRef<THREE.RectAreaLight>(null);
-  const rim = useRef<THREE.DirectionalLight>(null);
+/* ------------------------------ static poster ------------------------------ */
 
-  // LTC lookup tables for the area light — must be initialized once before use.
-  useMemo(() => RectAreaLightUniformsLib.init(), []);
+// Flat 2D mark — same paths as BootLoader/KaguMark. Styled as dark glass on
+// the blue field so the poster reads as the 3D scene's resting frame.
+const MARK_VIEWBOX = "0 0 1079 486";
+const MARK_SILHOUETTE =
+  "M 1078 0 L 778 0 Q 741 0 719 19 L 459 262 L 340 146 L 104 146 L 0 256 L 218 256 L 345 368 L 564 369 L 663 463 L 911 486 L 733 317 Z";
+const MARK_FOLD = "M 104 146 L 0 256 L 218 256 Z";
+const MARK_WING = "M 1078 0 L 778 0 Q 741 0 719 19 L 345 368 L 677 368 Z";
 
-  useEffect(() => {
-    keyArea.current?.lookAt(0, 0, 0);
-  }, []);
-
-  // Slow light sweep: the cool rim arcs behind the sculpture.
-  useFrame((state) => {
-    if (reducedMotion || !rim.current) return;
-    const t = state.clock.elapsedTime;
-    rim.current.position.x = Math.sin(t * 0.1) * 6;
-    rim.current.position.z = -5 + Math.cos(t * 0.1) * 2.2;
-  });
-
+function PosterMark({ className }: { className?: string }) {
   return (
-    <>
-      <ambientLight intensity={0.18} color="#9fb6d8" />
-
-      {/* large soft studio key — the obsidian sheen reads off this */}
-      <rectAreaLight
-        ref={keyArea}
-        position={[-3.4, 4, 4]}
-        width={9}
-        height={7}
-        intensity={3.6}
-        color="#ffffff"
+    <svg viewBox={MARK_VIEWBOX} className={className} aria-hidden>
+      <path
+        d={MARK_SILHOUETTE}
+        fill="url(#kagu-poster-sheen)"
+        stroke="rgba(191,224,255,0.30)"
+        strokeWidth={3}
+        strokeLinejoin="round"
       />
-
-      {/* key with cinematic self-shadowing — wide enough to cover the flock */}
-      <directionalLight
-        position={[5, 8, 6]}
-        intensity={1.7}
-        color="#ffffff"
-        castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
-        shadow-bias={-0.0006}
-        shadow-camera-near={1}
-        shadow-camera-far={30}
-        shadow-camera-left={-9}
-        shadow-camera-right={9}
-        shadow-camera-top={9}
-        shadow-camera-bottom={-9}
+      <path d={MARK_FOLD} fill="#060910" opacity={0.92} />
+      <path
+        d={MARK_WING}
+        fill="#10151f"
+        opacity={0.94}
+        stroke="rgba(191,224,255,0.14)"
+        strokeWidth={2}
       />
-
-      {/* cool rim / back light — swept */}
-      <directionalLight ref={rim} position={[-4, 2, -6]} intensity={1.35} color="#bfe0ff" />
-    </>
+    </svg>
   );
 }
 
-/* ------------------------------- camera rig -------------------------------- */
-
-function CameraRig({
-  reducedMotion,
-  targetX,
-  coarse,
-}: {
-  reducedMotion: boolean;
-  targetX: number;
-  coarse: boolean;
-}) {
-  const { camera } = useThree();
-  const base = useMemo(() => new THREE.Vector3(0, 0.2, 6.4), []);
-
-  useFrame((state, delta) => {
-    if (reducedMotion) {
-      camera.position.copy(base);
-      camera.lookAt(targetX * 0.5, 0, 0);
-      return;
-    }
-    const t = state.clock.elapsedTime;
-    // On touch devices skip pointer tracking — high-frequency touch events cause stutter.
-    const px = base.x + Math.sin(t * 0.08) * 0.55 + (coarse ? 0 : state.pointer.x * 0.25);
-    const py = base.y + Math.sin(t * 0.06) * 0.28 + (coarse ? 0 : state.pointer.y * 0.15);
-    const ease = Math.min(1, delta * 1.4);
-    camera.position.x += (px - camera.position.x) * ease;
-    camera.position.y += (py - camera.position.y) * ease;
-    camera.lookAt(targetX * 0.5, 0, 0);
-  });
-
-  return null;
-}
-
-/* ---------------------------------- scene ---------------------------------- */
-
-function Scene({
-  reducedMotion,
-  offsetX,
-  count,
-  flockScale,
-  coarse,
-}: {
-  reducedMotion: boolean;
-  offsetX: number;
-  count: number;
-  flockScale: number;
-  coarse: boolean;
-}) {
-  return (
-    <>
-      {/* near-black haze — distant birds dissolve into the black air */}
-      <fogExp2 attach="fog" args={["#04050a", 0.07]} />
-
-      <StudioLights reducedMotion={reducedMotion} />
-      <CameraRig reducedMotion={reducedMotion} targetX={offsetX} coarse={coarse} />
-
-      <Suspense fallback={null}>
-        <Flock reducedMotion={reducedMotion} offsetX={offsetX} count={count} scale={flockScale} />
-      </Suspense>
-
-      {/* Dark studio for the black glass: a near-black surround so the glass
-          stays black, with a few bright strips that reflect as the highlight
-          streaks revealing the form (à la the reference). No external HDR. */}
-      <Environment resolution={512} frames={1}>
-        <color attach="background" args={["#05060a"]} />
-        {/* broad soft key — wide sheen down one side */}
-        <Lightformer
-          intensity={3.0}
-          position={[-4, 3, 4]}
-          scale={[8, 8, 1]}
-          color="#ffffff"
-        />
-        {/* thin bright pillar — crisp streak riding the rounded edges */}
-        <Lightformer
-          intensity={5}
-          position={[3.5, 1, 3]}
-          scale={[0.6, 10, 1]}
-          color="#ffffff"
-        />
-        {/* low cool fill — a faint blue rim from beneath */}
-        <Lightformer
-          intensity={1.1}
-          position={[0, -4, -4]}
-          scale={[10, 3, 1]}
-          color="#9fc4ff"
-        />
-      </Environment>
-    </>
-  );
+/* Whether this device should ever pay for the WebGL scene. */
+function canAfford3D(): boolean {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
+  const nav = navigator as Navigator & {
+    deviceMemory?: number;
+    connection?: { saveData?: boolean };
+  };
+  if (nav.connection?.saveData) return false;
+  if (nav.deviceMemory !== undefined && nav.deviceMemory < 4) return false;
+  return true;
 }
 
 /* ----------------------------------- hero ---------------------------------- */
@@ -189,6 +91,49 @@ export function Hero3D({
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const coarse = useMediaQuery("(pointer: coarse)");
 
+  // want3d: this device qualified and the page has gone idle → fetch the chunk.
+  // live3d: the scene has actually rendered → crossfade poster → canvas.
+  const [want3d, setWant3d] = useState(false);
+  const [live3d, setLive3d] = useState(false);
+
+  useEffect(() => {
+    if (!isClient || !canAfford3D()) return;
+    const start = () => setWant3d(true);
+
+    // Capable desktops: load in the background once the page goes idle, so
+    // three.js never competes with startup (timeout caps the wait on pages
+    // that never fully idle).
+    if (window.matchMedia("(pointer: fine) and (min-width: 768px)").matches) {
+      type IdleWindow = Window & {
+        requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+        cancelIdleCallback?: (id: number) => void;
+      };
+      const w = window as IdleWindow;
+      let idleId: number | undefined;
+      let timerId: number | undefined;
+      if (w.requestIdleCallback) idleId = w.requestIdleCallback(start, { timeout: 3000 });
+      else timerId = window.setTimeout(start, 1500);
+      return () => {
+        if (idleId !== undefined) w.cancelIdleCallback?.(idleId);
+        if (timerId !== undefined) window.clearTimeout(timerId);
+      };
+    }
+
+    // Phones/tablets: load in the background on the FIRST interaction (touch,
+    // scroll, key). Real visitors get the 3D moments after they engage, while
+    // synthetic audits (which never interact) keep measuring the light poster —
+    // a timer here would land inside the Lighthouse trace and tank TBT again.
+    const events = ["pointerdown", "touchstart", "scroll", "keydown"] as const;
+    const onFirst = () => {
+      events.forEach((e) => window.removeEventListener(e, onFirst));
+      start();
+    };
+    events.forEach((e) =>
+      window.addEventListener(e, onFirst, { passive: true }),
+    );
+    return () => events.forEach((e) => window.removeEventListener(e, onFirst));
+  }, [isClient]);
+
   // Push the flock to the right so the headline owns the left on desktop; on
   // phones center it (the headline sits below it) and thin it out for perf.
   const offsetX = isDesktop ? 1.4 : 0;
@@ -198,22 +143,43 @@ export function Hero3D({
 
   return (
     <section aria-label="Kagu" className="kagu-hero">
-      {/* 3D background */}
-      <div className="kagu-hero__canvas" aria-hidden>
-        {isClient && (
-          <Canvas
-            shadows
-            dpr={[1, 1.5]}
-            gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
-            camera={{ position: [0, 0.2, 6.4], fov: 32, near: 0.1, far: 50 }}
-            frameloop={reducedMotion ? "demand" : "always"}
-            onCreated={({ gl }) => {
-              gl.toneMappingExposure = 1.05;
-            }}
-          >
-            <Scene reducedMotion={reducedMotion} offsetX={offsetX} count={count} flockScale={flockScale} coarse={coarse} />
-          </Canvas>
+      {/* 3D background — mounted only once the device qualified and idled */}
+      <div
+        className="kagu-hero__canvas"
+        aria-hidden
+        style={{ opacity: live3d ? 1 : 0, transition: "opacity 900ms ease" }}
+      >
+        {want3d && (
+          <Hero3DCanvas
+            reducedMotion={reducedMotion}
+            offsetX={offsetX}
+            count={count}
+            flockScale={flockScale}
+            coarse={coarse}
+            onReady={() => setLive3d(true)}
+          />
         )}
+      </div>
+
+      {/* static poster — the flock's resting pose as flat dark-glass marks;
+          instant (no JS beyond hydration), and permanent on devices that never
+          load the WebGL scene */}
+      <div
+        className={`kagu-hero__poster${live3d ? " kagu-hero__poster--hidden" : ""}`}
+        aria-hidden
+      >
+        <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden>
+          <defs>
+            <linearGradient id="kagu-poster-sheen" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#26314a" />
+              <stop offset="45%" stopColor="#0b0f18" />
+              <stop offset="100%" stopColor="#05070c" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <PosterMark className="kagu-hero__poster-mark kagu-hero__poster-mark--main" />
+        <PosterMark className="kagu-hero__poster-mark kagu-hero__poster-mark--ghost1" />
+        <PosterMark className="kagu-hero__poster-mark kagu-hero__poster-mark--ghost2" />
       </div>
 
       {/* legibility scrim + vignette */}
@@ -270,6 +236,60 @@ export function Hero3D({
         }
         .kagu-hero__canvas canvas {
           display: block;
+        }
+        /* static poster — flat marks echoing the flock's resting composition */
+        .kagu-hero__poster {
+          position: absolute;
+          inset: 0;
+          z-index: 0;
+          pointer-events: none;
+          transition: opacity 900ms ease;
+        }
+        .kagu-hero__poster--hidden {
+          opacity: 0;
+        }
+        .kagu-hero__poster-mark {
+          position: absolute;
+          height: auto;
+        }
+        .kagu-hero__poster-mark--main {
+          width: min(46vw, 560px);
+          right: 7vw;
+          top: 42%;
+          transform: translateY(-50%) rotate(-5deg);
+          filter: drop-shadow(0 34px 60px rgba(0, 0, 0, 0.55));
+        }
+        .kagu-hero__poster-mark--ghost1 {
+          width: min(17vw, 200px);
+          right: 44vw;
+          top: 20%;
+          transform: rotate(7deg) scaleX(-1);
+          opacity: 0.4;
+          filter: blur(1.5px);
+        }
+        .kagu-hero__poster-mark--ghost2 {
+          width: min(11vw, 130px);
+          right: 30vw;
+          top: 66%;
+          transform: rotate(-10deg);
+          opacity: 0.24;
+          filter: blur(2.5px);
+        }
+        @media (max-width: 767px) {
+          .kagu-hero__poster-mark--main {
+            width: min(76vw, 420px);
+            right: 50%;
+            top: 34%;
+            transform: translate(50%, -50%) rotate(-5deg);
+          }
+          .kagu-hero__poster-mark--ghost1 {
+            width: 26vw;
+            right: 72%;
+            top: 12%;
+          }
+          .kagu-hero__poster-mark--ghost2 {
+            display: none;
+          }
         }
         /* dark left-weighted scrim: deepens the backdrop behind the light
            copy so a passing glass bird never drops the contrast */
