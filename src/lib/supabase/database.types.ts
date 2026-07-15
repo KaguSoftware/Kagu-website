@@ -1085,6 +1085,101 @@ export interface Database {
           },
         ];
       };
+      seo_speed_tracked_urls: {
+        Row: {
+          id: string;
+          url: string;
+          host: string;
+          active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          url: string;
+          host: string;
+          active?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          url?: string;
+          host?: string;
+          active?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      seo_speed_snapshots: {
+        Row: {
+          id: string;
+          tracked_id: string;
+          strategy: string;
+          source: string;
+          score: number | null;
+          accessibility: number | null;
+          best_practices: number | null;
+          seo: number | null;
+          runs: number | null;
+          fcp_ms: number | null;
+          lcp_ms: number | null;
+          tbt_ms: number | null;
+          cls: number | null;
+          si_ms: number | null;
+          ttfb_ms: number | null;
+          inp_ms: number | null;
+          regression: boolean;
+          checked_at: string;
+        };
+        Insert: {
+          id?: string;
+          tracked_id: string;
+          strategy: string;
+          source?: string;
+          score?: number | null;
+          accessibility?: number | null;
+          best_practices?: number | null;
+          seo?: number | null;
+          runs?: number | null;
+          fcp_ms?: number | null;
+          lcp_ms?: number | null;
+          tbt_ms?: number | null;
+          cls?: number | null;
+          si_ms?: number | null;
+          ttfb_ms?: number | null;
+          inp_ms?: number | null;
+          regression?: boolean;
+          checked_at?: string;
+        };
+        Update: {
+          id?: string;
+          tracked_id?: string;
+          strategy?: string;
+          source?: string;
+          score?: number | null;
+          accessibility?: number | null;
+          best_practices?: number | null;
+          seo?: number | null;
+          runs?: number | null;
+          fcp_ms?: number | null;
+          lcp_ms?: number | null;
+          tbt_ms?: number | null;
+          cls?: number | null;
+          si_ms?: number | null;
+          ttfb_ms?: number | null;
+          inp_ms?: number | null;
+          regression?: boolean;
+          checked_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "seo_speed_snapshots_tracked_id_fkey";
+            columns: ["tracked_id"];
+            isOneToOne: false;
+            referencedRelation: "seo_speed_tracked_urls";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       contact_requests: {
         Row: {
           id: string;

@@ -13,6 +13,23 @@ type TrackedKeyword = {
   seo_rank_snapshots: Array<{ rank: number | null; checked_at: string }>;
 };
 
+type SpeedTrackedUrl = {
+  id: string;
+  url: string;
+  host: string;
+  seo_speed_snapshots: Array<{
+    strategy: string;
+    source: string;
+    score: number | null;
+    lcp_ms: number | null;
+    inp_ms: number | null;
+    regression: boolean;
+    checked_at: string;
+  }>;
+};
+
+type SpeedSnapshot = SpeedTrackedUrl["seo_speed_snapshots"][number];
+
 const rankLabel = (r: number | null) => (r === null ? "—" : `#${r}`);
 
 /* Movement between the two latest snapshots. Lower rank = better, so an
@@ -30,6 +47,69 @@ function Delta({ snaps }: { snaps: TrackedKeyword["seo_rank_snapshots"] }) {
   if (diff > 0) return <span className="font-mono text-[#3fb27f]">▲ {diff}</span>;
   if (diff < 0) return <span className="font-mono text-[#e5594e]">▼ {-diff}</span>;
   return <span className="text-slate-ink">=</span>;
+}
+
+/* Movement between the two latest performance scores — higher = better,
+   unlike ranks. */
+function ScoreDelta({ latest, previous }: { latest?: number | null; previous?: number | null }) {
+  if (typeof latest !== "number" || typeof previous !== "number")
+    return <span className="text-slate-ink">—</span>;
+  const diff = latest - previous;
+  if (diff > 0) return <span className="font-mono text-[#3fb27f]">▲ {diff}</span>;
+  if (diff < 0) return <span className="font-mono text-[#e5594e]">▼ {-diff}</span>;
+  return <span className="text-slate-ink">=</span>;
+}
+
+/* Score trend, oldest → newest: line in the de-emphasis ink, latest point in
+   the accent. The numbers beside it carry the values — the sparkline only
+   carries the shape. */
+function Sparkline({ values }: { values: number[] }) {
+  if (values.length < 2) return <span className="text-xs text-slate-ink">—</span>;
+  const w = 110;
+  const h = 26;
+  const padY = 3;
+  const min = Math.min(...values);
+  const span = Math.max(...values) - min || 1;
+  const x = (i: number) => 3 + (i / (values.length - 1)) * (w - 6);
+  const y = (v: number) => h - padY - ((v - min) / span) * (h - 2 * padY);
+  const points = values.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const lastIdx = values.length - 1;
+  return (
+    <svg
+      width={w}
+      height={h}
+      viewBox={`0 0 ${w} ${h}`}
+      role="img"
+      aria-label={`performance score trend: ${values.join(", ")}`}
+    >
+      <polyline
+        points={points}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="text-slate-ink"
+      />
+      <circle cx={x(lastIdx)} cy={y(values[lastIdx])} r="2.5" fill="currentColor" className="text-ink" />
+    </svg>
+  );
+}
+
+/* Field p75 with Google's grading — value always printed, color is only the
+   secondary channel. */
+function FieldValue({ ms, good, poor }: { ms: number | null; good: number; poor: number }) {
+  if (typeof ms !== "number") return <span className="text-slate-ink">—</span>;
+  const color = ms <= good ? "#3fb27f" : ms <= poor ? "#d9a13d" : "#e5594e";
+  const display = ms >= 1000 ? `${(ms / 1000).toFixed(2)}s` : `${Math.round(ms)}ms`;
+  return (
+    <span className="font-mono text-ink">
+      <span aria-hidden style={{ color }}>
+        ●{" "}
+      </span>
+      {display}
+    </span>
+  );
 }
 
 export default async function SeoPage() {
@@ -53,6 +133,41 @@ export default async function SeoPage() {
     })
     .limit(6, { referencedTable: "seo_rank_snapshots" });
   const tracked = (trackedData ?? []) as TrackedKeyword[];
+
+  // Speed history tables come from supabase/seo_speed_module.sql — until that
+  // module is applied this query errors and the section shows the setup hint.
+  // The embedded limit is generous because Lighthouse and weekly CrUX rows
+  // share the table and both accumulate.
+  const { data: speedData, error: speedError } = await supabase
+    .from("seo_speed_tracked_urls")
+    .select(
+      "id, url, host, seo_speed_snapshots(strategy, source, score, lcp_ms, inp_ms, regression, checked_at)"
+    )
+    .eq("active", true)
+    .order("url")
+    .order("checked_at", {
+      referencedTable: "seo_speed_snapshots",
+      ascending: false,
+    })
+    .limit(200, { referencedTable: "seo_speed_snapshots" });
+  const speedTracked = (speedData ?? []) as SpeedTrackedUrl[];
+
+  // One row per URL × device: Lighthouse snapshots feed the score trend,
+  // the newest CrUX row supplies the real-user vitals.
+  const speedRows = speedTracked.flatMap((t) =>
+    ["mobile", "desktop"]
+      .map((strategy) => {
+        const lab = t.seo_speed_snapshots.filter(
+          (s): s is SpeedSnapshot & { score: number } =>
+            s.strategy === strategy && s.source === "lighthouse" && typeof s.score === "number"
+        );
+        const field = t.seo_speed_snapshots.find(
+          (s) => s.strategy === strategy && s.source === "crux"
+        );
+        return { key: `${t.id}-${strategy}`, url: t.url, host: t.host, strategy, lab, field };
+      })
+      .filter((r) => r.lab.length > 0 || r.field)
+  );
 
   return (
     <div className="flex flex-col gap-12">
@@ -137,6 +252,94 @@ export default async function SeoPage() {
                       <td className="px-4 py-3 text-xs text-slate-ink">
                         {latest
                           ? new Date(latest.checked_at).toLocaleDateString("en-GB")
+                          : "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Weekly Lighthouse medians + real-user CrUX vitals per tracked URL —
+          answers "did my last deploy make it slower?". */}
+      <div>
+        <Eyebrow>Speed history ({speedRows.length} tracked)</Eyebrow>
+        {speedError ? (
+          <p className="mt-3 max-w-prose text-xs leading-relaxed text-slate-ink">
+            Not set up yet — run{" "}
+            <code className="text-ink">supabase/seo_speed_module.sql</code> once
+            in the Supabase SQL editor. After that, every{" "}
+            <code className="text-ink">npm run seo:speed</code> run snapshots its
+            medians here and the worker re-checks tracked URLs weekly.
+          </p>
+        ) : speedRows.length === 0 ? (
+          <p className="mt-3 max-w-prose text-xs leading-relaxed text-slate-ink">
+            No speed snapshots yet — run{" "}
+            <code className="text-ink">npm run seo:speed -- kagusoftware.com</code>{" "}
+            once (or <code className="text-ink">--field-only</code> to backfill
+            ~40 weeks of real-user history) and the worker keeps it fresh weekly.
+          </p>
+        ) : (
+          <div className="mt-3 overflow-x-auto border border-neutral">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-neutral">
+                  <th className="eyebrow px-4 py-3 font-normal">Page</th>
+                  <th className="eyebrow px-4 py-3 font-normal">Device</th>
+                  <th className="eyebrow px-4 py-3 font-normal">Perf</th>
+                  <th className="eyebrow px-4 py-3 font-normal">Change</th>
+                  <th className="eyebrow px-4 py-3 font-normal">Trend</th>
+                  <th className="eyebrow px-4 py-3 font-normal">Field LCP</th>
+                  <th className="eyebrow px-4 py-3 font-normal">Field INP</th>
+                  <th className="eyebrow px-4 py-3 font-normal">Checked</th>
+                </tr>
+              </thead>
+              <tbody>
+                {speedRows.map((r) => {
+                  const latest = r.lab[0];
+                  const previous = r.lab[1];
+                  // Oldest → newest for the sparkline, capped at 12 points.
+                  const series = r.lab
+                    .slice(0, 12)
+                    .map((s) => s.score)
+                    .reverse();
+                  const checked = latest ?? r.field;
+                  return (
+                    <tr key={r.key} className="border-b border-neutral last:border-0">
+                      <td className="px-4 py-3 text-xs text-slate-ink">
+                        {r.url.replace(/^https?:\/\/(www\.)?/, "")}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-slate-ink">{r.strategy}</td>
+                      <td className="px-4 py-3">
+                        {latest ? (
+                          <span className="font-mono text-ink">
+                            {latest.score}
+                            {latest.regression && (
+                              <span className="ml-2 text-xs text-[#e5594e]">▼ regression</span>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-ink">field only</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-xs">
+                        <ScoreDelta latest={latest?.score} previous={previous?.score} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <Sparkline values={series} />
+                      </td>
+                      <td className="px-4 py-3 text-xs">
+                        <FieldValue ms={r.field?.lcp_ms ?? null} good={2500} poor={4000} />
+                      </td>
+                      <td className="px-4 py-3 text-xs">
+                        <FieldValue ms={r.field?.inp_ms ?? null} good={200} poor={500} />
+                      </td>
+                      <td className="px-4 py-3 text-xs text-slate-ink">
+                        {checked
+                          ? new Date(checked.checked_at).toLocaleDateString("en-GB")
                           : "—"}
                       </td>
                     </tr>

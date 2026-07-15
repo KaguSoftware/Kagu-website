@@ -42,6 +42,7 @@ import {
 } from "./seo-audit-jobs.js";
 import { buildSeoStrategy } from "./strategy.js";
 import { runDueRankChecks, seedTrackedKeywords } from "./rank-tracking.js";
+import { runDueSpeedChecks } from "./speed-tracking.js";
 import {
   claimNextSeoStrategyJob,
   completeSeoStrategyJob,
@@ -469,12 +470,18 @@ async function main(): Promise<void> {
       console.log("No pending jobs. Exiting (RUN_ONCE=1).");
       break;
     }
-    // All four queues idle — spend the quiet time on weekly rank checks
-    // (self-throttled to one attempt per hour, one host per attempt).
+    // All four queues idle — spend the quiet time on weekly rank checks and
+    // weekly speed snapshots (each self-throttled to one attempt per hour,
+    // one host/URL per attempt).
     try {
       await runDueRankChecks();
     } catch (err) {
       console.warn("[rank] pass failed:", err instanceof Error ? err.message : err);
+    }
+    try {
+      await runDueSpeedChecks();
+    } catch (err) {
+      console.warn("[speed-history] pass failed:", err instanceof Error ? err.message : err);
     }
     await sleep(config.pollIntervalMs);
   }

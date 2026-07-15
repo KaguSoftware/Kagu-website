@@ -169,13 +169,19 @@ pagespeed.web.dev. Each run executes Lighthouse on Google's own
 infrastructure (a standardized throttled load, not this machine's network)
 and, when the site has enough Chrome traffic, attaches **CrUX field data**:
 the real-user Core Web Vitals that actually feed Google's ranking signal.
-CLI-only, writes nothing to the DB, needs no Supabase creds:
+Works fully standalone (no Supabase creds needed); with creds present each
+run also snapshots into speed history (below):
 
 ```sh
 npm run seo:speed -- kagusoftware.com
 npm run seo:speed -- --mobile example.com/pricing   # one strategy only
 npm run seo:speed -- --runs 5 example.com           # bigger sample (default 3)
-npm run seo:speed -- --json example.com             # machine-readable
+npm run seo:speed -- --json example.com             # machine-readable (progress → stderr)
+npm run seo:speed -- --field-only example.com       # ~40-week real-user CWV trend, no Lighthouse
+npm run seo:speed -- --site 8 example.com           # sample 8 pages from the sitemap
+npm run seo:speed -- --vs competitor.com example.com  # side-by-side benchmark
+npm run seo:speed -- --baseline before.json --budget score=90,lcp=2500 example.com
+npm run seo:speed -- --prompt fixes.md example.com  # fix brief for a coding agent
 ```
 
 Lighthouse is noisy — identical back-to-back runs can swing the performance
@@ -210,6 +216,48 @@ PageSpeed Insights API enabled) for 25k requests/day. Lab differs from the
 `seo:audit` vitals because Google's reference hardware differs from this
 machine — treat `seo:speed` as the canonical number and the audit's as a
 directional cross-check.
+
+### Speed history
+
+The rank-tracking pattern applied to speed: run
+`supabase/seo_speed_module.sql` once, and every default-mode CLI run saves
+its medians to `seo_speed_snapshots` (seeding the URL into
+`seo_speed_tracked_urls`). The idle worker re-checks each tracked URL weekly
+(`src/speed-tracking.ts`, one URL per hourly attempt), the admin SEO tab
+charts the trend, and a median performance drop of **more than 5 points** vs
+the previous snapshot is flagged as a **REGRESSION** — so "did my last
+deploy make it slower?" answers itself. `--no-save` skips persistence;
+without Supabase creds the tool is unchanged.
+
+`--field-only` reads the **CrUX History API** instead of running Lighthouse:
+~40 weeks of weekly real-user p75s (LCP / INP / CLS / FCP / TTFB) per page
+or origin, near-instant, on a quota separate from PSI — and it backfills
+those weeks into speed history retroactively, so the effect of past deploys
+shows up immediately. Needs `PSI_API_KEY` with the **Chrome UX Report API**
+enabled (the CrUX API takes no anonymous calls). `--weeks N` shortens the
+window.
+
+### Deploy gate, site sampling, benchmarking, fix brief
+
+- `--baseline before.json` — print per-score and per-metric deltas against a
+  previously saved `--json` report (better/worse marked per Google's
+  direction).
+- `--budget score=90,lcp=2500,cls=0.1` — enforce minimum scores
+  (`score`/`a11y`/`bp`/`seo`) and maximum metrics
+  (`lcp`/`fcp`/`tbt`/`cls`/`si`/`ttfb`, ms) against the medians; any breach
+  exits **2**, so a pre-push hook or post-deploy check against the Vercel
+  preview URL is a one-liner.
+- `--site [N]` — pull N URLs (default 6) from the sitemap (robots.txt →
+  /sitemap.xml → homepage links), spread across path sections, and print a
+  per-page score table worst-first plus the worst offender's top
+  opportunities. Defaults to mobile-only single runs to keep the sample ~N
+  PSI calls; `--budget` applies per page.
+- `--vs competitor.com` — run both sites and print side-by-side medians
+  (scores, lab metrics, field p75s) with a winner marker per row.
+- `--prompt fixes.md` — convert the findings into an actionable brief for a
+  coding agent (context, prioritized fixes with exact culprits, acceptance
+  criteria from `--budget` or Google's thresholds, verification commands) —
+  the same handoff `seo:strategy` formalizes with its master prompt.
 
 ## SEO strategy tool
 

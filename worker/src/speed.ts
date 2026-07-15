@@ -35,8 +35,10 @@ import { config } from "./config.js";
   limited per IP; set PSI_API_KEY (a plain Google Cloud API key with the
   "PageSpeed Insights API" enabled — no OAuth, no service account) to get
   25k requests/day. Like seo.ts/audit.ts this is a standalone tool (run via
-  `npm run seo:speed`) — it writes nothing to the DB and needs no Supabase
-  creds.
+  `npm run seo:speed`) and needs no Supabase creds — though when they ARE
+  present, the CLI opportunistically saves each report's medians as a speed
+  history snapshot (worker/src/speed-tracking.ts) so the admin SEO tab can
+  chart the trend and the idle worker re-checks weekly.
 */
 
 /* ------------------------------------------------------------------------ */
