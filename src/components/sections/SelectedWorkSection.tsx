@@ -21,6 +21,7 @@ import { Eyebrow } from "@/components/layout/Eyebrow";
 import { ViewTransition } from "@/lib/view-transition";
 import { CaseCover } from "@/components/cases/CaseCover";
 import { CaseReel } from "@/components/cases/CaseReel";
+import { ArrowGlyph } from "@/components/ui/ArrowGlyph";
 
 const COVER_BG: Record<string, string> = {
   "mint-pale": "var(--mint-pale)",
@@ -65,13 +66,13 @@ export function SelectedWorkSection({ cases }: { cases: Case[] }) {
                 fontSize: "var(--type-sm)",
                 letterSpacing: "var(--tracking-eyebrow)",
                 textTransform: "uppercase",
-                color: "var(--ink)",
-                borderBottom: "1px solid var(--neutral)",
+                color: "var(--mint-text)",
+                borderBottom: "1px solid var(--mint-text)",
                 paddingBottom: "var(--space-2)",
               }}
             >
               All work
-              <span aria-hidden style={{ width: 32, height: 1, background: "var(--ink)" }} />
+              <ArrowGlyph length={32} />
             </Link>
           </div>
         </SectionRise>
@@ -178,13 +179,13 @@ export function SelectedWorkSection({ cases }: { cases: Case[] }) {
                       fontSize: "var(--type-xs)",
                       letterSpacing: "var(--tracking-eyebrow)",
                       textTransform: "uppercase",
-                      color: "var(--ink)",
-                      borderBottom: "1px solid var(--mint-deep)",
+                      color: "var(--mint-text)",
+                      borderBottom: "1px solid var(--mint-text)",
                       paddingBottom: 6,
                     }}
                   >
                     Read case
-                    <span aria-hidden style={{ width: 28, height: 1, background: "var(--mint-deep)" }} />
+                    <ArrowGlyph length={28} />
                   </Link>
                 </div>
               </SectionRise>

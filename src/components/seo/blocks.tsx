@@ -20,6 +20,7 @@ import type { ReactNode } from "react";
 import { Eyebrow } from "@/components/layout/Eyebrow";
 import { JsonLd } from "./JsonLd";
 import { faqJsonLd, type FaqItem } from "@/lib/seo";
+import { ArrowGlyph } from "@/components/ui/ArrowGlyph";
 
 const SURFACE = ["var(--paper)", "var(--mint-pale)"] as const;
 
@@ -136,7 +137,7 @@ export function A({ href, children }: { href: string; children: ReactNode }) {
     <Link
       href={href}
       data-cursor="read"
-      style={{ color: "var(--ink)", borderBottom: "1px solid var(--mint-deep)" }}
+      style={{ color: "var(--mint-text)", borderBottom: "1px solid var(--mint-text)" }}
     >
       {children}
     </Link>
@@ -359,7 +360,7 @@ export function CtaBand({ title, href, label, secondaryHref, secondaryLabel }: C
             }}
           >
             {label}
-            <span aria-hidden style={{ width: 24, height: 1, background: "var(--ink)" }} />
+            <ArrowGlyph length={24} color="var(--ink)" />
           </Link>
           {secondaryHref && secondaryLabel ? (
             <Link
@@ -370,15 +371,15 @@ export function CtaBand({ title, href, label, secondaryHref, secondaryLabel }: C
                 fontSize: "var(--type-sm)",
                 letterSpacing: "var(--tracking-eyebrow)",
                 textTransform: "uppercase",
-                color: "var(--ink)",
-                borderBottom: "1px solid var(--neutral)",
+                color: "var(--mint-text)",
+                borderBottom: "1px solid var(--mint-text)",
                 paddingBottom: "var(--space-2)",
                 minHeight: 44,
                 alignItems: "center",
               }}
             >
               {secondaryLabel}
-              <span aria-hidden style={{ width: 24, height: 1, background: "var(--ink)" }} />
+              <ArrowGlyph length={24} />
             </Link>
           ) : null}
         </div>

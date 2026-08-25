@@ -60,7 +60,7 @@ function InlineLink({ href, children }: { href: string; children: ReactNode }) {
     <Link
       href={href}
       data-cursor="read"
-      style={{ color: "var(--ink)", borderBottom: "1px solid var(--mint-deep)" }}
+      style={{ color: "var(--mint-text)", borderBottom: "1px solid var(--mint-text)" }}
     >
       {children}
     </Link>

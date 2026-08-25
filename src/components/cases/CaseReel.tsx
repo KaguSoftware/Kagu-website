@@ -18,6 +18,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useScroll, useMotionValueEvent, useReducedMotion } from "motion/react";
 import type { Case } from "@/lib/content";
+import { ArrowGlyph } from "@/components/ui/ArrowGlyph";
 
 interface CaseReelProps {
   caseData: Case;
@@ -1045,13 +1046,13 @@ export function CaseReel({
                   fontSize: "var(--type-xs)",
                   letterSpacing: "var(--tracking-eyebrow)",
                   textTransform: "uppercase",
-                  color: "var(--ink)",
-                  borderBottom: "1px solid var(--mint-deep)",
+                  color: "var(--mint-text)",
+                  borderBottom: "1px solid var(--mint-text)",
                   paddingBottom: 6,
                 }}
               >
                 Read case
-                <span aria-hidden style={{ width: 28, height: 1, background: "var(--mint-deep)" }} />
+                <ArrowGlyph length={28} />
               </Link>
             )}
           </div>

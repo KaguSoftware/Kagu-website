@@ -33,6 +33,8 @@ import {
   type WebsiteTypeId,
   type ZoneChoices,
 } from "./catalog";
+import { ArrowGlyph } from "@/components/ui/ArrowGlyph";
+import { MailLink } from "@/components/ui/MailLink";
 
 type Stage = "default" | "submitting" | "success";
 
@@ -208,13 +210,11 @@ export function InquiryForm({
             ? ` with ${totals.features.length} add-on${totals.features.length > 1 ? "s" : ""}`
             : ""}{" "}
           (est. {formatPrice(totals.total)}) is in. You can also reach us directly at{" "}
-          <a
-            href={`mailto:${studioEmail}`}
+          <MailLink
+            email={studioEmail}
             data-cursor="read"
-            style={{ color: "var(--ink)", borderBottom: "1px solid var(--mint-deep)" }}
-          >
-            {studioEmail}
-          </a>
+            style={{ color: "var(--mint-text)", borderBottom: "1px solid var(--mint-text)" }}
+          />
           .
         </p>
       </div>
@@ -263,7 +263,7 @@ export function InquiryForm({
               ) : (
                 <HoverTextSwap>Send my package</HoverTextSwap>
               )}
-              <span aria-hidden style={{ width: 24, height: 1, background: "var(--ink)" }} />
+              <ArrowGlyph length={24} color="var(--ink)" />
             </button>
           </HoverMagnet>
         </div>

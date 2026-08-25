@@ -20,6 +20,8 @@ import { AmbientDrift } from "@/components/motion/AmbientDrift";
 import { Eyebrow } from "@/components/layout/Eyebrow";
 import { FooterLegalStrip } from "@/components/layout/FooterLegalStrip";
 import type { Studio } from "@/lib/content";
+import { ArrowGlyph } from "@/components/ui/ArrowGlyph";
+import { MailLink } from "@/components/ui/MailLink";
 
 function useLiveTime(tz: string) {
   const [t, setT] = useState("");
@@ -126,8 +128,9 @@ export function ContactFooterSection({ studio }: { studio: Studio }) {
             >
               Direct
             </span>
-            <a
-              href={`mailto:${studio.email}`}
+            <MailLink
+              email={studio.email}
+              confirm="block"
               data-cursor="read"
               className="kagu-text-swap-trigger"
               style={{
@@ -140,7 +143,7 @@ export function ContactFooterSection({ studio }: { studio: Studio }) {
               }}
             >
               <HoverTextSwap>{studio.email}</HoverTextSwap>
-            </a>
+            </MailLink>
             <p
               style={{
                 fontSize: "var(--type-md)",
@@ -175,7 +178,7 @@ export function ContactFooterSection({ studio }: { studio: Studio }) {
                 }}
               >
                 <HoverTextSwap>Start a project</HoverTextSwap>
-                <span aria-hidden style={{ width: 24, height: 1, background: "var(--paper)" }} />
+                <ArrowGlyph length={24} color="var(--paper)" />
               </Link>
             </HoverMagnet>
           </div>

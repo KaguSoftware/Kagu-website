@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SiteFooter } from "@/components/layout/SiteFooter";
+import { ArrowGlyph } from "@/components/ui/ArrowGlyph";
 
 export const metadata = {
   title: "Not found, Kagu",
@@ -64,7 +65,7 @@ export default function NotFound() {
               }}
             >
               See the work
-              <span aria-hidden style={{ width: 24, height: 1, background: "var(--ink)" }} />
+              <ArrowGlyph length={24} color="var(--ink)" />
             </Link>
             <Link
               href="/"
@@ -74,8 +75,8 @@ export default function NotFound() {
                 fontSize: "var(--type-sm)",
                 letterSpacing: "var(--tracking-eyebrow)",
                 textTransform: "uppercase",
-                color: "var(--ink)",
-                borderBottom: "1px solid var(--neutral)",
+                color: "var(--mint-text)",
+                borderBottom: "1px solid var(--mint-text)",
                 paddingBottom: 6,
               }}
             >

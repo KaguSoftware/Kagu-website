@@ -10,6 +10,7 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import { pageMetadata, webPageJsonLd } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { ContactForm } from "./ContactForm";
+import { MailLink } from "@/components/ui/MailLink";
 
 const TITLE = "Contact Kagu — Let's Talk Software";
 const DESCRIPTION =
@@ -99,25 +100,24 @@ export default async function ContactPage() {
               >
                 Direct
               </span>
-              <a
-                href={`mailto:${studio.email}`}
+              <MailLink
+                email={studio.email}
+                confirm="block"
                 data-cursor="read"
                 style={{
                   fontFamily: "var(--font-display)",
                   // Scale down on phones and allow wrapping so a long address
                   // doesn't run off the edge.
                   fontSize: "clamp(1.25rem, 6vw, var(--type-3xl))",
-                  color: "var(--ink)",
+                  color: "var(--mint-text)",
                   lineHeight: 1.1,
-                  borderBottom: "1px solid var(--mint-deep)",
+                  borderBottom: "1px solid var(--mint-text)",
                   display: "inline-block",
                   maxWidth: "100%",
                   overflowWrap: "anywhere",
                   paddingBottom: 4,
                 }}
-              >
-                {studio.email}
-              </a>
+              />
             </div>
             <div>
               <span

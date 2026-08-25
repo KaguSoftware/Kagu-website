@@ -12,6 +12,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, useMotionValue, useSpring, useReducedMotion, AnimatePresence } from "motion/react";
+import { ArrowGlyph } from "@/components/ui/ArrowGlyph";
 
 type Preview = { slug: string; bg: string; label: string };
 
@@ -143,10 +144,7 @@ export function CursorTrailPreview({ previews, children }: CursorTrailPreviewPro
                 }}
               >
                 View details
-                <span
-                  aria-hidden
-                  style={{ width: 20, height: 1, background: "currentColor", opacity: 0.7 }}
-                />
+                <ArrowGlyph length={20} style={{ opacity: 0.7 }} />
               </span>
             </motion.div>
           )}

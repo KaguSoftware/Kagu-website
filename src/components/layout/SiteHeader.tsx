@@ -7,6 +7,7 @@ import { Logo } from "@/components/Logo";
 import { KaguMark } from "@/components/KaguMark";
 import { MobileNav } from "./MobileNav";
 import { navItems } from "./navItems";
+import { HomeLink } from "@/components/ui/HomeLink";
 
 /*
   SiteHeader — a floating "Glass Navbar" (after hover.dev), Kagu-toned.
@@ -56,14 +57,9 @@ export function SiteHeader() {
           </ul>
         </nav>
 
-        <Link
-          href="/"
-          aria-label="Kagu, home"
-          data-cursor="nav-link"
-          className="kagu-glassnav__logo"
-        >
+        <HomeLink data-cursor="nav-link" className="kagu-glassnav__logo">
           <Logo wordmarkOnly size={28} />
-        </Link>
+        </HomeLink>
 
         <div className="kagu-glassnav__right">
           <Link href="/start-project" data-cursor="nav-link" className="kagu-glassnav__cta">

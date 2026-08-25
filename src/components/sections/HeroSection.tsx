@@ -20,6 +20,7 @@ import { AmbientDrift } from "@/components/motion/AmbientDrift";
 import { ScrollSkew } from "@/components/motion/ScrollSkew";
 import { Marquee } from "@/components/motion/Marquee";
 import type { MarqueeItem } from "@/lib/marquees";
+import { ArrowGlyph } from "@/components/ui/ArrowGlyph";
 
 // Tiny crosshair used as corner registration marks (editorial blueprint feel).
 function CornerMark({
@@ -286,14 +287,7 @@ export function HeroSection({ heroMarquee }: { heroMarquee: MarqueeItem[] }) {
                 }}
               >
                 <HoverTextSwap>Start a project</HoverTextSwap>
-                <span
-                  aria-hidden
-                  style={{
-                    width: 24,
-                    height: 1,
-                    background: "var(--ink)",
-                  }}
-                />
+                <ArrowGlyph length={24} color="var(--ink)" />
               </Link>
             </HoverMagnet>
           </motion.div>

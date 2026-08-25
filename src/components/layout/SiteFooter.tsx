@@ -13,6 +13,7 @@ import { Logo } from "@/components/Logo";
 import { FooterLegalStrip } from "./FooterLegalStrip";
 import { createClient } from "@/lib/supabase/client";
 import type { Clock } from "@/lib/supabase/database.types";
+import { MailLink } from "@/components/ui/MailLink";
 
 export type FooterStudio = {
   mission: string;
@@ -200,13 +201,11 @@ export function SiteFooter({ studio: initial }: { studio?: FooterStudio }) {
         >
           <span>© {new Date().getFullYear()} Kagu Software</span>
           <span>{studio.location} · {studio.timezone}</span>
-          <a
-            href={`mailto:${studio.email}`}
+          <MailLink
+            email={studio.email}
             data-cursor="read"
-            style={{ color: "var(--mint-deep)" }}
-          >
-            {studio.email}
-          </a>
+            style={{ color: "var(--mint-text)" }}
+          />
         </div>
 
         <FooterLegalStrip />

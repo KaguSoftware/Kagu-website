@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import { ViewTransition } from "@/lib/view-transition";
 import { CaseCover } from "@/components/cases/CaseCover";
 import { CaseReel } from "@/components/cases/CaseReel";
+import { ArrowGlyph } from "@/components/ui/ArrowGlyph";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -58,7 +59,7 @@ export default async function CaseStudyPage({ params }: PageProps) {
               color: "var(--ink)",
             }}
           >
-            <span aria-hidden style={{ width: 28, height: 1, background: "currentColor" }} />
+            <ArrowGlyph length={28} direction="left" />
             All work
           </Link>
         </div>
@@ -77,9 +78,12 @@ export default async function CaseStudyPage({ params }: PageProps) {
             <h1
               className="display"
               style={{
-                fontSize: "var(--type-7xl)",
+                // Same guard as the "next case" title: --type-7xl's 4.5rem floor
+                // is wider than a phone for long client names.
+                fontSize: "clamp(2.75rem, 12vw, var(--type-7xl))",
                 lineHeight: 0.9,
                 maxWidth: "14ch",
+                overflowWrap: "anywhere",
                 marginBottom: "var(--space-12)",
                 letterSpacing: "var(--tracking-tight)",
               }}
@@ -213,13 +217,13 @@ export default async function CaseStudyPage({ params }: PageProps) {
                     fontSize: "var(--type-sm)",
                     letterSpacing: "var(--tracking-eyebrow)",
                     textTransform: "uppercase",
-                    color: "var(--ink)",
-                    borderBottom: "1px solid var(--mint-deep)",
+                    color: "var(--mint-text)",
+                    borderBottom: "1px solid var(--mint-text)",
                     paddingBottom: 6,
                   }}
                 >
                   Visit live
-                  <span aria-hidden style={{ width: 28, height: 1, background: "var(--mint-deep)" }} />
+                  <ArrowGlyph length={28} />
                 </a>
               </div>
             )}
@@ -239,17 +243,23 @@ export default async function CaseStudyPage({ params }: PageProps) {
           <Link href={`/work/${next.slug}`} data-cursor="view" className="block group">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-end">
               <h2
-                className="display md:col-span-9"
+                className="display md:col-span-9 min-w-0"
                 style={{
-                  fontSize: "var(--type-7xl)",
+                  // --type-7xl bottoms out at 4.5rem, which is wider than a
+                  // phone for a name like "UpperDeck" — the page then scrolled
+                  // sideways. Track the viewport below the breakpoint and let a
+                  // long single word break rather than push past the edge.
+                  fontSize: "clamp(2.75rem, 12vw, var(--type-7xl))",
                   lineHeight: 0.9,
                   color: "var(--slate-ink)",
+                  overflowWrap: "anywhere",
+                  maxWidth: "100%",
                 }}
               >
                 {next.client}
               </h2>
               <span
-                className="font-mono md:col-span-3 md:text-right"
+                className="font-mono md:col-span-3 md:text-right min-w-0"
                 style={{
                   fontSize: "var(--type-sm)",
                   letterSpacing: "var(--tracking-eyebrow)",

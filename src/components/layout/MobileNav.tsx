@@ -23,6 +23,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { Logo } from "@/components/Logo";
 import { navItems } from "./navItems";
+import { HomeLink } from "@/components/ui/HomeLink";
 
 // Refined easing — fast, confident, no bounce.
 const EASE_BLOT = [0.16, 1, 0.3, 1] as const; // expo-out
@@ -137,15 +138,9 @@ export function MobileNav() {
               exit={reduced ? undefined : { opacity: 0, y: -8 }}
               transition={{ duration: 0.5, ease: EASE_WORD, delay: reduced ? 0 : 0.28 }}
             >
-              <Link
-                href="/"
-                onClick={close}
-                className="kagu-blot__logo"
-                aria-label="Kagu, home"
-                aria-current={pathname === "/" ? "page" : undefined}
-              >
+              <HomeLink onClick={close} className="kagu-blot__logo">
                 <Logo size={30} />
-              </Link>
+              </HomeLink>
             </motion.div>
 
             <motion.nav
@@ -203,15 +198,13 @@ export function MobileNav() {
 
       {/* Persistent logo blob — top-left frosted chip, mirrors the burger.
           Hidden while the menu is open (the flooded panel has its own brand). */}
-      <Link
-        href="/"
-        aria-label="Kagu, home"
+      <HomeLink
         className={`kagu-blot__home ${open ? "is-hidden" : ""}`}
         tabIndex={open ? -1 : undefined}
         aria-hidden={open ? "true" : undefined}
       >
         <Logo wordmarkOnly size={26} />
-      </Link>
+      </HomeLink>
 
       <button
         ref={triggerRef}

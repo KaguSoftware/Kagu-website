@@ -10,6 +10,8 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { HoverMagnet } from "@/components/motion/HoverMagnet";
 import { HoverTextSwap } from "@/components/motion/HoverTextSwap";
+import { ArrowGlyph } from "@/components/ui/ArrowGlyph";
+import { MailLink } from "@/components/ui/MailLink";
 
 type Stage = "default" | "submitting" | "success" | "error";
 
@@ -95,13 +97,11 @@ export function ContactForm({ email }: { email: string }) {
           </h2>
           <p style={{ fontSize: "var(--type-md)", color: "var(--ink)", maxWidth: "52ch", lineHeight: 1.6 }}>
             Meanwhile, you can write to us directly at{" "}
-            <a
-              href={`mailto:${email}`}
+            <MailLink
+              email={email}
               data-cursor="read"
-              style={{ color: "var(--ink)", borderBottom: "1px solid var(--mint-deep)" }}
-            >
-              {email}
-            </a>
+              style={{ color: "var(--mint-text)", borderBottom: "1px solid var(--mint-text)" }}
+            />
             .
           </p>
         </div>
@@ -171,10 +171,7 @@ export function ContactForm({ email }: { email: string }) {
                 ) : (
                   <HoverTextSwap>Send</HoverTextSwap>
                 )}
-                <span
-                  aria-hidden
-                  style={{ width: 24, height: 1, background: "var(--ink)" }}
-                />
+                <ArrowGlyph length={24} color="var(--ink)" />
               </button>
             </HoverMagnet>
           </div>
