@@ -69,6 +69,11 @@ h1, h2, h3, h4, .display {
   line-height: var(--leading-tight);
   letter-spacing: var(--tracking-tight);
   font-weight: 500;
+  /* Display steps are large enough that one long word can be wider than a
+     phone column (Space Mono is 0.6em per glyph: at --type-7xl a 9-letter
+     word is ~380px). Without this it silently overflows and the section's
+     overflow:hidden crops it. Only engages when the word cannot fit at all. */
+  overflow-wrap: break-word;
 }
 
 /* Eyebrows / small focal labels */

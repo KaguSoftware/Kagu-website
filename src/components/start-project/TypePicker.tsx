@@ -39,6 +39,9 @@ export function TypePicker({
               zIndex: selectedType ? 1 : 0,
             }}
           >
+            {/* No nowrap: "Restaurant & booking" at 0.18em tracking is ~200px,
+                which together with the price is wider than a 320px phone row —
+                it pushed the price off the edge. It wraps at the space instead. */}
             <span
               className="font-mono"
               style={{
@@ -46,7 +49,6 @@ export function TypePicker({
                 letterSpacing: "var(--tracking-eyebrow)",
                 textTransform: "uppercase",
                 color: selectedType ? "var(--mint-deep)" : "var(--ink)",
-                whiteSpace: "nowrap",
               }}
             >
               {type.label}
@@ -66,6 +68,7 @@ export function TypePicker({
               className="font-mono"
               style={{
                 marginLeft: "auto",
+                flexShrink: 0,
                 fontSize: "var(--type-sm)",
                 color: selectedType ? "var(--mint-deep)" : "var(--slate-ink)",
                 whiteSpace: "nowrap",

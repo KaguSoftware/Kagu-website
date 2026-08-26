@@ -128,22 +128,33 @@ export function ContactFooterSection({ studio }: { studio: Studio }) {
             >
               Direct
             </span>
-            <MailLink
-              email={studio.email}
-              confirm="block"
-              data-cursor="read"
-              className="kagu-text-swap-trigger"
-              style={{
-                fontFamily: "var(--font-display)",
-                fontSize: "var(--type-5xl)",
-                color: "var(--ink)",
-                display: "inline-block",
-                lineHeight: 1,
-                letterSpacing: "var(--tracking-tight)",
-              }}
-            >
-              <HoverTextSwap>{studio.email}</HoverTextSwap>
-            </MailLink>
+            {/* The address is one unbreakable word in a 0.6em-per-glyph mono
+                face, so a fixed display size runs straight off the edge on a
+                phone (and past the column on desktop) where the section's
+                overflow:hidden silently crops it. Size it FROM the column
+                instead: the wrapper is a query container, so 100cqw is the
+                space actually available and 100cqw / chars / 0.63 is the
+                largest size the whole address still fits on one line. min()
+                keeps it from ever growing past the intended display step. */}
+            <div style={{ containerType: "inline-size", maxWidth: "100%" }}>
+              <MailLink
+                email={studio.email}
+                confirm="block"
+                data-cursor="read"
+                className="kagu-text-swap-trigger"
+                style={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: `min(var(--type-5xl), calc(100cqw / ${studio.email.length} / 0.63))`,
+                  color: "var(--ink)",
+                  display: "inline-block",
+                  maxWidth: "100%",
+                  lineHeight: 1,
+                  letterSpacing: "var(--tracking-tight)",
+                }}
+              >
+                <HoverTextSwap>{studio.email}</HoverTextSwap>
+              </MailLink>
+            </div>
             <p
               style={{
                 fontSize: "var(--type-md)",

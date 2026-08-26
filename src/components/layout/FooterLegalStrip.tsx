@@ -131,6 +131,10 @@ export function FooterLegalStrip() {
             style={{ height: 28, width: "auto", maxWidth: "100%" }}
           />
         </div>
+        {/* No nowrap: at 0.18em tracking this line is ~338px wide, which is
+            wider than the column on any phone — it used to run off the edge
+            and get clipped by the footer's overflow:hidden. It still sits on
+            one line everywhere it fits. */}
         <span
           className="font-mono"
           style={{
@@ -138,7 +142,6 @@ export function FooterLegalStrip() {
             letterSpacing: "var(--tracking-eyebrow)",
             textTransform: "uppercase",
             color: "var(--mint-deep)",
-            whiteSpace: "nowrap",
           }}
         >
           Güvenli ödeme · SSL · Secure payment

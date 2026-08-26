@@ -60,6 +60,14 @@ const CTA_BG: Record<NonNullable<Frame["ctaBg"]>, string> = {
   paper: "var(--paper)",
 };
 
+// CTA-card type, sized against the card's own box (see the Link below). Each
+// value takes the smaller of a width- and a height-share, so a short, wide card
+// (phone: ~335x210) shrinks the type instead of clipping it while a full-width
+// desktop card still lands on the old 128px headline.
+const CTA_LABEL_SIZE = "clamp(22px, min(9cqw, 15cqh), 128px)";
+const CTA_META_SIZE = "clamp(11px, min(2.2cqw, 3.6cqh), 14px)";
+const CTA_ARROW_SIZE = "clamp(16px, min(5cqw, 8cqh), 28px)";
+
 const CTA_FG: Record<NonNullable<Frame["ctaBg"]>, string> = {
   "mint-pale": "var(--slate-ink)",
   "mint-soft": "var(--slate-ink)",
@@ -591,7 +599,10 @@ export function CaseReel({
                               <span
                                 className="display"
                                 style={{
-                                  fontSize: "clamp(22px, 7vw, 40px)",
+                                  // cqw = 1% of the phone shell, not the
+                                  // viewport: 7vw overshot the ~150px screen on
+                                  // a large phone and the label clipped.
+                                  fontSize: "clamp(14px, 19cqw, 40px)",
                                   lineHeight: 0.95,
                                   letterSpacing: "var(--tracking-tight)",
                                   color: "inherit",
@@ -613,7 +624,16 @@ export function CaseReel({
                                     transition: "width 420ms cubic-bezier(0.22,1,0.36,1)",
                                   }}
                                 />
-                                <svg width="22" height="22" viewBox="0 0 28 28" fill="none" style={{ marginLeft: -2 }}>
+                                <svg
+                                  viewBox="0 0 28 28"
+                                  fill="none"
+                                  style={{
+                                    marginLeft: -2,
+                                    flexShrink: 0,
+                                    width: "min(9cqw, 22px)",
+                                    height: "min(9cqw, 22px)",
+                                  }}
+                                >
                                   <path d="M14 4 L24 14 L14 24 M24 14 L4 14" stroke="currentColor" strokeWidth="2" fill="none" />
                                 </svg>
                               </span>
@@ -655,6 +675,15 @@ export function CaseReel({
                         </div>
                         </div>
                       ) : isCta ? (
+                        // Everything inside is sized against the CARD, not the
+                        // viewport: at phone width the stage is only ~210px tall,
+                        // and viewport-based type (8vw headline + a 28px arrow +
+                        // two meta rows) overran that and was eaten by
+                        // overflow:hidden, so the arrow and the URL row simply
+                        // vanished. container-type:size exposes the card box as
+                        // cqw/cqh, and every size below is min(width-share,
+                        // height-share) so content can never outgrow the card in
+                        // either axis.
                         <Link
                           href={`/work/${caseData.slug}`}
                           data-cursor="view"
@@ -662,12 +691,14 @@ export function CaseReel({
                           style={{
                             position: "absolute",
                             inset: 0,
+                            containerType: "size",
                             background: CTA_BG[f.ctaBg ?? "mint-soft"],
                             color: CTA_FG[f.ctaBg ?? "mint-soft"],
                             display: "flex",
                             flexDirection: "column",
                             justifyContent: "space-between",
-                            padding: "clamp(24px, 4vw, 56px)",
+                            gap: "min(2cqw, 3cqh)",
+                            padding: "clamp(14px, min(4cqw, 6.5cqh), 56px)",
                             textDecoration: "none",
                             overflow: "hidden",
                           }}
@@ -693,13 +724,14 @@ export function CaseReel({
                               position: "relative",
                               zIndex: 1,
                               flexWrap: "wrap",
-                              gap: 8,
+                              flexShrink: 0,
+                              gap: "min(1.5cqw, 8px)",
                             }}
                           >
                             <span
                               className="font-mono"
                               style={{
-                                fontSize: "var(--type-xs)",
+                                fontSize: CTA_META_SIZE,
                                 letterSpacing: "var(--tracking-eyebrow)",
                                 textTransform: "uppercase",
                                 opacity: 0.7,
@@ -710,7 +742,7 @@ export function CaseReel({
                             <span
                               className="font-mono"
                               style={{
-                                fontSize: "var(--type-xs)",
+                                fontSize: CTA_META_SIZE,
                                 letterSpacing: "var(--tracking-eyebrow)",
                                 textTransform: "uppercase",
                                 opacity: 0.7,
@@ -724,16 +756,17 @@ export function CaseReel({
                             style={{
                               display: "flex",
                               alignItems: "center",
-                              gap: "clamp(16px, 3vw, 40px)",
+                              gap: "clamp(10px, min(3cqw, 5cqh), 40px)",
                               position: "relative",
                               zIndex: 1,
                               flexWrap: "wrap",
+                              minHeight: 0,
                             }}
                           >
                             <span
                               className="display"
                               style={{
-                                fontSize: "clamp(48px, 8vw, 128px)",
+                                fontSize: CTA_LABEL_SIZE,
                                 lineHeight: 0.95,
                                 letterSpacing: "var(--tracking-tight)",
                                 color: "inherit",
@@ -753,18 +786,21 @@ export function CaseReel({
                               <span
                                 style={{
                                   display: "inline-block",
-                                  width: "clamp(48px, 8vw, 120px)",
+                                  width: "clamp(28px, min(8cqw, 13cqh), 120px)",
                                   height: 2,
                                   background: "currentColor",
                                   transition: "width 420ms cubic-bezier(0.22,1,0.36,1)",
                                 }}
                               />
                               <svg
-                                width="28"
-                                height="28"
                                 viewBox="0 0 28 28"
                                 fill="none"
-                                style={{ marginLeft: -2 }}
+                                style={{
+                                  marginLeft: -2,
+                                  flexShrink: 0,
+                                  width: CTA_ARROW_SIZE,
+                                  height: CTA_ARROW_SIZE,
+                                }}
                               >
                                 <path
                                   d="M14 4 L24 14 L14 24 M24 14 L4 14"
@@ -784,13 +820,14 @@ export function CaseReel({
                               position: "relative",
                               zIndex: 1,
                               flexWrap: "wrap",
-                              gap: 8,
+                              flexShrink: 0,
+                              gap: "min(1.5cqw, 8px)",
                             }}
                           >
                             <span
                               className="font-mono"
                               style={{
-                                fontSize: "var(--type-xs)",
+                                fontSize: CTA_META_SIZE,
                                 letterSpacing: "var(--tracking-eyebrow)",
                                 textTransform: "uppercase",
                                 opacity: 0.7,
@@ -801,7 +838,7 @@ export function CaseReel({
                             <span
                               className="font-mono"
                               style={{
-                                fontSize: "var(--type-xs)",
+                                fontSize: CTA_META_SIZE,
                                 letterSpacing: "var(--tracking-eyebrow)",
                                 textTransform: "uppercase",
                                 opacity: 0.7,
@@ -811,7 +848,7 @@ export function CaseReel({
                             </span>
                           </div>
                           <style>{`
-                            .kagu-cta-card:hover .kagu-cta-arrow > span:first-child { width: clamp(72px, 12vw, 180px); }
+                            .kagu-cta-card:hover .kagu-cta-arrow > span:first-child { width: clamp(40px, min(12cqw, 19cqh), 180px); }
                           `}</style>
                         </Link>
                       ) : thisDevice === "mobile" ? (
