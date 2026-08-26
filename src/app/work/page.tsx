@@ -287,8 +287,8 @@ export default async function WorkIndexPage() {
                     font-size: var(--type-base);
                 }
                 .kagu-work__intro-link {
-                    color: var(--ink);
-                    border-bottom: 1px solid var(--mint-deep);
+                    color: var(--mint-text);
+                    border-bottom: 1px solid var(--mint-text);
                 }
 
                 .kagu-folders {

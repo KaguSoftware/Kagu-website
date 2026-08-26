@@ -71,6 +71,7 @@
   text-transform: uppercase;
   color: var(--ink);
   text-decoration: none;
+  transition: color 220ms cubic-bezier(0.6, 0.01, 0.05, 0.95);
 }
 .kagu-nav-link::after {
   content: "";
@@ -87,11 +88,15 @@
 .kagu-nav-link.is-active::after {
   right: 0;
 }
+/* Underlined means clickable, so the label goes blue with the rule. */
+.kagu-nav-link:hover,
+.kagu-nav-link:focus-visible,
 .kagu-nav-link.is-active {
-  color: var(--ink);
+  color: var(--mint-text);
 }
 @media (prefers-reduced-motion: reduce) {
   .kagu-nav-link::after { transition: none; }
+  .kagu-nav-link { transition: none; }
 }
 
 /* --- CTA pill — the single, unmistakable call-to-action ---

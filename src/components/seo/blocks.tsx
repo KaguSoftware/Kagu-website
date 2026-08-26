@@ -54,8 +54,8 @@ export function SeoHero({ eyebrow, title, lede, langSwitchHref, langSwitchLabel 
               fontSize: "var(--type-xs)",
               letterSpacing: "var(--tracking-eyebrow)",
               textTransform: "uppercase",
-              color: "var(--mint-deep)",
-              borderBottom: "1px solid var(--mint-deep)",
+              color: "var(--mint-text)",
+              borderBottom: "1px solid var(--mint-text)",
               paddingBottom: 2,
             }}
           >

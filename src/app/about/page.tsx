@@ -7,6 +7,7 @@ import { Eyebrow } from "@/components/layout/Eyebrow";
 import { pageMetadata, webPageJsonLd } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { TeamRoster, type RosterMember } from "./TeamRoster";
+import { ArrowGlyph } from "@/components/ui/ArrowGlyph";
 
 const TITLE = "About Kagu — The People Behind the Work";
 const DESCRIPTION =
@@ -337,14 +338,7 @@ export default async function AboutPage({ searchParams }: AboutPageProps) {
                         }}
                     >
                         Start a project
-                        <span
-                            aria-hidden
-                            style={{
-                                width: 24,
-                                height: 1,
-                                background: "var(--ink)",
-                            }}
-                        />
+                        <ArrowGlyph length={24} color="var(--ink)" />
                     </Link>
                 </div>
             </section>
