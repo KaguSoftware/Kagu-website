@@ -1,9 +1,10 @@
 /*
   /marketing — the service page for Kagu's digital marketing branch.
 
-  Server-rendered so every word of the copy exists in the raw HTML; the lead
-  form (MarketingLeadForm) is the only client island. Section order follows the
-  background ladder in docs/DESIGN_BASELINE.md §3 — no two adjacent sections
+  Server-rendered so every word of the copy exists in the raw HTML. Two client
+  islands only: the headline's rotating word (HeroHeadline) and the lead form
+  (MarketingLeadForm). Section order follows the background
+  ladder in docs/DESIGN_BASELINE.md §3 — no two adjacent sections
   share a surface, and the dark close is used once:
 
     Hero (paper) → Services (mint-pale) → Process (paper)
@@ -35,6 +36,7 @@ import {
 } from "@/lib/seo";
 import { whatsappHref } from "@/lib/marketing.config";
 import { MARKETING_CLIENTS, type MarketingClient } from "./clients";
+import { MarketingHeroHeadline, HERO_SENTENCE } from "./HeroHeadline";
 import { MarketingLeadForm } from "./MarketingLeadForm";
 
 const PATH = "/marketing";
@@ -197,11 +199,15 @@ export default async function MarketingPage() {
           <span className="eyebrow block" style={{ marginBottom: "var(--space-6)" }}>
             Marketing · Meta &amp; TikTok · {studio.location}
           </span>
+          {/* Type is untouched — only the copy changed. maxWidth is 18ch, the
+              exact length of the fixed line, so it sits on one line wherever
+              the container allows and the accent word gets the line below. */}
           <h1
             className="display"
-            style={{ fontSize: "var(--type-6xl)", lineHeight: 0.95, maxWidth: "16ch" }}
+            aria-label={HERO_SENTENCE}
+            style={{ fontSize: "var(--type-6xl)", lineHeight: 0.95, maxWidth: "18ch" }}
           >
-            We run your social accounts and your ads.
+            <MarketingHeroHeadline />
           </h1>
           <p
             style={{

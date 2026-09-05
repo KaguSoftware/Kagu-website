@@ -32,7 +32,7 @@ Components consume eases from `--ease-*` CSS vars or `easeCss` / `ease` from
 
 ---
 
-## 2. Library — what shipped (M01 → M15)
+## 2. Library — what shipped (M01 → M16)
 
 | ID | Name | File | Library | Notes |
 |----|------|------|---------|-------|
@@ -51,6 +51,7 @@ Components consume eases from `--ease-*` CSS vars or `easeCss` / `ease` from
 | M13 | ScrollSkew | [motion/ScrollSkew.tsx](../src/components/motion/ScrollSkew.tsx) | RAF loop | **capped at 1.5°** (down from brief's 2.5° per audit); hero type only; decays to 0 after scroll stops |
 | M14 | CursorTrailPreview | [motion/CursorTrailPreview.tsx](../src/components/motion/CursorTrailPreview.tsx) | Motion springs (180/30) | `/work` index only; spring lag ~80ms; touch + reduced-motion = disabled |
 | M15 | AmbientDrift | [motion/AmbientDrift.tsx](../src/components/motion/AmbientDrift.tsx) | CSS @keyframes | 28s diagonal background-position drift; IntersectionObserver pause; light + dark variants |
+| M16 | MarketingHeroHeadline | [marketing/HeroHeadline.tsx](../src/app/marketing/HeroHeadline.tsx) | Motion (AnimatePresence) | `/marketing` `<h1>` only; accent word cycles on its own line, 2800ms hold + 450ms masked Y-slide; hidden sizer holds the box so nothing reflows; `clip-path` top inset of 0.12em keeps the outgoing word off the line above; IntersectionObserver pause |
 
 ---
 
@@ -100,6 +101,7 @@ Motion's `useReducedMotion()` hook AND global CSS `@media (prefers-reduced-motio
 | M13 ScrollSkew | RAF loop not started; no transform applied |
 | M14 CursorTrailPreview | thumbnails never render |
 | M15 AmbientDrift | CSS animation paused via media query |
+| M16 MarketingHeroHeadline | index never advances — first word only, no slide |
 
 Touch (`pointer: coarse`) opt-outs: M09, M10, M14.
 
