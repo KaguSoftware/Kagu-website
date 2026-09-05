@@ -158,6 +158,13 @@ export function SiteFooter({ studio: initial }: { studio?: FooterStudio }) {
               Work
             </Link>
             <Link
+              href="/marketing"
+              data-cursor="nav-link"
+              style={{ fontFamily: "var(--font-display)", fontSize: "var(--type-lg)", color: "var(--ink)" }}
+            >
+              Marketing
+            </Link>
+            <Link
               href="/about"
               data-cursor="nav-link"
               style={{ fontFamily: "var(--font-display)", fontSize: "var(--type-lg)", color: "var(--ink)" }}
