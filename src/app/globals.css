@@ -3,6 +3,7 @@
 @import "../styles/view-transitions.css";
 @import "../styles/mobile-nav.css";
 @import "../styles/site-header.css";
+@import "../styles/file-card.css";
 
 @theme inline {
   /* Colors → expose every token to Tailwind */

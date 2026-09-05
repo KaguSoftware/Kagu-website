@@ -1,0 +1,466 @@
+/*
+  File card — the "folder" surface shared by /work and /marketing.
+
+  Extracted from src/app/work/page.tsx so both pages render the same object:
+  a folder tab rising off a coloured body, a File nn / nn meta line, a ghost
+  index watermark, the title / tags / lede column and a framed thumbnail.
+  Markup lives in src/components/cases/FileCard.tsx.
+
+  Two layout modes sit on top of the shared card:
+    .kagu-folder--pinned  /work — position:sticky, every folder pinning to the
+                          same top so the tabs line up in one row, body capped
+                          to the viewport below the pin line (see WorkStackFit).
+    .kagu-folder--flow    /marketing — ordinary flow, one left-anchored tab per
+                          card, natural height. A pinned pile only works as the
+                          last thing on a page, so a card mid-page uses this.
+
+  Surface colours arrive per card as --fl (fill), --ft (ink) and --fm (muted
+  ink) from src/lib/caseRamp.ts; --i / --n carry the card's index and count.
+  The stack geometry (.kagu-work, .kagu-folders, the runway, the short-viewport
+  trims) stays in /work's own page.tsx — it belongs to the pile, not the card.
+*/
+
+.kagu-folder {
+    /* Tabs lay out in a grid: --per-row across, then wrap to a new
+       row that stacks *upward* (the first --per-row tabs form the
+       bottom row that sits on the body; later tabs pile on top).
+       Each tab is one slot wide — 1/per-row of the folder — so a
+       full row spans the width and the tabs keep a constant size
+       however many cases there are, instead of shrinking to fit. */
+    --per-row: 7;
+    --tab-h: clamp(3rem, 2.6rem + 1vw, 3.6rem);
+    --tab-gap: clamp(0.4rem, 0.2rem + 0.6vw, 0.9rem);
+    --tab-step: calc(100% / var(--per-row));
+    --tab-w: calc(var(--tab-step) - var(--tab-gap));
+    --col: mod(var(--i), var(--per-row));
+    --row: round(down, calc(var(--i) / var(--per-row)), 1);
+    --rows: round(up, calc(var(--n) / var(--per-row)), 1);
+    --joint: 16px;
+    isolation: isolate;
+    transition: transform 0.34s var(--ease-out-quint);
+}
+
+/* ---- pinned pile (/work) ---- */
+.kagu-folder--pinned {
+    /* every folder pins to the SAME top so all the tabs line up;
+       leave extra headroom above the pin for each wrapped row. */
+    --stack-top: calc(
+        clamp(7.5rem, 6rem + 3.5vw, 9.5rem)
+        + (var(--rows) - 1) * var(--tab-h)
+    );
+    position: sticky;
+    top: var(--stack-top);
+    /* land here when a tab anchor is clicked */
+    scroll-margin-top: var(--stack-top);
+    /* reserve room above each folder for its own tab row in flow */
+    margin-top: calc((var(--row) + 1) * var(--tab-h));
+}
+
+/* ---- ordinary flow (/marketing) ---- */
+.kagu-folder--flow {
+    position: relative;
+    /* one card per row: a single left-anchored tab, no wrapped rows */
+    --col: 0;
+    --row: 0;
+    --rows: 1;
+    /* room above the card for its own tab */
+    margin-top: var(--tab-h);
+}
+.kagu-folder--flow + .kagu-folder--flow {
+    margin-top: calc(var(--tab-h) + var(--space-16));
+}
+/* Nothing sits to the right of a flow tab, so it keeps both fillets —
+   the pile suppresses the last one because the tabs there are adjacent. */
+.kagu-folder--flow .kagu-folder__tab::after {
+    --cf: 1;
+}
+
+.kagu-folder__body {
+    position: relative;
+    overflow: hidden;
+    background: var(--fl);
+    color: var(--ft);
+    border-radius: clamp(16px, 1.4vw, 26px) clamp(16px, 1.4vw, 26px) 0 0;
+    padding: clamp(1.5rem, 0.9rem + 2.6vw, 3.5rem);
+    display: flex;
+    flex-direction: column;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        0 -14px 26px -18px rgba(0, 0, 0, 0.55),
+        0 30px 64px -46px rgba(0, 0, 0, 0.7);
+}
+/* --fit-h caps every card to the viewport below its pin line, so the whole
+   case shows on any screen. WorkStackFit then equalises all cards to the
+   tallest one (min-height set inline) and sizes the runway; the min-height
+   below is just the pre-hydration / reduced-motion fallback. --stack-top is
+   inherited from .kagu-folder--pinned. Flow cards take their natural height. */
+.kagu-folder--pinned .kagu-folder__body {
+    --fit-gap: clamp(0.75rem, 0.4rem + 1.4vw, 1.75rem);
+    --fit-h: calc(100svh - var(--stack-top) - var(--fit-gap));
+    min-height: min(clamp(22rem, 16rem + 26vh, 40rem), var(--fit-h));
+    max-height: var(--fit-h);
+}
+.kagu-folder__body::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0) 18%),
+        linear-gradient(0deg, rgba(0, 0, 0, 0.16), rgba(0, 0, 0, 0) 26%);
+}
+
+/* Folder tab — two narrow lines, rising above the body with
+   concave fillet joints. Distributed across the row by index. */
+.kagu-folder__tab {
+    position: absolute;
+    /* placed by grid cell: column across, row stacked upward from
+       the body (row 0 sits on it). Column 0 is flush to the
+       folder's left edge and anchors the start of each row. */
+    left: calc(var(--col) * var(--tab-step));
+    bottom: calc(100% - 1px + var(--row) * var(--tab-h));
+    width: var(--tab-w);
+    min-height: var(--tab-h);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.1em;
+    padding: 0.35em clamp(0.85rem, 0.5rem + 0.8vw, 1.35rem);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0) 70%),
+        var(--fl);
+    color: var(--ft);
+    border-radius: clamp(12px, 1vw, 18px) clamp(12px, 1vw, 18px) 0 0;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    font-family: var(--font-mono);
+    line-height: 1.05;
+    text-decoration: none;
+    transition:
+        transform 0.24s var(--ease-out-quint),
+        box-shadow 0.24s var(--ease-out-quint);
+}
+.kagu-folder__tab:focus-visible {
+    outline: 2px solid var(--ft);
+    outline-offset: 2px;
+}
+.kagu-folder__tab-no {
+    font-size: var(--type-xs);
+    letter-spacing: var(--tracking-eyebrow);
+    opacity: 0.62;
+}
+.kagu-folder__tab-name {
+    font-size: var(--type-sm);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* Concave fillets flaring each tab's sides into the body. They
+   overlap the tab and body by 1px to avoid a seam, and only show
+   on the bottom row (the one touching the body) — wrapped rows are
+   plain tabs resting on the row below. A per-edge factor (--cf)
+   collapses a fillet to nothing where it isn't wanted: column 0
+   has no left fillet (flush to the edge), and the last tab of a
+   row / the final tab has no right fillet, so nothing hooks past
+   the side. */
+.kagu-folder__tab::before,
+.kagu-folder__tab::after {
+    content: "";
+    position: absolute;
+    bottom: -1px;
+    background: var(--fl);
+    /* 1 on the bottom row, 0 on any wrapped row above it */
+    --on-body-row: calc(1 - min(var(--row), 1));
+}
+.kagu-folder__tab::before {
+    --cf: calc(min(var(--col), 1) * var(--on-body-row));
+    left: calc(-1 * var(--joint));
+    width: calc((var(--joint) + 1px) * var(--cf));
+    height: calc((var(--joint) + 1px) * var(--cf));
+    -webkit-mask: radial-gradient(circle var(--joint) at top left, #0000 99%, #000 100%);
+            mask: radial-gradient(circle var(--joint) at top left, #0000 99%, #000 100%);
+}
+.kagu-folder__tab::after {
+    --cf: calc(
+        min(calc(var(--per-row) - 1 - var(--col)), 1)
+        * min(calc(var(--n) - 1 - var(--i)), 1)
+        * var(--on-body-row)
+    );
+    right: calc(-1 * var(--joint));
+    width: calc((var(--joint) + 1px) * var(--cf));
+    height: calc((var(--joint) + 1px) * var(--cf));
+    -webkit-mask: radial-gradient(circle var(--joint) at top right, #0000 99%, #000 100%);
+            mask: radial-gradient(circle var(--joint) at top right, #0000 99%, #000 100%);
+}
+
+.kagu-folder__ghost {
+    position: absolute;
+    top: -0.18em;
+    left: clamp(0.5rem, 1.5vw, 2rem);
+    font-family: var(--font-display);
+    font-size: clamp(9rem, 24vw, 21rem);
+    line-height: 1;
+    font-weight: 600;
+    letter-spacing: -0.05em;
+    color: var(--ft);
+    opacity: 0.05;
+    pointer-events: none;
+    user-select: none;
+}
+.kagu-folder__meta {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: var(--type-xs);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    opacity: 0.8;
+}
+.kagu-folder__main {
+    position: relative;
+    margin-top: auto;
+    min-height: 0; /* allow the row to shrink inside a capped body */
+    display: flex;
+    gap: clamp(1.5rem, 4vw, 3.25rem);
+    align-items: flex-end;
+}
+.kagu-folder__copy {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.kagu-folder__title {
+    color: var(--ft);
+    font-size: clamp(2.5rem, 1.4rem + 4.4vw, 5.75rem);
+    line-height: 0.92;
+    letter-spacing: var(--tracking-display);
+}
+.kagu-folder__sub {
+    margin-top: var(--space-4);
+    font-size: var(--type-lg);
+    font-weight: 500;
+}
+.kagu-folder__sep {
+    margin: 0 0.6em;
+    opacity: 0.5;
+}
+.kagu-folder__lede {
+    margin-top: var(--space-4);
+    max-width: 48ch;
+    font-size: var(--type-base);
+    color: var(--fm);
+    line-height: var(--leading-normal);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+}
+.kagu-folder__view {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6em;
+    min-height: 2.75rem;
+    margin-top: var(--space-8);
+    padding: 0.6em 1.5em;
+    border: 1px solid color-mix(in oklab, var(--ft) 42%, transparent);
+    border-radius: 999px;
+    color: var(--ft);
+    font-family: var(--font-mono);
+    font-size: var(--type-sm);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    transition:
+        background 0.28s var(--ease-out-quint),
+        color 0.28s var(--ease-out-quint),
+        border-color 0.28s var(--ease-out-quint);
+}
+.kagu-folder__view:focus-visible {
+    outline: 2px solid var(--ft);
+    outline-offset: 3px;
+}
+.kagu-folder__arrow {
+    transition: transform 0.28s var(--ease-out-quint);
+}
+
+/* ---- framed thumbnails ---- */
+.kagu-thumb {
+    flex: 0 1 auto;
+    min-width: 0;
+}
+.kagu-thumb--browser {
+    display: flex;
+    justify-content: flex-end;
+}
+/* Browser window sizes to the screenshot's natural aspect ratio. */
+.kagu-win {
+    width: fit-content;
+    max-width: min(44rem, 100%);
+    margin: 0;
+    border-radius: clamp(10px, 1vw, 15px);
+    overflow: hidden;
+    background: #0e1116;
+    box-shadow:
+        0 34px 60px -28px rgba(0, 0, 0, 0.6),
+        0 0 0 1px rgba(255, 255, 255, 0.07);
+}
+.kagu-win__bar {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.36rem 0.7rem;
+}
+.kagu-win__dots {
+    display: flex;
+    gap: 0.3rem;
+    flex: none;
+}
+.kagu-win__dots i {
+    width: 0.46rem;
+    height: 0.46rem;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.24);
+}
+.kagu-win__url {
+    flex: 1;
+    min-width: 0;
+    max-width: 20ch;
+    margin-right: 1.8rem;
+    padding: 0.18rem 0.6rem;
+    border-radius: 0.35rem;
+    background: rgba(255, 255, 255, 0.07);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.03em;
+    color: rgba(255, 255, 255, 0.55);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.kagu-win__screen {
+    display: block;
+    line-height: 0;
+}
+.kagu-win__screen img {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: clamp(16rem, 32vh, 28rem);
+}
+/* phone mockup — container on .kagu-phone, cqw styling on __body */
+.kagu-thumb--phone {
+    display: flex;
+    justify-content: center;
+}
+.kagu-phone {
+    container-type: inline-size;
+    /* Height-driven so the tall portrait mockup shrinks to fit a
+       capped card on short screens; width follows the aspect. */
+    height: clamp(11rem, 34svh, 22rem);
+    aspect-ratio: 9 / 19.5;
+    width: auto;
+    flex: 0 0 auto;
+}
+.kagu-phone__body {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: #0e0f13;
+    border-radius: 11cqw;
+    padding: 2.6cqw;
+    box-shadow:
+        0 34px 60px -22px rgba(0, 0, 0, 0.6),
+        0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.kagu-phone__screen {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 8cqw;
+    overflow: hidden;
+    background: #050608;
+}
+.kagu-phone__island {
+    position: absolute;
+    top: 4.6cqw;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 26%;
+    height: 6.5cqw;
+    border-radius: 4cqw;
+    background: #0e0f13;
+    z-index: 2;
+}
+
+/* Narrow screens: stack the preview above the copy and slim the frames.
+   (/work also drops to four tabs per row — that's stack geometry and lives
+   in its own page.) */
+@media (max-width: 760px) {
+    .kagu-folder__tab {
+        min-width: 0;
+        padding-inline: clamp(0.3rem, 1.4vw, 0.7rem);
+        gap: 0.05em;
+    }
+    .kagu-folder__tab-no { font-size: 0.75rem; }
+    .kagu-folder__tab-name {
+        font-size: clamp(0.75rem, 2.7vw, 0.78rem);
+        letter-spacing: 0.01em;
+        white-space: normal;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+    .kagu-folder__main {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .kagu-thumb {
+        flex: none;
+        width: 100%;
+        margin-top: var(--space-8);
+        order: -1;
+    }
+    .kagu-thumb--browser { justify-content: center; }
+    /* slimmer browser frame so it doesn't dominate the stack */
+    .kagu-win {
+        margin-inline: auto;
+        max-width: min(20rem, 74%);
+    }
+    .kagu-win__screen img { max-height: clamp(11rem, 30vh, 16rem); }
+}
+
+/* A flow card has the page's full width to itself and no pin line above it,
+   so the tab can be wider and the copy keeps its two-column footing longer. */
+@media (max-width: 760px) {
+    .kagu-folder--flow { --per-row: 2; }
+}
+
+/* Hover only on real pointers, so touch can't get stuck in :hover. */
+@media (hover: hover) {
+    .kagu-folder:hover {
+        transform: translateY(-10px);
+        z-index: 999;
+    }
+    .kagu-folder__tab:hover {
+        transform: translateY(-3px);
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.22),
+            0 -8px 18px -12px rgba(0, 0, 0, 0.6);
+    }
+    .kagu-folder__view:hover {
+        background: var(--ft);
+        border-color: var(--ft);
+        color: var(--fl);
+    }
+    .kagu-folder__view:hover .kagu-folder__arrow {
+        transform: translateX(0.35em);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .kagu-folder:hover { transform: none; }
+    .kagu-folder__arrow { transition: none; }
+}
