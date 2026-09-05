@@ -257,20 +257,13 @@ export default async function WorkIndexPage() {
                     max-width: 80rem; /* ~7xl */
                     margin: 0 auto;
                 }
-                /* The card itself (tab, body, copy, thumbnails) lives in
-                   src/styles/file-card.css and is shared with /marketing. What
-                   stays here is the pile: the sticky geometry, the runway, and
-                   the short-viewport trims that only matter to a pinned card. */
-
-                /* 100px of breathing room between files while they're laid out in
-                   flow (before they scroll up and stack into the pile) */
-                .kagu-folder--pinned + .kagu-folder--pinned {
-                    margin-top: calc((var(--row) + 1) * var(--tab-h) + 100px);
-                }
+                /* Everything about the card itself — the tab grid, the sticky
+                   geometry, the inter-card spacing, the short-viewport trims and
+                   the reduced-motion fallback — lives in src/styles/file-card.css
+                   and is shared with /marketing's client pile. What stays here is
+                   this page's own pile: the container and the runway. */
                 .kagu-folders__runway { height: 0; }
 
-                /* Narrow screens: a row of tabs can't fit, so staircase them
-                   (the card's own responsive rules are in file-card.css). */
                 @media (max-width: 760px) {
                     /* Pre-hydration / no-JS fallback only — once WorkStackFit runs
                        it sets the runway inline so the page's max scroll lands
@@ -278,76 +271,11 @@ export default async function WorkIndexPage() {
                        Tall mobile bodies make that release especially violent, so
                        this keeps a reasonable tail before the script takes over. */
                     .kagu-folders__runway { height: clamp(20rem, 65svh, 40rem); }
-                    /* phones wrap tighter: four tabs per row (the grid math from
-                       the base rules recomputes off --per-row). */
-                    .kagu-folder.kagu-folder--pinned { --per-row: 4; }
                 }
 
-                /* Short viewports: trim the card's vertical content so the whole
-                   case still fits between the pin line and the bottom of screen
-                   (the body is already capped to the viewport via --fit-h).
-                   Pinned only — a flow card has the whole page to grow into. */
-                @media (max-height: 760px) {
-                    .kagu-folder--pinned .kagu-folder__lede {
-                        -webkit-line-clamp: 2;
-                        margin-top: var(--space-2);
-                    }
-                    .kagu-folder--pinned .kagu-folder__view { margin-top: var(--space-4); }
-                    .kagu-folder--pinned .kagu-win__screen img { max-height: clamp(9rem, 24vh, 14rem); }
-                    .kagu-folder--pinned .kagu-phone { height: clamp(9rem, 26svh, 14rem); }
-                    .kagu-folder--pinned .kagu-thumb { margin-top: var(--space-4); }
-                }
-                @media (max-height: 600px) {
-                    .kagu-folder--pinned .kagu-folder__lede { display: none; }
-                    .kagu-folder--pinned .kagu-folder__sub {
-                        margin-top: var(--space-2);
-                        font-size: var(--type-base);
-                    }
-                    .kagu-folder--pinned .kagu-folder__title {
-                        font-size: clamp(1.6rem, 1rem + 3.5vw, 3rem);
-                    }
-                    .kagu-folder--pinned .kagu-folder__view { margin-top: var(--space-2); }
-                    .kagu-folder--pinned .kagu-win__screen img { max-height: clamp(6rem, 32svh, 11rem); }
-                    .kagu-folder--pinned .kagu-phone { height: clamp(6rem, 40svh, 11rem); }
-                    /* Short screens are almost always landscape: keep copy and
-                       thumbnail side-by-side (the stacked phone layout would push
-                       the title and link off the bottom of such a shallow card). */
-                    .kagu-folder--pinned .kagu-folder__main {
-                        flex-direction: row;
-                        align-items: flex-end;
-                        gap: clamp(1rem, 3vw, 2.5rem);
-                    }
-                    .kagu-folder--pinned .kagu-thumb {
-                        order: 0;
-                        width: auto;
-                        margin-top: 0;
-                        flex: 0 1 auto;
-                    }
-                    .kagu-folder--pinned .kagu-thumb--browser { justify-content: flex-end; }
-                    .kagu-folder--pinned .kagu-win { margin-inline: 0; max-width: min(28rem, 50%); }
-                }
                 /* anchor jumps from the tabs ease into place */
                 @media (prefers-reduced-motion: no-preference) {
                     html { scroll-behavior: smooth; }
-                }
-
-                /* Reduced motion drops the pile: the folders fall back to
-                   ordinary flow, one at a time, at their natural height.
-                   (Card-level hover/transition opt-outs are in file-card.css.) */
-                @media (prefers-reduced-motion: reduce) {
-                    .kagu-folder--pinned {
-                        position: relative;
-                        top: auto;
-                        transition: none;
-                        /* static flow shows one folder at a time, so drop the grid:
-                           a single left-anchored tab per folder, no wrapped rows. */
-                        --col: 0;
-                        --row: 0;
-                        --rows: 1;
-                    }
-                    /* Static flow: drop the viewport cap so nothing is clipped
-                       (cards aren't pinned, so they can be their natural height). */
-                    .kagu-folder--pinned .kagu-folder__body { max-height: none; }
                 }
             `}</style>
         </div>

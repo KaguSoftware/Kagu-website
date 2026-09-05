@@ -6,10 +6,13 @@
   framed thumbnail beside it. Styles live in src/styles/file-card.css.
 
   Layout mode is the caller's call:
-    mode="pinned"  /work — part of the sticky pile (see WorkStackFit).
-    mode="flow"    /marketing — ordinary flow, natural height. A pinned pile
-                   only works as the last thing on a page, so a card that sits
-                   mid-page runs in flow.
+    mode="pinned"  /work and /marketing — part of a sticky pile, every card
+                   pinning to the same top so the tabs line up in one row.
+                   The pile's own script equalises the heights: WorkStackFit,
+                   ClientStackFit.
+    mode="flow"    Ordinary flow: natural height, one left-anchored tab, no
+                   pin. No page uses it at the moment — it is what a card
+                   standing on its own, outside a pile, would get.
 
   Server component — TabLink is the only client piece and only appears when the
   tab is a scroll-to anchor.

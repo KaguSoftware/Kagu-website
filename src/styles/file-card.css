@@ -7,17 +7,22 @@
   Markup lives in src/components/cases/FileCard.tsx.
 
   Two layout modes sit on top of the shared card:
-    .kagu-folder--pinned  /work — position:sticky, every folder pinning to the
-                          same top so the tabs line up in one row, body capped
-                          to the viewport below the pin line (see WorkStackFit).
-    .kagu-folder--flow    /marketing — ordinary flow, one left-anchored tab per
-                          card, natural height. A pinned pile only works as the
-                          last thing on a page, so a card mid-page uses this.
+    .kagu-folder--pinned  /work and /marketing — position:sticky, every folder
+                          pinning to the same top so the tabs line up in one
+                          row, body capped to the viewport below the pin line.
+    .kagu-folder--flow    Ordinary flow, one left-anchored tab per card,
+                          natural height. No page uses it at the moment — it is
+                          what a card outside a pile would get.
 
   Surface colours arrive per card as --fl (fill), --ft (ink) and --fm (muted
   ink) from src/lib/caseRamp.ts; --i / --n carry the card's index and count.
-  The stack geometry (.kagu-work, .kagu-folders, the runway, the short-viewport
-  trims) stays in /work's own page.tsx — it belongs to the pile, not the card.
+
+  Everything that describes a *card* lives here, pinned mode included — the tab
+  grid, the sticky geometry, the spacing between cards, the short-viewport trims
+  and the reduced-motion fallback. What stays with each page is its own *pile*:
+  the container and the runway (.kagu-work / .kagu-folders on /work,
+  .kagu-client-files on /marketing), because those decide whether the stack
+  locks or lets go.
 */
 
 .kagu-folder {
@@ -56,7 +61,7 @@
     margin-top: calc((var(--row) + 1) * var(--tab-h));
 }
 
-/* ---- ordinary flow (/marketing) ---- */
+/* ---- ordinary flow (no page uses this today) ---- */
 .kagu-folder--flow {
     position: relative;
     /* one card per row: a single left-anchored tab, no wrapped rows */
@@ -443,9 +448,69 @@
 }
 
 /* A flow card has the page's full width to itself and no pin line above it,
-   so the tab can be wider and the copy keeps its two-column footing longer. */
+   so the tab can be wider and the copy keeps its two-column footing longer.
+   A pinned card shares its row with the rest of the pile, so it wraps tighter
+   instead — four tabs per row (the grid math recomputes off --per-row). */
 @media (max-width: 760px) {
     .kagu-folder--flow { --per-row: 2; }
+    .kagu-folder.kagu-folder--pinned { --per-row: 4; }
+}
+
+/* ---- pinned pile: spacing and short-viewport trims ----
+   These describe what a *pinned card* is, so they live with the card rather
+   than with either pile. They used to sit in /work's page style, back when it
+   was the only pinned consumer; /marketing's client pile is the second, and
+   both need them identically. The pile itself — the container, the runway and
+   the scroll behaviour — still belongs to each page. */
+
+/* 100px of breathing room between files while they're laid out in flow
+   (before they scroll up and stack into the pile) */
+.kagu-folder--pinned + .kagu-folder--pinned {
+    margin-top: calc((var(--row) + 1) * var(--tab-h) + 100px);
+}
+
+/* Short viewports: trim the card's vertical content so the whole case still
+   fits between the pin line and the bottom of screen (the body is already
+   capped to the viewport via --fit-h). Pinned only — a flow card has the
+   whole page to grow into. */
+@media (max-height: 760px) {
+    .kagu-folder--pinned .kagu-folder__lede {
+        -webkit-line-clamp: 2;
+        margin-top: var(--space-2);
+    }
+    .kagu-folder--pinned .kagu-folder__view { margin-top: var(--space-4); }
+    .kagu-folder--pinned .kagu-win__screen img { max-height: clamp(9rem, 24vh, 14rem); }
+    .kagu-folder--pinned .kagu-phone { height: clamp(9rem, 26svh, 14rem); }
+    .kagu-folder--pinned .kagu-thumb { margin-top: var(--space-4); }
+}
+@media (max-height: 600px) {
+    .kagu-folder--pinned .kagu-folder__lede { display: none; }
+    .kagu-folder--pinned .kagu-folder__sub {
+        margin-top: var(--space-2);
+        font-size: var(--type-base);
+    }
+    .kagu-folder--pinned .kagu-folder__title {
+        font-size: clamp(1.6rem, 1rem + 3.5vw, 3rem);
+    }
+    .kagu-folder--pinned .kagu-folder__view { margin-top: var(--space-2); }
+    .kagu-folder--pinned .kagu-win__screen img { max-height: clamp(6rem, 32svh, 11rem); }
+    .kagu-folder--pinned .kagu-phone { height: clamp(6rem, 40svh, 11rem); }
+    /* Short screens are almost always landscape: keep copy and thumbnail
+       side-by-side (the stacked phone layout would push the title and link
+       off the bottom of such a shallow card). */
+    .kagu-folder--pinned .kagu-folder__main {
+        flex-direction: row;
+        align-items: flex-end;
+        gap: clamp(1rem, 3vw, 2.5rem);
+    }
+    .kagu-folder--pinned .kagu-thumb {
+        order: 0;
+        width: auto;
+        margin-top: 0;
+        flex: 0 1 auto;
+    }
+    .kagu-folder--pinned .kagu-thumb--browser { justify-content: flex-end; }
+    .kagu-folder--pinned .kagu-win { margin-inline: 0; max-width: min(28rem, 50%); }
 }
 
 /* Hover only on real pointers, so touch can't get stuck in :hover. */
@@ -473,4 +538,21 @@
 @media (prefers-reduced-motion: reduce) {
     .kagu-folder:hover { transform: none; }
     .kagu-folder__arrow { transition: none; }
+    /* Drop the pile: the folders fall back to ordinary flow, one at a time, at
+       their natural height. Must stay after .kagu-folder--pinned above — same
+       specificity, so order is what decides it. */
+    .kagu-folder--pinned {
+        position: relative;
+        top: auto;
+        transition: none;
+        /* static flow shows one folder at a time, so drop the grid: a single
+           left-anchored tab per folder, no wrapped rows. */
+        --col: 0;
+        --row: 0;
+        --rows: 1;
+    }
+    /* Static flow: drop the viewport cap so nothing is clipped (cards aren't
+       pinned, so they can be their natural height). */
+    .kagu-folder--pinned .kagu-folder__body { max-height: none; }
 }
+

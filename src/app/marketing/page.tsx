@@ -10,8 +10,10 @@
     Hero (paper) → Services (mint-pale) → Process (paper)
     → Clients (mint-soft) → Why Kagu (paper) → Contact (#0e1016)
 
-  Clients render through the same FileCard as /work, in flow mode. Client data
-  lives in ./clients.ts — a fourth client is one entry there, not new markup.
+  Clients render through the same FileCard as /work, and in the same pinned
+  pile: each card sticks to the header line and the next rises over it, then
+  the whole stack lifts away and the page carries on. Client data lives in
+  ./clients.ts — a fourth client is one entry there, not new markup.
 
   Deliberately absent, and to stay absent until there is real data behind them:
   metrics, percentages, prices, and testimonials.
@@ -37,6 +39,7 @@ import {
 import { whatsappHref } from "@/lib/marketing.config";
 import { MARKETING_CLIENTS, type MarketingClient } from "./clients";
 import { MarketingHeroHeadline, HERO_SENTENCE } from "./HeroHeadline";
+import { ClientStackFit } from "./ClientStackFit";
 import { MarketingLeadForm } from "./MarketingLeadForm";
 
 const PATH = "/marketing";
@@ -461,8 +464,10 @@ export default async function MarketingPage() {
           </p>
         </div>
 
-        {/* Flow mode: the pinned pile on /work only works as the last thing on a
-            page, so mid-page cards run in ordinary flow. Same card otherwise. */}
+        {/* The same pinned pile as /work. It works mid-page because a sticky
+            card is only ever clamped by its own container: extend that past the
+            last card (the runway below) and the aligned stack holds, then the
+            container ends and the whole pile lifts away together. */}
         <div className="kagu-client-files">
           {clients.map((client, i) => {
             // Same ramp as /work, trimmed at both ends: pure navy disappears
@@ -477,8 +482,12 @@ export default async function MarketingPage() {
                 id={`client-${client.id}`}
                 index={i}
                 count={n}
-                mode="flow"
+                mode="pinned"
                 tabLabel={client.tab}
+                tabTarget={{
+                  targetId: `client-${client.id}`,
+                  ariaLabel: `Jump to file ${String(i + 1).padStart(2, "0")}: ${client.name}`,
+                }}
                 title={client.name}
                 subtitle={client.tags}
                 lede={client.lede}
@@ -494,10 +503,19 @@ export default async function MarketingPage() {
                 }
                 thumb={<ClientThumb client={client} />}
                 colors={{ fill, ink, muted: rgba(ink, 0.78) }}
+                style={{ zIndex: i + 1 }}
               />
             );
           })}
+          {/* The hold. Sticky cards are released by their container's bottom
+              edge, so this is what keeps the aligned pile on screen for a beat
+              before it lets go. */}
+          <div className="kagu-client-files__runway" aria-hidden />
         </div>
+
+        {/* Sizes every card to the tallest, so the pile is uniform and comes
+            away as a single object. */}
+        <ClientStackFit />
 
         {/*
           Case studies slot in here, between the client cards and "Why Kagu":
@@ -721,11 +739,22 @@ export default async function MarketingPage() {
           min-height: 44px;
         }
 
-        /* Client file cards: same max width as the /work pile so the two pages
-           set their cards on the same measure. */
+        /* Client pile. The cards themselves — tab grid, sticky geometry,
+           spacing, short-viewport trims, reduced-motion fallback — all come from
+           src/styles/file-card.css, shared with /work. What belongs to this page
+           is the container and the runway. */
         .kagu-client-files {
           max-width: 80rem; /* ~7xl, matches .kagu-folders */
           margin: 0 auto;
+        }
+        /* Deliberately a fixed length, where /work's runway is sized at runtime
+           to swallow every remaining pixel of scroll so its pile can never let
+           go. This pile is mid-page and must let go — the runway only buys the
+           aligned stack a moment on screen first. */
+        .kagu-client-files__runway { height: clamp(7rem, 48svh, 24rem); }
+        @media (prefers-reduced-motion: reduce) {
+          /* No pile, so nothing to hold. */
+          .kagu-client-files__runway { height: 0; }
         }
 
         /* Monogram plate — stands in for a client screenshot until one is
