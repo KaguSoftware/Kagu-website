@@ -74,6 +74,12 @@
 .kagu-folder--flow .kagu-folder__tab::after {
     --cf: 1;
 }
+/* The pile clamps the lede to fit a height-capped card. A flow card has no
+   cap, so it shows the whole thing. */
+.kagu-folder--flow .kagu-folder__lede {
+    display: block;
+    -webkit-line-clamp: none;
+}
 
 .kagu-folder__body {
     position: relative;
@@ -231,7 +237,11 @@
     flex: 1 1 auto;
     min-width: 0;
 }
-.kagu-folder__title {
+/* Doubled up on purpose: the card title is an h2.display, and globals.css
+   styles `h1, h2, h3, h4, .display` at the same specificity. This file is
+   @imported there, so a single .kagu-folder__title would lose the tie on
+   colour, leading and tracking. */
+.kagu-folder .kagu-folder__title {
     color: var(--ft);
     font-size: clamp(2.5rem, 1.4rem + 4.4vw, 5.75rem);
     line-height: 0.92;

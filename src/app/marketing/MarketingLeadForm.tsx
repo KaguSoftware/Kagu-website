@@ -419,7 +419,9 @@ function Field({
     "aria-describedby": error ? errorId : undefined,
     style: {
       width: "100%",
-      background: "transparent",
+      // backgroundColor, not the `background` shorthand: the shorthand would
+      // reset background-image inline and wipe the select's drawn arrow.
+      backgroundColor: "transparent",
       border: 0,
       borderBottom: "1px solid var(--neutral)",
       padding: "var(--space-3) 0",
@@ -447,7 +449,7 @@ function Field({
           <span aria-hidden style={{ color: "var(--mint-deep)" }}> *</span>
         ) : null}
         {hint ? (
-          <span style={{ color: "var(--neutral)" }}> · {hint}</span>
+          <span style={{ color: "var(--slate-ink)" }}> · {hint}</span>
         ) : null}
       </label>
 

@@ -735,7 +735,7 @@ export default async function MarketingPage() {
           line-height: 1;
           font-weight: 600;
           letter-spacing: var(--tracking-display);
-          color: color-mix(in oklab, var(--ink) 30%, transparent);
+          color: color-mix(in oklab, var(--ink) 55%, transparent);
           background:
             radial-gradient(120% 80% at 50% 0%,
               color-mix(in oklab, var(--mint-deep) 22%, transparent) 0%,
