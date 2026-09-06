@@ -239,6 +239,14 @@ export default async function MarketingPage() {
               Talk to us
               <ArrowGlyph length={24} color="var(--ink)" />
             </TabLink>
+            <Link
+              href="/start-marketing"
+              data-cursor="nav-link"
+              className="kagu-cta-secondary font-mono inline-flex items-center gap-3"
+            >
+              Start marketing
+              <ArrowGlyph length={24} />
+            </Link>
             {whatsapp ? (
               <a
                 href={whatsapp}
@@ -672,6 +680,39 @@ export default async function MarketingPage() {
                   </a>
                 </div>
               ) : null}
+              <div>
+                <span
+                  className="font-mono block"
+                  style={{
+                    fontSize: "var(--type-xs)",
+                    letterSpacing: "var(--tracking-eyebrow)",
+                    textTransform: "uppercase",
+                    color: "var(--slate-ink)",
+                    marginBottom: "var(--space-3)",
+                  }}
+                >
+                  Want us to come prepared?
+                </span>
+                <p
+                  style={{
+                    fontSize: "var(--type-md)",
+                    color: "var(--ink)",
+                    lineHeight: 1.6,
+                    marginBottom: "var(--space-4)",
+                  }}
+                >
+                  Answer a few more questions and the first call skips the
+                  introductions entirely. About two minutes.
+                </p>
+                <Link
+                  href="/start-marketing"
+                  data-cursor="read"
+                  className="kagu-cta-secondary font-mono inline-flex items-center gap-3"
+                >
+                  Start marketing
+                  <ArrowGlyph length={24} />
+                </Link>
+              </div>
               <div>
                 <span
                   className="font-mono block"
