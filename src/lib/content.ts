@@ -15,6 +15,8 @@ export type CaseFeature = {
   image: string;
   title: string;
   description: string;
+  /** Describes what the screenshot shows. Falls back to `title` when unset. */
+  alt?: string;
   device?: DeviceKind;
 };
 
@@ -31,6 +33,8 @@ export type Case = {
   body: readonly string[];
   cover: { bg: CoverBg; label: string };
   thumbnail?: string;
+  /** Describes what the cover screenshot shows. Falls back to `project` when unset. */
+  thumbnailAlt?: string;
   features?: readonly CaseFeature[];
   device?: DeviceKind;
 };
@@ -77,8 +81,11 @@ export type TeamMember = {
   segment: TeamSegment;
 };
 
-const PROJECT_SELECT =
-  "*, clients(name), project_features(image, title, description, device, sort_order)";
+// project_features(*) rather than a column list on purpose: naming a column
+// that doesn't exist yet fails the whole select, and getCases() swallows the
+// error into [], which empties /work and un-prerenders every case page. The
+// wildcard lets this deploy before or after supabase/case_alt_text.sql.
+const PROJECT_SELECT = "*, clients(name), project_features(*)";
 
 // The embedded row shape Supabase returns for PROJECT_SELECT.
 type ProjectJoinRow = {
@@ -94,12 +101,14 @@ type ProjectJoinRow = {
   cover_bg: CoverBg;
   cover_label: string;
   thumbnail: string | null;
+  thumbnail_alt: string | null;
   device: DeviceKind | null;
   clients: { name: string } | null;
   project_features: {
     image: string;
     title: string;
     description: string;
+    alt: string | null;
     device: DeviceKind | null;
     sort_order: number;
   }[];
@@ -119,6 +128,7 @@ function toCase(p: ProjectJoinRow): Case {
     body: p.body ?? [],
     cover: { bg: p.cover_bg, label: p.cover_label },
     thumbnail: p.thumbnail ?? undefined,
+    thumbnailAlt: p.thumbnail_alt ?? undefined,
     device: p.device ?? undefined,
     features: (p.project_features ?? [])
       .slice()
@@ -127,6 +137,7 @@ function toCase(p: ProjectJoinRow): Case {
         image: f.image,
         title: f.title,
         description: f.description,
+        alt: f.alt ?? undefined,
         device: f.device ?? undefined,
       })),
   };
