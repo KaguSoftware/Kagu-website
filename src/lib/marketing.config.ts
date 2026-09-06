@@ -7,23 +7,22 @@
 
 /**
  * WhatsApp number for the marketing branch, digits only, country code first,
- * no "+" or spaces — the format wa.me expects (e.g. "905535531792").
+ * no "+" or spaces — the format wa.me expects.
  *
- * TODO(owner): fill this in. While it is empty the WhatsApp buttons are not
- * rendered at all, so the page never ships a dead or wrong-number link.
- * Deliberately NOT defaulted to the company phone in src/lib/legal.ts: that
- * line is the legal contact, and marketing enquiries should not land on it
- * by accident.
+ * +90 553 553 17 92. Deliberately NOT the company phone in src/lib/legal.ts:
+ * that line is the legal contact, and marketing enquiries should not land on
+ * it by accident. Setting this back to "" hides every WhatsApp button rather
+ * than shipping a dead link.
  */
-export const MARKETING_WHATSAPP_NUMBER = "";
+export const MARKETING_WHATSAPP_NUMBER = "905535531792";
 
 /** Prefilled first message, in the site's language. */
 export const MARKETING_WHATSAPP_MESSAGE =
   "Hi, I saw the marketing page on your site and I'd like to talk.";
 
 /**
- * wa.me link with the message prefilled, or null while the number is unset.
- * Callers must handle null — see the TODO above.
+ * wa.me link with the message prefilled, or null if the number above is ever
+ * cleared. Callers must handle null.
  */
 export function whatsappHref(): string | null {
   const number = MARKETING_WHATSAPP_NUMBER.replace(/\D/g, "");
