@@ -14,6 +14,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/about`, lastModified, changeFrequency: "yearly", priority: 0.7 },
     { url: `${SITE_URL}/contact`, lastModified, changeFrequency: "yearly", priority: 0.8 },
     { url: `${SITE_URL}/start-project`, lastModified: contentDate, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${SITE_URL}/start-marketing`, lastModified: contentDate, changeFrequency: "monthly", priority: 0.8 },
     // SEO cluster pages — TR pages own their cluster, EN pages are the hreflang pair.
     { url: `${SITE_URL}/butik-operator-yazilimi`, lastModified: contentDate, changeFrequency: "monthly", priority: 0.9 },
     { url: `${SITE_URL}/proje-baslat`, lastModified: contentDate, changeFrequency: "monthly", priority: 0.9 },
