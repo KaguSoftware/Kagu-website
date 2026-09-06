@@ -80,10 +80,11 @@ async function submitMarketingLead(values: Values, studioEmail: string) {
   const { error } = await supabase.from("contact_requests").insert({
     name: values.name.trim(),
     email: values.email.trim(),
-    // The table's "company / project" column — the business name belongs here,
-    // tagged so marketing leads are obvious next to software enquiries.
-    company: `${values.business.trim()} (marketing)`,
+    // The table's "company / project" column — the business name belongs here.
+    // What kind of enquiry it is rides in `source`, not in a name suffix.
+    company: values.business.trim(),
     message: summary,
+    source: "marketing",
   });
   if (error) {
     // The mail draft still goes out below — the enquiry is never lost.
@@ -342,35 +343,6 @@ export function MarketingLeadForm({ email }: { email: string }) {
           0% { opacity: 0.3; }
           50% { opacity: 1; }
           100% { opacity: 0.3; }
-        }
-        /* The site has no <select> anywhere else; match .kagu-field's underline
-           inputs rather than inventing a control. The arrow is drawn here
-           because a bare appearance:none select shows nothing. */
-        .kagu-field select {
-          appearance: none;
-          background-image:
-            linear-gradient(45deg, transparent 50%, var(--slate-ink) 50%),
-            linear-gradient(135deg, var(--slate-ink) 50%, transparent 50%);
-          background-position: right 0.75em top 55%, right 0.35em top 55%;
-          background-size: 0.4em 0.4em, 0.4em 0.4em;
-          background-repeat: no-repeat;
-          padding-right: 2em;
-        }
-        .kagu-field select:hover { border-bottom-color: var(--slate-ink); }
-        .kagu-field select:focus-visible {
-          border-bottom: 1.5px solid var(--mint-deep);
-          outline: none;
-        }
-        /* The dark page tokens don't reach the native option list on every
-           platform, so name both sides explicitly. */
-        .kagu-field select option {
-          background: var(--paper);
-          color: var(--ink);
-        }
-        .kagu-field[data-invalid="true"] input,
-        .kagu-field[data-invalid="true"] select,
-        .kagu-field[data-invalid="true"] textarea {
-          border-bottom-color: var(--mint-text);
         }
       `}</style>
     </form>

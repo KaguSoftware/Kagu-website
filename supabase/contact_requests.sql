@@ -1,4 +1,4 @@
--- Public contact messages from /contact (the contact form).
+-- Public contact messages from /contact, /marketing and /start-marketing.
 -- Run this once in the Supabase SQL editor. Safe to re-run (idempotent).
 -- Mirrors the contact_requests block in src/lib/supabase/database.types.ts.
 --
@@ -12,9 +12,24 @@ create table if not exists public.contact_requests (
   email       text not null,
   company     text,                 -- "Company / project" field, optional
   message     text not null,
+  source      text,                 -- which form sent it; see below
   status      text not null default 'new',
   created_at  timestamptz not null default now()
 );
+
+-- `source` tells the three public forms apart in /admin/requests. Added after
+-- the table shipped, so it is nullable and added separately: rows written
+-- before it existed read as null and the admin list labels them "Contact".
+-- Until this column exists in your project, /start-marketing cannot insert at
+-- all — run this file BEFORE deploying that page.
+alter table public.contact_requests
+  add column if not exists source text;
+
+alter table public.contact_requests
+  drop constraint if exists contact_requests_source_check;
+alter table public.contact_requests
+  add constraint contact_requests_source_check
+    check (source is null or source in ('contact', 'marketing', 'start-marketing'));
 
 alter table public.contact_requests
   drop constraint if exists contact_requests_status_check;

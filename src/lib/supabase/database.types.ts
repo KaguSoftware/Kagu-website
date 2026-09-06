@@ -56,6 +56,10 @@ export type MessageLanguage = "tr" | "ar" | "en";
 
 export type InquiryStatus = "new" | "contacted" | "archived";
 
+/** Which public form a contact_requests row came from. Null on rows
+    written before the column existed — treated as "contact". */
+export type RequestSource = "contact" | "marketing" | "start-marketing";
+
 export type AuditFlag =
   | "no_website"
   | "facebook_only"
@@ -1187,6 +1191,7 @@ export interface Database {
           email: string;
           company: string | null;
           message: string;
+          source: RequestSource | null;
           status: InquiryStatus;
           created_at: string;
         };
@@ -1196,6 +1201,7 @@ export interface Database {
           email: string;
           company?: string | null;
           message: string;
+          source?: RequestSource | null;
           status?: InquiryStatus;
           created_at?: string;
         };
@@ -1205,6 +1211,7 @@ export interface Database {
           email?: string;
           company?: string | null;
           message?: string;
+          source?: RequestSource | null;
           status?: InquiryStatus;
           created_at?: string;
         };

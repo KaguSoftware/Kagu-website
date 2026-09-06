@@ -45,6 +45,7 @@ export function ContactForm({ email }: { email: string }) {
       email: senderEmail,
       company: company || null,
       message,
+      source: "contact",
     });
     if (error) {
       // The mail draft still goes out below — the message is never lost.
