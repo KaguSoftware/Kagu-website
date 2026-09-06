@@ -86,6 +86,11 @@ export function CaseReel({
   eager = false,
 }: CaseReelProps) {
   const isLarge = size === "large";
+  // The reel carries the case title, so on a case-study page (size="large")
+  // it owns the page's <h1> — that page renders no other one. In the homepage
+  // strip the reel sits under the section's <h2>, so it stays an <h3> there;
+  // promoting it would give the homepage five competing <h1>s.
+  const ClientHeading = isLarge ? "h1" : "h3";
   // Alternate sides per index in the homepage strip (even = image left,
   // odd = image right). Case-page reel ignores this (single component).
   const reversed = !isLarge && index % 2 === 1;
@@ -303,7 +308,7 @@ export function CaseReel({
                   {String(index + 1).padStart(2, "0")} · {caseData.sector} · {caseData.year}
                 </span>
               )}
-              <h3
+              <ClientHeading
                 className="display"
                 style={{
                   fontSize: tokens.clientSize,
@@ -314,7 +319,7 @@ export function CaseReel({
                 }}
               >
                 {caseData.client}
-              </h3>
+              </ClientHeading>
             </div>
             {!preview && (
               <div className="hidden md:block md:col-span-3 md:col-start-10 md:text-right">
@@ -1027,7 +1032,15 @@ export function CaseReel({
                       marginBottom: "var(--space-3)",
                     }}
                   >
-                    {preview ? "View details" : f.isCover ? "Overview" : `Feature ${String(i).padStart(2, "0")}`}
+                    {/* Number features from 01. `i` is the frame index, and the
+                        cover frame only occupies index 0 when the case has a
+                        thumbnail — without one the first feature sat at i=0 and
+                        read "Feature 00". Count from the first feature instead. */}
+                    {preview
+                      ? "View details"
+                      : f.isCover
+                        ? "Overview"
+                        : `Feature ${String(caseData.thumbnail ? i : i + 1).padStart(2, "0")}`}
                   </span>
                   <h4
                     className="display"

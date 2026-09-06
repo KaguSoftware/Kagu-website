@@ -114,6 +114,21 @@ type ProjectJoinRow = {
   }[];
 };
 
+/*
+  next/image rejects a local src that doesn't start with "/" — it answers the
+  optimizer request with 400 and the photo renders as a broken image. One
+  team_members row was saved as "team/Kemal.JPG", so that member's portrait was
+  missing on /about. Normalising here fixes the stored rows and stops the next
+  hand-typed path from doing it again; remote URLs pass through untouched.
+*/
+function normalizeImagePath(src: string | null): string | null {
+  if (!src) return null;
+  const trimmed = src.trim();
+  if (!trimmed) return null;
+  if (/^(https?:)?\/\//.test(trimmed)) return trimmed;
+  return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+}
+
 function toCase(p: ProjectJoinRow): Case {
   return {
     slug: p.slug,
@@ -127,14 +142,14 @@ function toCase(p: ProjectJoinRow): Case {
     lede: p.lede ?? "",
     body: p.body ?? [],
     cover: { bg: p.cover_bg, label: p.cover_label },
-    thumbnail: p.thumbnail ?? undefined,
+    thumbnail: normalizeImagePath(p.thumbnail) ?? undefined,
     thumbnailAlt: p.thumbnail_alt ?? undefined,
     device: p.device ?? undefined,
     features: (p.project_features ?? [])
       .slice()
       .sort((a, b) => a.sort_order - b.sort_order)
       .map((f) => ({
-        image: f.image,
+        image: normalizeImagePath(f.image) ?? f.image,
         title: f.title,
         description: f.description,
         alt: f.alt ?? undefined,
@@ -255,7 +270,7 @@ export async function getTeam(): Promise<TeamMember[]> {
     name: m.name,
     role: m.role,
     bio: m.bio ?? "",
-    image: m.image_url ?? null,
+    image: normalizeImagePath(m.image_url),
     segment: m.segment,
   }));
 }

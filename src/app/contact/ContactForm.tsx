@@ -68,7 +68,11 @@ export function ContactForm({ email }: { email: string }) {
   }
 
   return (
-    <form onSubmit={onSubmit} aria-busy={stage === "submitting"} noValidate>
+    // No noValidate: unlike /start-marketing (which validates in JS), this form
+    // has no validation of its own, so suppressing the browser's would let an
+    // empty submit through — writing a blank contact_requests row and opening
+    // an empty mail draft. The fields' own required/type="email" are the check.
+    <form onSubmit={onSubmit} aria-busy={stage === "submitting"}>
       {stage === "success" ? (
         <div
           role="status"
