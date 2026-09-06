@@ -41,7 +41,7 @@ export const revalidate = 3600;
 
 async function Thumb({ c }: { c: Case }) {
     if (!c.thumbnail) return null;
-    const alt = `${c.client} preview`;
+    const alt = c.thumbnailAlt ?? `${c.client} preview`;
 
     if (c.device === "mobile") {
         return (

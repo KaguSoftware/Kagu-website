@@ -300,6 +300,7 @@ export interface Database {
           cover_bg: CoverBg;
           cover_label: string;
           thumbnail: string | null;
+          thumbnail_alt: string | null;
           device: DeviceKind | null;
           is_featured: boolean;
           featured_order: number | null;
@@ -323,6 +324,7 @@ export interface Database {
           cover_bg: CoverBg;
           cover_label: string;
           thumbnail?: string | null;
+          thumbnail_alt?: string | null;
           device?: DeviceKind | null;
           is_featured?: boolean;
           featured_order?: number | null;
@@ -346,6 +348,7 @@ export interface Database {
           cover_bg?: CoverBg;
           cover_label?: string;
           thumbnail?: string | null;
+          thumbnail_alt?: string | null;
           device?: DeviceKind | null;
           is_featured?: boolean;
           featured_order?: number | null;
@@ -371,6 +374,7 @@ export interface Database {
           image: string;
           title: string;
           description: string;
+          alt: string | null;
           device: DeviceKind | null;
           sort_order: number;
         };
@@ -380,6 +384,7 @@ export interface Database {
           image: string;
           title: string;
           description: string;
+          alt?: string | null;
           device?: DeviceKind | null;
           sort_order?: number;
         };
@@ -389,6 +394,7 @@ export interface Database {
           image?: string;
           title?: string;
           description?: string;
+          alt?: string | null;
           device?: DeviceKind | null;
           sort_order?: number;
         };

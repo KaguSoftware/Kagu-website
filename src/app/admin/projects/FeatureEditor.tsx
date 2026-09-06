@@ -6,6 +6,7 @@ type Feature = {
   image: string;
   title: string;
   description: string;
+  alt: string;
   device: "desktop" | "mobile" | null;
 };
 
@@ -23,7 +24,7 @@ export function FeatureEditor({
       )
     );
   const add = () =>
-    setFeatures((prev) => [...prev, { image: "", title: "", description: "", device: null }]);
+    setFeatures((prev) => [...prev, { image: "", title: "", description: "", alt: "", device: null }]);
   const remove = (i: number) =>
     setFeatures((prev) => prev.filter((_, idx) => idx !== i));
 
@@ -66,6 +67,12 @@ export function FeatureEditor({
                 placeholder="Description"
                 rows={2}
                 className="w-full resize-y border border-neutral bg-transparent p-2 text-sm text-ink outline-none focus-visible:border-mint-deep"
+              />
+              <input
+                value={f.alt}
+                onChange={(e) => update(i, "alt", e.target.value)}
+                placeholder="Alt text — what the screenshot shows (falls back to the title)"
+                className="w-full border-0 border-b border-neutral bg-transparent py-1.5 text-sm text-ink outline-none focus-visible:border-mint-deep"
               />
               <select
                 value={f.device ?? ""}

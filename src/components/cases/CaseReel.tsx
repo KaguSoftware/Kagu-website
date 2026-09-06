@@ -39,6 +39,8 @@ type Frame = {
   image?: string;
   title: string;
   description: string;
+  /** Alt text describing the screenshot. Falls back to `title`. */
+  alt?: string;
   isCover?: boolean;
   /** "cta" renders a color-block placeholder (no screenshot) with a big label. */
   kind?: "image" | "cta";
@@ -162,6 +164,7 @@ export function CaseReel({
             image: caseData.thumbnail,
             title: caseData.project,
             description: caseData.lede,
+            alt: caseData.thumbnailAlt,
             isCover: true,
             kind: "image",
           },
@@ -181,6 +184,7 @@ export function CaseReel({
                 image: caseData.thumbnail,
                 title: caseData.project,
                 description: caseData.lede,
+                alt: caseData.thumbnailAlt,
                 isCover: true,
                 kind: "image",
               } as Frame,
@@ -190,6 +194,7 @@ export function CaseReel({
           image: f.image,
           title: f.title,
           description: f.description,
+          alt: f.alt,
           kind: "image",
           device: f.device,
         })),
@@ -907,7 +912,7 @@ export function CaseReel({
                               >
                                 <Image
                                   src={f.image}
-                                  alt={f.title}
+                                  alt={f.alt ?? f.title}
                                   fill
                                   sizes="(max-width: 768px) 45vw, 280px"
                                   priority={eager && i === 0}
@@ -953,7 +958,7 @@ export function CaseReel({
                           >
                             <Image
                               src={f.image}
-                              alt={f.title}
+                              alt={f.alt ?? f.title}
                               fill
                               sizes="(max-width: 768px) 100vw, 66vw"
                               priority={eager && i === 0}
