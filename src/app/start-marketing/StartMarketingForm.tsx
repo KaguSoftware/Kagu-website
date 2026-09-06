@@ -49,7 +49,22 @@ const BLOCK_BACKGROUNDS = ["var(--mint-pale)", "var(--paper)", "var(--mint-soft)
 
 const domId = (id: FieldId) => `sm-${id}`;
 
-export function StartMarketingForm({ email }: { email: string }) {
+export function StartMarketingForm({
+  email,
+  anchorId,
+  heading,
+  aside,
+}: {
+  email: string;
+  /** Scroll target for a CTA elsewhere on the page. Sits on the first block,
+      and on the success state so the anchor survives a submit. */
+  anchorId?: string;
+  /** Section heading rendered above the first block — /marketing supplies its
+      own so the intake reads as that page's closing section. */
+  heading?: React.ReactNode;
+  /** Extra column beside the send button, under the WhatsApp escape hatch. */
+  aside?: React.ReactNode;
+}) {
   const [values, setValues] = useState<Values>(EMPTY_VALUES);
   const [errors, setErrors] = useState<Errors>({});
   const [touched, setTouched] = useState<ReadonlySet<FieldId>>(new Set());
@@ -129,7 +144,8 @@ export function StartMarketingForm({ email }: { email: string }) {
     const handle = normaliseHandle(values.instagram);
     return (
       <section
-        style={{ background: "#0e1016" }}
+        id={anchorId}
+        style={{ background: "#0e1016", scrollMarginTop: "clamp(5rem, 4rem + 3vw, 7rem)" }}
         className="px-(--container-x) py-(--section-y)"
       >
         <div className="w-full max-w-(--container-max) mx-auto">
@@ -211,10 +227,23 @@ export function StartMarketingForm({ email }: { email: string }) {
       {BLOCKS.map((block, index) => (
         <section
           key={block.id}
+          id={index === 0 ? anchorId : undefined}
           aria-labelledby={`${block.id}-heading`}
-          style={{ background: BLOCK_BACKGROUNDS[index] }}
+          style={{
+            background: BLOCK_BACKGROUNDS[index],
+            // Clears the floating header when a CTA jumps here.
+            scrollMarginTop: "clamp(5rem, 4rem + 3vw, 7rem)",
+          }}
           className="px-(--container-x) py-(--section-y)"
         >
+          {index === 0 && heading ? (
+            <div
+              className="w-full max-w-(--container-max) mx-auto"
+              style={{ marginBottom: "var(--space-20)" }}
+            >
+              {heading}
+            </div>
+          ) : null}
           <div className="w-full max-w-(--container-max) mx-auto grid grid-cols-1 lg:grid-cols-12 gap-x-12 gap-y-(--space-10)">
             {/* Heading rides along on desktop so it is still visible deep into
                 a long block; static on mobile, where sticky would eat the
@@ -444,40 +473,46 @@ export function StartMarketingForm({ email }: { email: string }) {
               </p>
             </div>
 
-            {/* The unobtrusive escape hatch. */}
-            {whatsapp ? (
-              <aside className="lg:col-span-4 lg:col-start-9">
-                <span
-                  className="font-mono block"
-                  style={{
-                    fontSize: "var(--type-xs)",
-                    letterSpacing: "var(--tracking-eyebrow)",
-                    textTransform: "uppercase",
-                    color: "var(--slate-ink)",
-                    marginBottom: "var(--space-4)",
-                  }}
-                >
-                  Would rather just message us?
-                </span>
-                <a
-                  href={whatsapp}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  data-cursor="read"
-                  className="font-mono inline-flex items-center gap-3"
-                  style={{
-                    fontSize: "var(--type-sm)",
-                    letterSpacing: "var(--tracking-eyebrow)",
-                    textTransform: "uppercase",
-                    color: "var(--mint-text)",
-                    borderBottom: "1px solid var(--mint-text)",
-                    paddingBottom: "var(--space-2)",
-                    minHeight: 44,
-                  }}
-                >
-                  WhatsApp
-                  <ArrowGlyph length={24} />
-                </a>
+            {/* The unobtrusive escape hatch, plus anything the host page
+                wants standing beside the send button. */}
+            {whatsapp || aside ? (
+              <aside className="lg:col-span-4 lg:col-start-9 flex flex-col gap-(--space-10)">
+                {whatsapp ? (
+                  <div>
+                    <span
+                      className="font-mono block"
+                      style={{
+                        fontSize: "var(--type-xs)",
+                        letterSpacing: "var(--tracking-eyebrow)",
+                        textTransform: "uppercase",
+                        color: "var(--slate-ink)",
+                        marginBottom: "var(--space-4)",
+                      }}
+                    >
+                      Would rather just message us?
+                    </span>
+                    <a
+                      href={whatsapp}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      data-cursor="read"
+                      className="font-mono inline-flex items-center gap-3"
+                      style={{
+                        fontSize: "var(--type-sm)",
+                        letterSpacing: "var(--tracking-eyebrow)",
+                        textTransform: "uppercase",
+                        color: "var(--mint-text)",
+                        borderBottom: "1px solid var(--mint-text)",
+                        paddingBottom: "var(--space-2)",
+                        minHeight: 44,
+                      }}
+                    >
+                      WhatsApp
+                      <ArrowGlyph length={24} />
+                    </a>
+                  </div>
+                ) : null}
+                {aside}
               </aside>
             ) : null}
           </div>

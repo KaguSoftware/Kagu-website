@@ -2,13 +2,15 @@
   /marketing — the service page for Kagu's digital marketing branch.
 
   Server-rendered so every word of the copy exists in the raw HTML. Two client
-  islands only: the headline's rotating word (HeroHeadline) and the lead form
-  (MarketingLeadForm). Section order follows the background
-  ladder in docs/DESIGN_BASELINE.md §3 — no two adjacent sections
-  share a surface, and the dark close is used once:
+  islands only: the headline's rotating word (HeroHeadline) and the intake form
+  shared with /start-marketing (StartMarketingForm), which closes the page as
+  its own three blocks — this page hands it the heading and the aside column.
+  Section order follows the background ladder in docs/DESIGN_BASELINE.md §3 —
+  no two adjacent sections share a surface, and the dark close is used once:
 
     Hero (paper) → Services (mint-pale) → Process (paper)
-    → Clients (mint-soft) → Why Kagu (paper) → Contact (#0e1016)
+    → Clients (mint-soft) → Why Kagu (paper)
+    → Intake 01 (mint-pale) → 02 (paper) → 03 (mint-soft) → Send (#0e1016)
 
   Clients render through the same FileCard as /work, and in the same pinned
   pile: each card sticks to the header line and the next rises over it, then
@@ -40,7 +42,7 @@ import { whatsappHref } from "@/lib/marketing.config";
 import { MARKETING_CLIENTS, type MarketingClient } from "./clients";
 import { MarketingHeroHeadline, HERO_SENTENCE } from "./HeroHeadline";
 import { ClientStackFit } from "./ClientStackFit";
-import { MarketingLeadForm } from "./MarketingLeadForm";
+import { StartMarketingForm } from "../start-marketing/StartMarketingForm";
 
 const PATH = "/marketing";
 const CONTACT_ID = "marketing-contact";
@@ -230,23 +232,19 @@ export default async function MarketingPage() {
             className="flex flex-wrap items-center gap-6"
             style={{ marginTop: "var(--space-12)" }}
           >
-            {/* Lenis-aware scroll, same helper the /work tabs use. */}
+            {/* Lenis-aware scroll, same helper the /work tabs use. The intake
+                itself closes this page, so this stays a scroll rather than a
+                trip to /start-marketing. */}
             <TabLink
               targetId={CONTACT_ID}
               className="kagu-cta inline-flex items-center gap-3"
-              ariaLabel="Jump to the enquiry form"
-            >
-              Talk to us
-              <ArrowGlyph length={24} color="var(--ink)" />
-            </TabLink>
-            <Link
-              href="/start-marketing"
-              data-cursor="nav-link"
-              className="kagu-cta-secondary font-mono inline-flex items-center gap-3"
+              // Contains the visible label, so the accessible name matches
+              // what a speech-input user would say (WCAG 2.5.3).
+              ariaLabel="Start marketing — jump to the intake form"
             >
               Start marketing
-              <ArrowGlyph length={24} />
-            </Link>
+              <ArrowGlyph length={24} color="var(--ink)" />
+            </TabLink>
             {whatsapp ? (
               <a
                 href={whatsapp}
@@ -619,140 +617,84 @@ export default async function MarketingPage() {
       </section>
 
       {/* ----------------------------- contact ---------------------------- */}
-      <section
-        id={CONTACT_ID}
-        aria-labelledby="marketing-contact-heading"
-        style={{
-          background: "#0e1016",
-          color: "var(--ink)",
-          // clear the floating header when the hero CTA jumps here
-          scrollMarginTop: "clamp(5rem, 4rem + 3vw, 7rem)",
-        }}
-        className="px-(--container-x) py-(--section-y)"
-      >
-        <div className="w-full max-w-(--container-max) mx-auto">
-          <Eyebrow number="05">
-            <span style={{ color: "var(--mint-deep)" }}>Get in touch</span>
-          </Eyebrow>
-          <h2
-            id="marketing-contact-heading"
-            className="display"
-            style={{
-              fontSize: "var(--type-5xl)",
-              lineHeight: 0.95,
-              color: "var(--ink)",
-              margin: "var(--space-6) 0 var(--space-16)",
-              maxWidth: "14ch",
-            }}
-          >
-            Tell us about the account.
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-12">
-            <div className="md:col-span-7">
-              <MarketingLeadForm email={studio.email} />
+      {/* The intake from /start-marketing closes the page: same questions,
+          same submit, rendered as this page's last three sections. The
+          heading and the aside below are this page's, handed to the form. */}
+      <StartMarketingForm
+        email={studio.email}
+        anchorId={CONTACT_ID}
+        heading={
+          <>
+            <Eyebrow number="05">
+              <span style={{ color: "var(--mint-deep)" }}>Get in touch</span>
+            </Eyebrow>
+            <h2
+              id="marketing-contact-heading"
+              className="display"
+              style={{
+                fontSize: "var(--type-5xl)",
+                lineHeight: 0.95,
+                color: "var(--ink)",
+                margin: "var(--space-6) 0 var(--space-8)",
+                maxWidth: "14ch",
+              }}
+            >
+              Tell us about the account.
+            </h2>
+            <p
+              style={{
+                fontSize: "var(--type-lg)",
+                color: "var(--slate-ink)",
+                lineHeight: 1.55,
+                maxWidth: "52ch",
+              }}
+            >
+              About two minutes, mostly things to tap. Answer these and the first
+              call is about your account rather than introductions.
+            </p>
+          </>
+        }
+        aside={
+          <>
+            <div>
+              <span
+                className="font-mono block"
+                style={{
+                  fontSize: "var(--type-xs)",
+                  letterSpacing: "var(--tracking-eyebrow)",
+                  textTransform: "uppercase",
+                  color: "var(--slate-ink)",
+                  marginBottom: "var(--space-3)",
+                }}
+              >
+                What happens next
+              </span>
+              <p style={{ fontSize: "var(--type-md)", color: "var(--ink)", lineHeight: 1.6 }}>
+                We look at your accounts and your ad history before we answer, so
+                the first reply is about your situation rather than a brochure.
+                Then we talk about scope and cost.
+              </p>
             </div>
-
-            <aside className="md:col-span-4 md:col-start-9 flex flex-col gap-(--space-10)">
-              {whatsapp ? (
-                <div>
-                  <span
-                    className="font-mono block"
-                    style={{
-                      fontSize: "var(--type-xs)",
-                      letterSpacing: "var(--tracking-eyebrow)",
-                      textTransform: "uppercase",
-                      color: "var(--slate-ink)",
-                      marginBottom: "var(--space-4)",
-                    }}
-                  >
-                    Faster
-                  </span>
-                  <a
-                    href={whatsapp}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    data-cursor="view"
-                    className="kagu-cta inline-flex items-center gap-3"
-                  >
-                    Message on WhatsApp
-                    <ArrowGlyph length={24} color="var(--ink)" />
-                  </a>
-                </div>
-              ) : null}
-              <div>
-                <span
-                  className="font-mono block"
-                  style={{
-                    fontSize: "var(--type-xs)",
-                    letterSpacing: "var(--tracking-eyebrow)",
-                    textTransform: "uppercase",
-                    color: "var(--slate-ink)",
-                    marginBottom: "var(--space-3)",
-                  }}
-                >
-                  Want us to come prepared?
-                </span>
-                <p
-                  style={{
-                    fontSize: "var(--type-md)",
-                    color: "var(--ink)",
-                    lineHeight: 1.6,
-                    marginBottom: "var(--space-4)",
-                  }}
-                >
-                  Answer a few more questions and the first call skips the
-                  introductions entirely. About two minutes.
-                </p>
-                <Link
-                  href="/start-marketing"
-                  data-cursor="read"
-                  className="kagu-cta-secondary font-mono inline-flex items-center gap-3"
-                >
-                  Start marketing
-                  <ArrowGlyph length={24} />
-                </Link>
-              </div>
-              <div>
-                <span
-                  className="font-mono block"
-                  style={{
-                    fontSize: "var(--type-xs)",
-                    letterSpacing: "var(--tracking-eyebrow)",
-                    textTransform: "uppercase",
-                    color: "var(--slate-ink)",
-                    marginBottom: "var(--space-3)",
-                  }}
-                >
-                  What happens next
-                </span>
-                <p style={{ fontSize: "var(--type-md)", color: "var(--ink)", lineHeight: 1.6 }}>
-                  We look at your accounts and your ad history before we answer, so
-                  the first reply is about your situation rather than a brochure.
-                  Then we talk about scope and cost.
-                </p>
-              </div>
-              <div>
-                <span
-                  className="font-mono block"
-                  style={{
-                    fontSize: "var(--type-xs)",
-                    letterSpacing: "var(--tracking-eyebrow)",
-                    textTransform: "uppercase",
-                    color: "var(--slate-ink)",
-                    marginBottom: "var(--space-3)",
-                  }}
-                >
-                  Response time
-                </span>
-                <p style={{ fontSize: "var(--type-md)", color: "var(--ink)", lineHeight: 1.6 }}>
-                  Within 24h · Turkish, English, Arabic, Persian, Russian
-                </p>
-              </div>
-            </aside>
-          </div>
-        </div>
-      </section>
+            <div>
+              <span
+                className="font-mono block"
+                style={{
+                  fontSize: "var(--type-xs)",
+                  letterSpacing: "var(--tracking-eyebrow)",
+                  textTransform: "uppercase",
+                  color: "var(--slate-ink)",
+                  marginBottom: "var(--space-3)",
+                }}
+              >
+                Response time
+              </span>
+              <p style={{ fontSize: "var(--type-md)", color: "var(--ink)", lineHeight: 1.6 }}>
+                Within 24h · Turkish, English, Arabic, Persian, Russian
+              </p>
+            </div>
+          </>
+        }
+      />
 
       <SiteFooter studio={studio} />
 
