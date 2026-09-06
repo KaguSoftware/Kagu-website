@@ -6,7 +6,7 @@ import { ViewTransition } from "@/lib/view-transition";
 import { CaseCover } from "@/components/cases/CaseCover";
 import { CaseReel } from "@/components/cases/CaseReel";
 import { ArrowGlyph } from "@/components/ui/ArrowGlyph";
-import { pageMetadata } from "@/lib/seo";
+import { pageMetadata, clampText } from "@/lib/seo";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -36,24 +36,17 @@ export async function generateStaticParams() {
   return cases.map((c) => ({ slug: c.slug }));
 }
 
-/* Meta descriptions get truncated around 160 chars; a lede can run longer, so
-   clip on a word boundary rather than letting the SERP cut mid-word. */
-function clampDescription(text: string, max = 155): string {
-  if (text.length <= max) return text;
-  const cut = text.slice(0, max);
-  return cut.slice(0, cut.lastIndexOf(" ")).replace(/[,;:—-]$/, "") + "…";
-}
-
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params;
   const cases = await getCases();
   const c = cases.find((x) => x.slug === slug);
   if (!c) return { title: "Case not found · Kagu" };
   // Canonical + OG/Twitter via the same helper every other indexable page
-  // uses. The OG *image* is inherited from app/opengraph-image.tsx.
+  // uses. The OG *image* comes from ./opengraph-image.tsx — metadata image
+  // files are per-segment, so app/opengraph-image.tsx does not reach here.
   return pageMetadata({
     title: `${c.client} · Kagu`,
-    description: clampDescription(c.lede),
+    description: clampText(c.lede),
     path: `/work/${c.slug}`,
     lang: "en",
   });
