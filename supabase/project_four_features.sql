@@ -54,8 +54,8 @@ cross join (values
   (
     '/cases/four/Notification.png',
     'Notifications that notice',
-    'The notification says what is actually true — down three days — instead of firing the same reminder at the same hour forever. It arrives because something changed, and it is specific enough to act on from the lock screen.',
-    'An iPhone lock screen at 9:41 on Wednesday, August 6, showing a single FOUR notification that reads "DOWN 3 DAYS".',
+    'The notification says something true and small enough to act on — one real thing keeps the day up — instead of firing the same reminder at the same hour forever. It arrives because something changed, and it lands as a sentence you can answer from the lock screen.',
+    'An iPhone lock screen at 9:08 on Sunday, September 6, showing a single notification from FOUR in Notification Center that reads "One small real thing keeps the day up."',
     2
   ),
   (
