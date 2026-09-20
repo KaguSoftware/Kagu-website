@@ -132,6 +132,12 @@ export function BoutiqueSoftwareSection() {
               <InlineLink href="/start-project">Start a project</InlineLink> and see an estimate
               instantly.
             </Block>
+            <Block title="Marketing, run the same way">
+              The same team also runs social accounts and paid campaigns on Meta and TikTok
+              for businesses in Turkey — account management, content direction, a written
+              monthly plan and tracking that actually fires. See{" "}
+              <InlineLink href="/marketing">what the marketing branch does</InlineLink>.
+            </Block>
           </div>
         </div>
       </section>

@@ -39,6 +39,8 @@ type Frame = {
   image?: string;
   title: string;
   description: string;
+  /** Alt text describing the screenshot. Falls back to `title`. */
+  alt?: string;
   isCover?: boolean;
   /** "cta" renders a color-block placeholder (no screenshot) with a big label. */
   kind?: "image" | "cta";
@@ -84,6 +86,11 @@ export function CaseReel({
   eager = false,
 }: CaseReelProps) {
   const isLarge = size === "large";
+  // The reel carries the case title, so on a case-study page (size="large")
+  // it owns the page's <h1> — that page renders no other one. In the homepage
+  // strip the reel sits under the section's <h2>, so it stays an <h3> there;
+  // promoting it would give the homepage five competing <h1>s.
+  const ClientHeading = isLarge ? "h1" : "h3";
   // Alternate sides per index in the homepage strip (even = image left,
   // odd = image right). Case-page reel ignores this (single component).
   const reversed = !isLarge && index % 2 === 1;
@@ -162,6 +169,7 @@ export function CaseReel({
             image: caseData.thumbnail,
             title: caseData.project,
             description: caseData.lede,
+            alt: caseData.thumbnailAlt,
             isCover: true,
             kind: "image",
           },
@@ -181,6 +189,7 @@ export function CaseReel({
                 image: caseData.thumbnail,
                 title: caseData.project,
                 description: caseData.lede,
+                alt: caseData.thumbnailAlt,
                 isCover: true,
                 kind: "image",
               } as Frame,
@@ -190,6 +199,7 @@ export function CaseReel({
           image: f.image,
           title: f.title,
           description: f.description,
+          alt: f.alt,
           kind: "image",
           device: f.device,
         })),
@@ -298,7 +308,7 @@ export function CaseReel({
                   {String(index + 1).padStart(2, "0")} · {caseData.sector} · {caseData.year}
                 </span>
               )}
-              <h3
+              <ClientHeading
                 className="display"
                 style={{
                   fontSize: tokens.clientSize,
@@ -309,7 +319,7 @@ export function CaseReel({
                 }}
               >
                 {caseData.client}
-              </h3>
+              </ClientHeading>
             </div>
             {!preview && (
               <div className="hidden md:block md:col-span-3 md:col-start-10 md:text-right">
@@ -907,7 +917,7 @@ export function CaseReel({
                               >
                                 <Image
                                   src={f.image}
-                                  alt={f.title}
+                                  alt={f.alt ?? f.title}
                                   fill
                                   sizes="(max-width: 768px) 45vw, 280px"
                                   priority={eager && i === 0}
@@ -953,7 +963,7 @@ export function CaseReel({
                           >
                             <Image
                               src={f.image}
-                              alt={f.title}
+                              alt={f.alt ?? f.title}
                               fill
                               sizes="(max-width: 768px) 100vw, 66vw"
                               priority={eager && i === 0}
@@ -1022,7 +1032,15 @@ export function CaseReel({
                       marginBottom: "var(--space-3)",
                     }}
                   >
-                    {preview ? "View details" : f.isCover ? "Overview" : `Feature ${String(i).padStart(2, "0")}`}
+                    {/* Number features from 01. `i` is the frame index, and the
+                        cover frame only occupies index 0 when the case has a
+                        thumbnail — without one the first feature sat at i=0 and
+                        read "Feature 00". Count from the first feature instead. */}
+                    {preview
+                      ? "View details"
+                      : f.isCover
+                        ? "Overview"
+                        : `Feature ${String(caseData.thumbnail ? i : i + 1).padStart(2, "0")}`}
                   </span>
                   <h4
                     className="display"

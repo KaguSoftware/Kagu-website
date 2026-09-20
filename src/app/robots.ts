@@ -14,10 +14,13 @@ export default function robots(): MetadataRoute.Robots {
         allow: "/",
         disallow: "/admin",
       },
-      { userAgent: "GPTBot", allow: "/" },
-      { userAgent: "ClaudeBot", allow: "/" },
-      { userAgent: "PerplexityBot", allow: "/" },
-      { userAgent: "Google-Extended", allow: "/" },
+      // A crawler obeys only the most specific group that names it and ignores
+      // the "*" group entirely, so each of these has to repeat the /admin
+      // disallow or it inherits nothing and crawls the admin panel.
+      { userAgent: "GPTBot", allow: "/", disallow: "/admin" },
+      { userAgent: "ClaudeBot", allow: "/", disallow: "/admin" },
+      { userAgent: "PerplexityBot", allow: "/", disallow: "/admin" },
+      { userAgent: "Google-Extended", allow: "/", disallow: "/admin" },
     ],
     sitemap: "https://kagusoftware.com/sitemap.xml",
   };

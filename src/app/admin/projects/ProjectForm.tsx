@@ -19,6 +19,7 @@ const DEVICE = [
 ];
 
 type Feature = Pick<Tables<"project_features">, "image" | "title" | "description"> & {
+  alt: string;
   device: "desktop" | "mobile" | null;
 };
 
@@ -86,6 +87,12 @@ export function ProjectForm({
         <Field label="Thumbnail URL" name="thumbnail" defaultValue={project?.thumbnail} />
         <Select label="Device" name="device" defaultValue={project?.device ?? ""} options={DEVICE} />
       </div>
+
+      <Field
+        label="Thumbnail alt text"
+        name="thumbnail_alt"
+        defaultValue={project?.thumbnail_alt}
+      />
 
       <div className="border-t border-neutral pt-6">
         <FeatureEditor defaultValue={features} />

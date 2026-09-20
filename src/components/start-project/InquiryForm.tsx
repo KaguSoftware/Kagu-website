@@ -222,7 +222,10 @@ export function InquiryForm({
   }
 
   return (
-    <form onSubmit={onSubmit} aria-busy={stage === "submitting"} noValidate>
+    // No noValidate: this form has no validation of its own, so suppressing the
+    // browser's let an empty submit through — a blank project_inquiries row and
+    // an empty mail draft. The fields' required/type="email" are the check.
+    <form onSubmit={onSubmit} aria-busy={stage === "submitting"}>
       <div className="flex flex-col gap-(--space-6)">
         <Field id="name" label="Name" type="text" required autoComplete="name" />
         <Field id="email" label="Email" type="email" required autoComplete="email" />

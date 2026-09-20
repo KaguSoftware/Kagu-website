@@ -6,9 +6,25 @@ import { ViewTransition } from "@/lib/view-transition";
 import { CaseCover } from "@/components/cases/CaseCover";
 import { CaseReel } from "@/components/cases/CaseReel";
 import { ArrowGlyph } from "@/components/ui/ArrowGlyph";
+import { pageMetadata, clampText } from "@/lib/seo";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
+}
+
+/* "Visit live" is wrong for a case whose only public link is a store listing —
+   there is no site to visit. Label off the host so a case page keeps saying
+   "Visit live" for every web build and nothing else has to change. */
+function visitLabel(url: string): string {
+  let host = "";
+  try {
+    host = new URL(url).hostname;
+  } catch {
+    return "Visit live";
+  }
+  if (host === "apps.apple.com") return "Get it on the App Store";
+  if (host === "play.google.com") return "Get it on Google Play";
+  return "Visit live";
 }
 
 // Static + hourly ISR; admin edits bust this instantly via revalidatePublic().
@@ -25,10 +41,15 @@ export async function generateMetadata({ params }: PageProps) {
   const cases = await getCases();
   const c = cases.find((x) => x.slug === slug);
   if (!c) return { title: "Case not found · Kagu" };
-  return {
+  // Canonical + OG/Twitter via the same helper every other indexable page
+  // uses. The OG *image* comes from ./opengraph-image.tsx — metadata image
+  // files are per-segment, so app/opengraph-image.tsx does not reach here.
+  return pageMetadata({
     title: `${c.client} · Kagu`,
-    description: c.lede,
-  };
+    description: clampText(c.lede),
+    path: `/work/${c.slug}`,
+    lang: "en",
+  });
 }
 
 export default async function CaseStudyPage({ params }: PageProps) {
@@ -222,7 +243,7 @@ export default async function CaseStudyPage({ params }: PageProps) {
                     paddingBottom: 6,
                   }}
                 >
-                  Visit live
+                  {visitLabel(caseData.url)}
                   <ArrowGlyph length={28} />
                 </a>
               </div>

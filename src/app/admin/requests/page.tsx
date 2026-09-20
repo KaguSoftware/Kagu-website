@@ -33,7 +33,7 @@ export default async function RequestsPage({
     <div className="space-y-8">
       <PageHeader
         title="Requests"
-        description="Everything visitors send in — contact messages from /contact and package requests from /start-project. New rows appear live."
+        description="Everything visitors send in — messages from /contact, enquiries from /marketing, the /start-marketing intake, and package requests from /start-project. New rows appear live."
       />
       <RequestsList
         initialContacts={contacts ?? []}
