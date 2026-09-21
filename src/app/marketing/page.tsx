@@ -1,10 +1,11 @@
 /*
   /marketing — the service page for Kagu's digital marketing branch.
 
-  Server-rendered so every word of the copy exists in the raw HTML. Two client
-  islands only: the headline's rotating word (HeroHeadline) and the intake form
-  shared with /start-marketing (StartMarketingForm), which closes the page as
-  its own three blocks — this page hands it the heading and the aside column.
+  Server-rendered so every word of the copy exists in the raw HTML. The client
+  islands carry no copy: the headline's rotating word (HeroHeadline), the
+  client reel's playback and sound (ClientReel), and the intake form shared
+  with /start-marketing (StartMarketingForm), which closes the page as its own
+  three blocks — this page hands it the heading and the aside column.
   Section order follows the background ladder in docs/DESIGN_BASELINE.md §3 —
   no two adjacent sections share a surface, and the dark close is used once:
 
@@ -14,8 +15,11 @@
 
   Clients render through the same FileCard as /work, and in the same pinned
   pile: each card sticks to the header line and the next rises over it, then
-  the whole stack lifts away and the page carries on. Client data lives in
-  ./clients.ts — a fourth client is one entry there, not new markup.
+  the whole stack lifts away and the page carries on. They use /work's phone
+  mockup too, with the account's own vertical video on the screen instead of a
+  screenshot (ClientReel — a third island, and the only one below the fold).
+  Client data lives in ./clients.ts — another client is one entry there, and
+  its video is one path in `reel`, not new markup.
 
   Deliberately absent, and to stay absent until there is real data behind them:
   metrics, percentages, prices, and testimonials.
@@ -23,11 +27,10 @@
 
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
 import { getStudio } from "@/lib/content";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { Eyebrow } from "@/components/layout/Eyebrow";
-import { FileCard } from "@/components/cases/FileCard";
+import { FileCard, type FileCardLink } from "@/components/cases/FileCard";
 import { TabLink } from "@/components/ui/TabLink";
 import { ArrowGlyph } from "@/components/ui/ArrowGlyph";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -39,8 +42,13 @@ import {
   breadcrumbJsonLd,
 } from "@/lib/seo";
 import { whatsappHref } from "@/lib/marketing.config";
-import { MARKETING_CLIENTS, type MarketingClient } from "./clients";
+import {
+  MARKETING_CLIENTS,
+  type ClientLinkKind,
+  type MarketingClient,
+} from "./clients";
 import { MarketingHeroHeadline, HERO_SENTENCE } from "./HeroHeadline";
+import { ClientReel } from "./ClientReel";
 import { ClientStackFit } from "./ClientStackFit";
 import { StartMarketingForm } from "../start-marketing/StartMarketingForm";
 
@@ -132,40 +140,45 @@ const WHY_POINTS = [
   },
 ] as const;
 
-/* ------------------------------ client thumb ----------------------------- */
+/* ------------------------------ client link ------------------------------ */
 
 /*
-  The phone mockup from /work, reused because these are phone-shaped accounts.
-  Until a real screenshot is supplied (clients.ts → `image`, 1080 × 2340) the
-  screen holds a monogram plate in the card's own ink rather than a broken or
-  obviously-placeholder image.
+  The card's one outbound link, in the slot /work fills with "View file".
+
+  It is the first entry in the client's `links` — their main account — and it
+  is the only one that renders. The card's right-hand side is the phone now,
+  so the 2 × 2 button grid that used to carry all four platforms is gone; a
+  wall of buttons beside the copy and a video beside that would be two ways of
+  saying the same thing at once.
+
+  A note for whoever edits the URLs: these are outbound links on a page that
+  sells doing UTMs properly, so they carry no inherited tracking. If Kagu-side
+  attribution is ever wanted, add a deliberate
+  `?utm_source=kagu&utm_medium=referral&utm_campaign=marketing-page` — never
+  paste a URL copied out of someone else's link-in-bio.
 */
-function ClientThumb({ client }: { client: MarketingClient }) {
-  return (
-    <div className="kagu-thumb kagu-thumb--phone">
-      <div className="kagu-phone">
-        <div className="kagu-phone__body">
-          <span className="kagu-phone__island" aria-hidden />
-          <div className="kagu-phone__screen">
-            {client.image ? (
-              <Image
-                src={client.image}
-                alt={client.imageAlt ?? `${client.name} content`}
-                fill
-                sizes="(max-width: 760px) 50vw, 200px"
-                loading="lazy"
-                style={{ objectFit: "cover", objectPosition: "top center" }}
-              />
-            ) : (
-              <span className="kagu-monogram" aria-hidden>
-                {client.name.trim().charAt(0).toUpperCase()}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+
+const LINK_LABEL: Record<ClientLinkKind, string> = {
+  instagram: "Instagram",
+  tiktok: "TikTok",
+  facebook: "Facebook",
+  website: "Website",
+};
+
+function clientCardLink(client: MarketingClient): FileCardLink | undefined {
+  const link = client.links[0];
+  if (!link) return undefined;
+  const platform = LINK_LABEL[link.kind];
+  return {
+    href: link.url,
+    external: true,
+    label: link.kind === "website" ? "Visit site" : `View on ${platform}`,
+    ariaLabel: `${
+      link.kind === "website"
+        ? `Visit the ${client.name} website`
+        : `View ${client.name} on ${platform}`
+    }${link.detail ? ` (${link.detail})` : ""} — opens in a new tab`,
+  };
 }
 
 /* --------------------------------- page ---------------------------------- */
@@ -497,17 +510,16 @@ export default async function MarketingPage() {
                 title={client.name}
                 subtitle={client.tags}
                 lede={client.lede}
-                link={
-                  client.instagram
-                    ? {
-                        href: client.instagram.url,
-                        label: "View profile",
-                        ariaLabel: `View ${client.name} on Instagram (${client.instagram.handle})`,
-                        external: true,
-                      }
-                    : undefined
+                link={clientCardLink(client)}
+                thumb={
+                  client.reel ? (
+                    <ClientReel
+                      src={client.reel.src}
+                      poster={client.reel.poster}
+                      label={client.name}
+                    />
+                  ) : undefined
                 }
-                thumb={<ClientThumb client={client} />}
                 colors={{ fill, ink, muted: rgba(ink, 0.78) }}
                 style={{ zIndex: i + 1 }}
               />
@@ -730,6 +742,36 @@ export default async function MarketingPage() {
           max-width: 80rem; /* ~7xl, matches .kagu-folders */
           margin: 0 auto;
         }
+
+        /* Tab joint, marketing only.
+
+           file-card.css anchors a column-0 tab flush to the folder's left edge
+           and suppresses its left fillet — there is no body to the left of it
+           to flare into. On /work that reads fine: card 01 is the darkest step
+           of the ramp, and four more tabs run to its right, so the row carries
+           the shape. This pile is one bright card on a dark surface, and the
+           same tab reads as a hard block overhanging the body's rounded
+           top-left corner — a notch exactly one corner radius wide.
+
+           So start the tab past that corner instead. Offset is the joint plus
+           the body's own radius (the clamp is copied from
+           .kagu-folder__body), which is the least distance that puts the left
+           fillet down on straight edge, and the fillet is switched back on. A
+           second and third client inherit this and stay aligned with each
+           other; only the flush-to-the-edge anchoring is given up, and with a
+           single tab there is no row for it to anchor. */
+        .kagu-client-files .kagu-folder__tab {
+          left: calc(
+            var(--col) * var(--tab-step)
+            + var(--joint)
+            + clamp(16px, 1.4vw, 26px)
+          );
+        }
+        .kagu-client-files .kagu-folder__tab::before {
+          /* Bottom row only, same as the shared rule — just no longer zeroed
+             out by being in column 0. */
+          --cf: var(--on-body-row);
+        }
         /* Deliberately a fixed length, where /work's runway is sized at runtime
            to swallow every remaining pixel of scroll so its pile can never let
            go. This pile is mid-page and must let go — the runway only buys the
@@ -740,25 +782,74 @@ export default async function MarketingPage() {
           .kagu-client-files__runway { height: 0; }
         }
 
-        /* Monogram plate — stands in for a client screenshot until one is
-           supplied (see clients.ts). Sits inside the phone mockup's screen. */
-        .kagu-monogram {
+        /* The client reel. The phone shell itself is file-card.css
+           (.kagu-thumb--phone / .kagu-phone) — shared with /work, and already
+           height-driven so it shrinks with a pinned card on a short screen.
+           Only the screen's contents and the sound button live here. */
+        /* Bigger than /work's 34svh. There a screenshot is a supporting
+           glance beside the copy; here the video IS the exhibit, and at that
+           size it was a thumbnail of a thumbnail. Only where the phone sits
+           BESIDE the copy, though — 761px up, the same breakpoint
+           file-card.css splits on. The card has the headroom there: __main is
+           bottom-aligned inside a body that is capped to the viewport, so the
+           extra height grows upward into the dead space above the title
+           instead of pushing the link off the bottom.
+
+           Below 761px it keeps the inherited size, and that is not a
+           conservative guess. Narrow stacks the phone ABOVE the copy, so the
+           two compete for the same capped height, and the body clips what
+           does not fit: at 390 x 844 a 52svh phone put "View on Instagram"
+           98px past the bottom edge. 34svh clears it by 29px. Anything much
+           larger on a phone needs the layout changed, not the number. */
+        @media (min-width: 761px) {
+          .kagu-thumb--reel .kagu-phone {
+            height: clamp(14rem, 52svh, 32rem);
+          }
+        }
+        .kagu-reel__video {
+          width: 100%;
+          height: 100%;
+          display: block;
+          /* The source is cut to 9 / 19.5, so cover is a no-op on it. It is
+             here so a client who supplies a squarer edit gets a filled screen
+             rather than pillarboxes inside the bezel. */
+          object-fit: cover;
+          background: #050608;
+        }
+        /* Top-right: the bottom of the screen belongs to the native controls
+           once the sound is on. */
+        .kagu-reel__sound {
           position: absolute;
-          inset: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-family: var(--font-display);
-          font-size: 42cqw;
-          line-height: 1;
-          font-weight: 600;
-          letter-spacing: var(--tracking-display);
-          color: color-mix(in oklab, var(--ink) 55%, transparent);
-          background:
-            radial-gradient(120% 80% at 50% 0%,
-              color-mix(in oklab, var(--mint-deep) 22%, transparent) 0%,
-              transparent 70%);
-          user-select: none;
+          top: 13cqw;
+          right: 4cqw;
+          z-index: 3;
+          display: grid;
+          place-items: center;
+          width: 14cqw;
+          height: 14cqw;
+          /* Never smaller than a comfortable target, however small the phone
+             gets on a short viewport. */
+          min-width: 34px;
+          min-height: 34px;
+          border: 0;
+          border-radius: 999px;
+          background: rgba(8, 9, 12, 0.55);
+          -webkit-backdrop-filter: blur(6px);
+          backdrop-filter: blur(6px);
+          color: #fff;
+          cursor: pointer;
+          transition: background 0.28s var(--ease-out-quint);
+        }
+        .kagu-reel__sound svg {
+          width: 58%;
+          height: 58%;
+        }
+        .kagu-reel__sound:focus-visible {
+          outline: 2px solid #fff;
+          outline-offset: 2px;
+        }
+        @media (hover: hover) {
+          .kagu-reel__sound:hover { background: rgba(8, 9, 12, 0.8); }
         }
       `}</style>
     </>

@@ -904,15 +904,12 @@ export function CaseReel({
                                 background: "var(--mint-pale)",
                               }}
                             >
-                              {/* Image is inset from the top so the screenshot's
-                                  own header isn't tucked behind the dynamic island. */}
+                              {/* Screenshot fills the whole screen and runs under
+                                  the dynamic island, like a real phone. */}
                               <div
                                 style={{
                                   position: "absolute",
-                                  top: "10cqw",
-                                  left: 0,
-                                  right: 0,
-                                  bottom: 0,
+                                  inset: 0,
                                 }}
                               >
                                 <Image
