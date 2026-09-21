@@ -21,10 +21,15 @@ import { useEffect, useRef, useState } from "react";
       paused until its card is actually on screen and paused again the moment
       it leaves. IntersectionObserver, not a scroll listener.
     - Autoplay has to be muted to be allowed at all, so the sound is behind a
-      button rather than silently lost. Unmuting also unhides the native
-      controls, since that is the point at which someone wants a scrubber.
+      button rather than silently lost.
     - Under prefers-reduced-motion nothing plays on its own. The poster frame
-      sits there with the controls showing and it starts when asked.
+      sits there and the play button starts it when asked.
+
+  The native `controls` bar is deliberately never shown. It brings fullscreen
+  and a playback-rate menu, neither of which belongs on a phone mockup inside
+  a page — blowing the reel up to fullscreen throws away the frame that is the
+  whole point of it. The two things someone actually wants here, sound and
+  transport, are the two buttons stacked in the corner of the screen.
 
   preload="metadata" so the card costs a few kB until it is looked at. And on
   a narrow screen the frame keeps file-card.css's order:-1 and sits above the
@@ -45,10 +50,10 @@ export function ClientReel({
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [muted, setMuted] = useState(true);
-  // Assume motion is fine for the first paint — the effect corrects it before
-  // anything can play, and guessing the other way would leave the common case
-  // with a video that never starts if the effect is late.
-  const [reduced, setReduced] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  // An explicit pause outranks visibility: scrolling the card away and back
+  // should not restart something the person deliberately stopped.
+  const stoppedByUser = useRef(false);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -61,15 +66,21 @@ export function ClientReel({
 
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const onMotion = () => {
-      setReduced(motion.matches);
       if (motion.matches) video.pause();
     };
     onMotion();
     motion.addEventListener("change", onMotion);
 
+    // The element is the source of truth for the icon: it also moves on its
+    // own via the observer below, and via the browser's own media keys.
+    const onPlay = () => setPlaying(true);
+    const onPause = () => setPlaying(false);
+    video.addEventListener("play", onPlay);
+    video.addEventListener("pause", onPause);
+
     const io = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting && !motion.matches) {
+        if (entry.isIntersecting && !motion.matches && !stoppedByUser.current) {
           // Rejected autoplay is an expected outcome, not an error: the poster
           // stays up and the controls are there to start it by hand.
           void video.play().catch(() => {});
@@ -85,12 +96,10 @@ export function ClientReel({
     return () => {
       io.disconnect();
       motion.removeEventListener("change", onMotion);
+      video.removeEventListener("play", onPlay);
+      video.removeEventListener("pause", onPause);
     };
   }, []);
-
-  // Once the sound is on, the person is watching rather than glancing, so give
-  // them the browser's own transport instead of a bare rectangle.
-  const withControls = !muted || reduced;
 
   return (
     <div className="kagu-thumb kagu-thumb--phone kagu-thumb--reel">
@@ -108,13 +117,46 @@ export function ClientReel({
               loop
               playsInline
               preload="metadata"
-              controls={withControls}
-              controlsList="nodownload noremoteplayback"
               disablePictureInPicture
             />
+            <div className="kagu-reel__controls">
             <button
               type="button"
-              className="kagu-reel__sound"
+              className="kagu-reel__btn"
+              onClick={() => {
+                const video = videoRef.current;
+                if (!video) return;
+                if (video.paused) {
+                  stoppedByUser.current = false;
+                  void video.play().catch(() => {});
+                } else {
+                  stoppedByUser.current = true;
+                  video.pause();
+                }
+              }}
+              aria-label={
+                playing ? `Stop the ${label} video` : `Play the ${label} video`
+              }
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                stroke="none"
+                aria-hidden
+              >
+                {playing ? (
+                  <>
+                    <rect x="7" y="5.5" width="3.4" height="13" rx="1.1" />
+                    <rect x="13.6" y="5.5" width="3.4" height="13" rx="1.1" />
+                  </>
+                ) : (
+                  <path d="M8.2 5.6a1 1 0 0 1 1.53-.85l8.2 5.4a1 1 0 0 1 0 1.7l-8.2 5.4a1 1 0 0 1-1.53-.85z" />
+                )}
+              </svg>
+            </button>
+            <button
+              type="button"
+              className="kagu-reel__btn"
               onClick={() => {
                 const video = videoRef.current;
                 const next = !muted;
@@ -125,7 +167,10 @@ export function ClientReel({
                 // and the moment a browser that only permitted it while it
                 // was silent will stop it, so play unconditionally rather
                 // than only when it is already paused.
-                if (!next) void video?.play().catch(() => {});
+                if (!next) {
+                  stoppedByUser.current = false;
+                  void video?.play().catch(() => {});
+                }
               }}
               aria-pressed={!muted}
               aria-label={
@@ -157,6 +202,7 @@ export function ClientReel({
                 )}
               </svg>
             </button>
+            </div>
           </div>
         </div>
       </div>

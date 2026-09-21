@@ -816,13 +816,19 @@ export default async function MarketingPage() {
           object-fit: cover;
           background: #050608;
         }
-        /* Top-right: the bottom of the screen belongs to the native controls
-           once the sound is on. */
-        .kagu-reel__sound {
+        /* Top-right, clear of the island. Stacking the pair rather than
+           positioning each one keeps the gap honest at every phone size: the
+           buttons hit a px floor on a short viewport, so a second hard-coded
+           cqw offset would have them overlap exactly when they stop scaling. */
+        .kagu-reel__controls {
           position: absolute;
           top: 13cqw;
           right: 4cqw;
           z-index: 3;
+          display: grid;
+          gap: 2.5cqw;
+        }
+        .kagu-reel__btn {
           display: grid;
           place-items: center;
           width: 14cqw;
@@ -840,16 +846,16 @@ export default async function MarketingPage() {
           cursor: pointer;
           transition: background 0.28s var(--ease-out-quint);
         }
-        .kagu-reel__sound svg {
+        .kagu-reel__btn svg {
           width: 58%;
           height: 58%;
         }
-        .kagu-reel__sound:focus-visible {
+        .kagu-reel__btn:focus-visible {
           outline: 2px solid #fff;
           outline-offset: 2px;
         }
         @media (hover: hover) {
-          .kagu-reel__sound:hover { background: rgba(8, 9, 12, 0.8); }
+          .kagu-reel__btn:hover { background: rgba(8, 9, 12, 0.8); }
         }
       `}</style>
     </>
