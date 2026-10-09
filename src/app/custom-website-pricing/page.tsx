@@ -4,7 +4,7 @@
 */
 
 import type { Metadata } from "next";
-import { SiteFooter } from "@/components/layout/SiteFooter";
+import { SiteFooterServer } from "@/components/layout/SiteFooterServer";
 import {
   SeoHero,
   SeoSection,
@@ -29,6 +29,8 @@ import {
   formatPrice,
   BRANDING_PRICE,
 } from "@/components/start-project/catalog";
+
+export const revalidate = 3600;
 
 const PATH = "/custom-website-pricing";
 const TR_PATH = "/custom-website-fiyati";
@@ -220,7 +222,7 @@ export default function CustomWebsitePricingPage() {
         secondaryLabel="Ask us directly"
       />
 
-      <SiteFooter />
+      <SiteFooterServer />
     </>
   );
 }

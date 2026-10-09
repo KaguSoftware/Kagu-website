@@ -5,7 +5,7 @@
 */
 
 import type { Metadata } from "next";
-import { SiteFooter } from "@/components/layout/SiteFooter";
+import { SiteFooterServer } from "@/components/layout/SiteFooterServer";
 import {
   SeoHero,
   SeoSection,
@@ -27,6 +27,8 @@ import {
   WEBSITE_TYPES,
   formatPrice,
 } from "@/components/start-project/catalog";
+
+export const revalidate = 3600;
 
 const PATH = "/proje-baslat";
 const EN_PATH = "/start-project";
@@ -183,7 +185,7 @@ export default function ProjeBaslatPage() {
         secondaryLabel="Bize yazın"
       />
 
-      <SiteFooter />
+      <SiteFooterServer />
     </div>
   );
 }

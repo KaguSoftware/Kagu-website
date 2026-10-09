@@ -964,7 +964,8 @@ export function CaseReel({
                               fill
                               sizes="(max-width: 768px) 100vw, 66vw"
                               priority={eager && i === 0}
-                              onLoadingComplete={(img) => {
+                              onLoad={(e) => {
+                                const img = e.currentTarget;
                                 if (img.naturalWidth && img.naturalHeight) {
                                   setRatios((r) =>
                                     r[i] ? r : { ...r, [i]: img.naturalWidth / img.naturalHeight },

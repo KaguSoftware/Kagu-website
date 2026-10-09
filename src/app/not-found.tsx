@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SiteFooter } from "@/components/layout/SiteFooter";
+import { SiteFooterServer } from "@/components/layout/SiteFooterServer";
 import { ArrowGlyph } from "@/components/ui/ArrowGlyph";
 
 export const metadata = {
@@ -85,7 +85,7 @@ export default function NotFound() {
           </div>
         </div>
       </section>
-      <SiteFooter />
+      <SiteFooterServer />
     </>
   );
 }

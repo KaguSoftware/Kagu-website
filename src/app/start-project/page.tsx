@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { SiteFooter } from "@/components/layout/SiteFooter";
+import { SiteFooterServer } from "@/components/layout/SiteFooterServer";
 import { StartProjectBuilder } from "@/components/start-project/StartProjectBuilder";
 import { pageMetadata } from "@/lib/seo";
 import { StartProjectSeoContent } from "./StartProjectSeoContent";
@@ -107,7 +107,7 @@ export default async function StartProjectPage({
         initialNavHover={initialNavHover}
       />
       <StartProjectSeoContent />
-      <SiteFooter />
+      <SiteFooterServer />
     </>
   );
 }

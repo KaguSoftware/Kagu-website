@@ -5,7 +5,7 @@
 */
 
 import type { Metadata } from "next";
-import { SiteFooter } from "@/components/layout/SiteFooter";
+import { SiteFooterServer } from "@/components/layout/SiteFooterServer";
 import {
   SeoHero,
   SeoSection,
@@ -30,6 +30,8 @@ import {
   formatPrice,
   BRANDING_PRICE,
 } from "@/components/start-project/catalog";
+
+export const revalidate = 3600;
 
 const PATH = "/custom-website-fiyati";
 const EN_PATH = "/custom-website-pricing";
@@ -221,7 +223,7 @@ export default function CustomWebsiteFiyatiPage() {
         secondaryLabel="Süreci okuyun"
       />
 
-      <SiteFooter />
+      <SiteFooterServer />
     </div>
   );
 }

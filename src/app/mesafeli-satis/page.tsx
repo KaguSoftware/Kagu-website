@@ -165,3 +165,5 @@ export default function MesafeliSatisPage() {
     />
   );
 }
+
+export const revalidate = 3600;

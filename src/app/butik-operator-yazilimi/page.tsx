@@ -4,7 +4,7 @@
 */
 
 import type { Metadata } from "next";
-import { SiteFooter } from "@/components/layout/SiteFooter";
+import { SiteFooterServer } from "@/components/layout/SiteFooterServer";
 import {
   SeoHero,
   SeoSection,
@@ -22,6 +22,8 @@ import {
   breadcrumbJsonLd,
   type FaqItem,
 } from "@/lib/seo";
+
+export const revalidate = 3600;
 
 const PATH = "/butik-operator-yazilimi";
 const TITLE = "Butik Operatör Yazılımı · Kagu";
@@ -161,7 +163,7 @@ export default function ButikOperatorYazilimiPage() {
         secondaryLabel="Bize yazın"
       />
 
-      <SiteFooter />
+      <SiteFooterServer />
     </div>
   );
 }

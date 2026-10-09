@@ -19,8 +19,8 @@ type ViewTransitionProps = {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const runtime: React.ComponentType<ViewTransitionProps> | undefined = (React as any)
-  .unstable_ViewTransition;
+const runtime: React.ComponentType<ViewTransitionProps> | undefined =
+  (React as any).ViewTransition ?? (React as any).unstable_ViewTransition;
 
 export const ViewTransition: React.ComponentType<ViewTransitionProps> =
   runtime ?? (({ children }) => <>{children}</>);

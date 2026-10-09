@@ -5,7 +5,7 @@
 */
 
 import type { Metadata } from "next";
-import { SiteFooter } from "@/components/layout/SiteFooter";
+import { SiteFooterServer } from "@/components/layout/SiteFooterServer";
 import {
   SeoHero,
   SeoSection,
@@ -22,6 +22,8 @@ import {
   breadcrumbJsonLd,
   type FaqItem,
 } from "@/lib/seo";
+
+export const revalidate = 3600;
 
 const PATH = "/butik-operatoler-dijital-arac";
 const EN_PATH = "/digital-tools-for-boutique-operators";
@@ -175,7 +177,7 @@ export default function ButikOperatorlerDijitalAracPage() {
         secondaryLabel="Bize yazın"
       />
 
-      <SiteFooter />
+      <SiteFooterServer />
     </div>
   );
 }

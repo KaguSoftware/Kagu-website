@@ -4,7 +4,7 @@
 */
 
 import type { Metadata } from "next";
-import { SiteFooter } from "@/components/layout/SiteFooter";
+import { SiteFooterServer } from "@/components/layout/SiteFooterServer";
 import {
   SeoHero,
   SeoSection,
@@ -28,6 +28,8 @@ import {
   FEATURES,
   formatPrice,
 } from "@/components/start-project/catalog";
+
+export const revalidate = 3600;
 
 const PATH = "/full-stack-platform-cost";
 const TR_PATH = "/full-stack-platform-maliyeti";
@@ -229,7 +231,7 @@ export default function FullStackPlatformCostPage() {
         secondaryLabel="Ask us directly"
       />
 
-      <SiteFooter />
+      <SiteFooterServer />
     </>
   );
 }

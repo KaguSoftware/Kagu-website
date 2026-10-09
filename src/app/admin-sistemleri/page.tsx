@@ -5,7 +5,7 @@
 */
 
 import type { Metadata } from "next";
-import { SiteFooter } from "@/components/layout/SiteFooter";
+import { SiteFooterServer } from "@/components/layout/SiteFooterServer";
 import {
   SeoHero,
   SeoSection,
@@ -23,6 +23,8 @@ import {
   type FaqItem,
 } from "@/lib/seo";
 import { FEATURES, formatPrice } from "@/components/start-project/catalog";
+
+export const revalidate = 3600;
 
 const PATH = "/admin-sistemleri";
 const EN_PATH = "/admin-systems";
@@ -176,7 +178,7 @@ export default function AdminSistemleriPage() {
         secondaryLabel="Bize yazın"
       />
 
-      <SiteFooter />
+      <SiteFooterServer />
     </div>
   );
 }
