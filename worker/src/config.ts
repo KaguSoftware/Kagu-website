@@ -57,6 +57,13 @@ export const config = {
   // works fine without drafts.
   groqApiKey: process.env.GROQ_API_KEY ?? "",
   groqModel: process.env.GROQ_MODEL ?? "openai/gpt-oss-120b",
+  // gpt-oss models reason before answering and that counts against
+  // max_tokens — at the default effort a tight cap can burn out before any
+  // JSON is written (400 json_validate_failed, empty failed_generation).
+  // Spread into every Groq request body; empty for non-reasoning models.
+  groqExtraParams: (process.env.GROQ_MODEL ?? "openai/gpt-oss-120b").includes("gpt-oss")
+    ? { reasoning_effort: "low" }
+    : {},
   // tr | ar | en — language the outreach drafts are written in.
   draftLanguage: (process.env.DRAFT_LANGUAGE ?? "tr") as "tr" | "ar" | "en",
   // Hard cap on listings collected per job (feed scrolling stops here).

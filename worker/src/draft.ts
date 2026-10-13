@@ -73,6 +73,7 @@ export async function draftMessages(
         },
         body: JSON.stringify({
           model: config.groqModel,
+          ...config.groqExtraParams,
           temperature: 0.3,
           max_tokens: 1024,
           response_format: { type: "json_object" },

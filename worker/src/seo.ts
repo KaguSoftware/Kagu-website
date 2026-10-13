@@ -377,6 +377,7 @@ Respond with STRICT JSON, nothing else:
         },
         body: JSON.stringify({
           model: config.groqModel,
+          ...config.groqExtraParams,
           temperature: 0.2,
           max_tokens: 1536,
           response_format: { type: "json_object" },

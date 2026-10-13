@@ -576,6 +576,7 @@ async function groqJson<T>(label: string, prompt: string, maxTokens: number): Pr
         },
         body: JSON.stringify({
           model: config.groqModel,
+          ...config.groqExtraParams,
           temperature: 0.2,
           max_tokens: maxTokens,
           response_format: { type: "json_object" },
