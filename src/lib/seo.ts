@@ -78,6 +78,22 @@ export function pageMetadata({
   };
 }
 
+/**
+ * Clip prose to `max` on a word boundary, dropping any dangling punctuation
+ * before the ellipsis. Meta descriptions get cut around 160 chars, and a case
+ * lede can run well past that.
+ */
+export function clampText(text: string, max = 155): string {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  // lastIndexOf returns -1 when there is no space to break on (one very long
+  // token), and slice(0, -1) would then silently drop the last character —
+  // keep the whole cut in that case.
+  const lastSpace = cut.lastIndexOf(" ");
+  const atSpace = lastSpace === -1 ? cut : cut.slice(0, lastSpace);
+  return atSpace.replace(/[\s,;:.—-]+$/, "") + "…";
+}
+
 /* ------------------------------- JSON-LD -------------------------------- */
 
 const ORG_ID = `${SITE_URL}/#organization`;

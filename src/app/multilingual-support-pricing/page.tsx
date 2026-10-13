@@ -4,7 +4,7 @@
 */
 
 import type { Metadata } from "next";
-import { SiteFooter } from "@/components/layout/SiteFooter";
+import { SiteFooterServer } from "@/components/layout/SiteFooterServer";
 import {
   SeoHero,
   SeoSection,
@@ -24,6 +24,8 @@ import {
   type FaqItem,
 } from "@/lib/seo";
 import { FEATURES, formatPrice } from "@/components/start-project/catalog";
+
+export const revalidate = 3600;
 
 const PATH = "/multilingual-support-pricing";
 const TR_PATH = "/multilingual-support-fiyat";
@@ -189,7 +191,7 @@ export default function MultilingualSupportPricingPage() {
         secondaryLabel="Write to us"
       />
 
-      <SiteFooter />
+      <SiteFooterServer />
     </>
   );
 }

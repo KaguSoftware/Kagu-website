@@ -4,7 +4,7 @@
 */
 
 import type { Metadata } from "next";
-import { SiteFooter } from "@/components/layout/SiteFooter";
+import { SiteFooterServer } from "@/components/layout/SiteFooterServer";
 import {
   SeoHero,
   SeoSection,
@@ -21,6 +21,8 @@ import {
   breadcrumbJsonLd,
   type FaqItem,
 } from "@/lib/seo";
+
+export const revalidate = 3600;
 
 const PATH = "/digital-tools-for-boutique-operators";
 const TR_PATH = "/butik-operatoler-dijital-arac";
@@ -175,7 +177,7 @@ export default function DigitalToolsForBoutiqueOperatorsPage() {
         secondaryLabel="Write to us"
       />
 
-      <SiteFooter />
+      <SiteFooterServer />
     </>
   );
 }

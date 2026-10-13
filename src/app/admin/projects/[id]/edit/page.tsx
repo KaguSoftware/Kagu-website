@@ -15,7 +15,7 @@ export default async function EditProjectPage({
   const [{ data: project }, { data: clients }] = await Promise.all([
     supabase
       .from("projects")
-      .select("*, clients(name), project_features(image, title, description, device, sort_order)")
+      .select("*, clients(name), project_features(*)")
       .eq("id", id)
       .single(),
     supabase.from("clients").select("name").order("name"),
@@ -30,6 +30,7 @@ export default async function EditProjectPage({
       image: f.image,
       title: f.title,
       description: f.description,
+      alt: f.alt ?? "",
       device: f.device,
     }));
 

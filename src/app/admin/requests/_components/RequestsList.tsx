@@ -6,11 +6,16 @@
   realtime subscription via useRealtimeRows; filters apply client-side over
   the merged rows so live INSERT/UPDATE patches respect the active filter.
   Filter state lives in the URL so views are shareable.
+
+  contact_requests carries three kinds of row, told apart by its `source`
+  column: /contact, the short form on /marketing, and the /start-marketing
+  intake. Rows written before that column existed read as null and are shown
+  as plain contact messages.
 */
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import type { InquiryStatus, Tables } from "@/lib/supabase/database.types";
+import type { InquiryStatus, RequestSource, Tables } from "@/lib/supabase/database.types";
 import {
   ANIMATION_ID,
   ANIMATION_LABEL,
@@ -44,6 +49,18 @@ const STATUS_CLASSES: Record<InquiryStatus, string> = {
 };
 
 const FEATURE_LABELS = new Map(FEATURES.map((f) => [f.id, f.label]));
+
+const SOURCE_LABELS: Record<RequestSource, string> = {
+  contact: "Contact",
+  marketing: "Marketing",
+  "start-marketing": "Intake",
+};
+
+/* The value the type filter matches on: a contact row is filtered by which
+   form sent it, an inquiry row by being an inquiry. */
+function kindKey(item: Unified): string {
+  return item.kind === "inquiry" ? "inquiry" : (item.row.source ?? "contact");
+}
 
 /* Resolves both feature ids and "zone:variant" component tokens to labels. */
 function labelFor(id: string): string {
@@ -108,10 +125,10 @@ function StatusSelect({
   );
 }
 
-function KindChip({ kind }: { kind: Unified["kind"] }) {
+function KindChip({ label }: { label: string }) {
   return (
     <span className="border border-neutral px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-slate-ink">
-      {kind === "contact" ? "Contact" : "Inquiry"}
+      {label}
     </span>
   );
 }
@@ -195,7 +212,7 @@ export function RequestsList({
   const statusFilter = params.status ?? "";
   const visible = merged.filter(
     (item) =>
-      (!typeFilter || item.kind === typeFilter) &&
+      (!typeFilter || kindKey(item) === typeFilter) &&
       (!statusFilter || item.row.status === statusFilter)
   );
 
@@ -219,6 +236,8 @@ export function RequestsList({
           allLabel="All types"
           options={[
             { value: "contact", label: "Contact messages" },
+            { value: "marketing", label: "Marketing enquiries" },
+            { value: "start-marketing", label: "Marketing intake" },
             { value: "inquiry", label: "Project inquiries" },
           ]}
         />
@@ -237,7 +256,7 @@ export function RequestsList({
       {visible.length === 0 ? (
         <EmptyState>
           {merged.length === 0
-            ? "No requests yet — they appear here when someone submits the /contact form or sends a package from /start-project."
+            ? "No requests yet — they appear here when someone submits the /contact or /marketing forms, fills in the /start-marketing intake, or sends a package from /start-project."
             : "Nothing matches these filters."}
         </EmptyState>
       ) : (
@@ -260,7 +279,7 @@ function ContactItem({ row }: { row: ContactRow }) {
     <li className="space-y-2 px-5 py-4">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <KindChip kind="contact" />
+          <KindChip label={SOURCE_LABELS[row.source ?? "contact"]} />
           <div>
             <a
               href={`mailto:${row.email}`}
@@ -295,7 +314,7 @@ function InquiryItem({ row }: { row: InquiryRow }) {
     <li className="space-y-2 px-5 py-4">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <KindChip kind="inquiry" />
+          <KindChip label="Inquiry" />
           <div>
             <a
               href={`mailto:${row.email}`}

@@ -13,7 +13,7 @@
   Two phases, two signals:
     • click on an internal <a>  → cover (swipe in), hold
     • pathname finally changes  → reveal (swipe out)
-  Plus a session-gated first-visit curtain on mount.
+  The cover is delayed by SHOW_DELAY_MS so fast navigations never flash it.
 
   Respects reduced-motion (quick fade instead of a swipe).
 */
@@ -37,7 +37,11 @@ const EASE = [0.16, 1, 0.3, 1] as const;
 // Minimum time the cover stays up so fast navigations still read as a deliberate
 // transition (just past the swipe-in). The curtain must never make the user wait
 // on an already-loaded page — it reveals as soon as the route lands.
-const MIN_COVER_MS = 650;
+const MIN_COVER_MS = 400;
+
+// The curtain only goes up if the destination hasn't landed within this window,
+// so already-fast navigations stay instant instead of paying for a swipe.
+const SHOW_DELAY_MS = 250;
 
 // Playful, studio/software-flavored loading lines — picked at random per swipe.
 const PHRASES = [
@@ -102,15 +106,28 @@ export function PageTransition() {
   // changes (i.e. the new route landed).
   const coverFromPath = useRef<string | null>(null);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const raise = useCallback(() => {
     if (hideTimer.current) clearTimeout(hideTimer.current);
-    setPhrase(pickPhrase());
-    setRunId((n) => n + 1);
-    coverStart.current = Date.now();
+    if (showTimer.current) clearTimeout(showTimer.current);
     coverFromPath.current = window.location.pathname;
-    setShow(true);
+    showTimer.current = setTimeout(() => {
+      showTimer.current = null;
+      setPhrase(pickPhrase());
+      setRunId((n) => n + 1);
+      coverStart.current = Date.now();
+      setShow(true);
+    }, SHOW_DELAY_MS);
   }, []);
+
+  // Route landed before the curtain went up — cancel it, no swipe needed.
+  useEffect(() => {
+    if (pathname !== coverFromPath.current && showTimer.current) {
+      clearTimeout(showTimer.current);
+      showTimer.current = null;
+    }
+  }, [pathname]);
 
   // Cover on internal-link clicks (capture phase, before Next router hijacks it).
   useEffect(() => {
@@ -276,7 +293,6 @@ export function PageTransition() {
                 transparent 100%
               );
               mix-blend-mode: screen;
-              filter: blur(6px);
             }
             .kagu-swipe__phrase {
               font-family: var(--font-mono, ui-monospace, monospace);

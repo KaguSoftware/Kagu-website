@@ -56,6 +56,10 @@ export type MessageLanguage = "tr" | "ar" | "en";
 
 export type InquiryStatus = "new" | "contacted" | "archived";
 
+/** Which public form a contact_requests row came from. Null on rows
+    written before the column existed — treated as "contact". */
+export type RequestSource = "contact" | "marketing" | "start-marketing";
+
 export type AuditFlag =
   | "no_website"
   | "facebook_only"
@@ -296,6 +300,7 @@ export interface Database {
           cover_bg: CoverBg;
           cover_label: string;
           thumbnail: string | null;
+          thumbnail_alt: string | null;
           device: DeviceKind | null;
           is_featured: boolean;
           featured_order: number | null;
@@ -319,6 +324,7 @@ export interface Database {
           cover_bg: CoverBg;
           cover_label: string;
           thumbnail?: string | null;
+          thumbnail_alt?: string | null;
           device?: DeviceKind | null;
           is_featured?: boolean;
           featured_order?: number | null;
@@ -342,6 +348,7 @@ export interface Database {
           cover_bg?: CoverBg;
           cover_label?: string;
           thumbnail?: string | null;
+          thumbnail_alt?: string | null;
           device?: DeviceKind | null;
           is_featured?: boolean;
           featured_order?: number | null;
@@ -367,6 +374,7 @@ export interface Database {
           image: string;
           title: string;
           description: string;
+          alt: string | null;
           device: DeviceKind | null;
           sort_order: number;
         };
@@ -376,6 +384,7 @@ export interface Database {
           image: string;
           title: string;
           description: string;
+          alt?: string | null;
           device?: DeviceKind | null;
           sort_order?: number;
         };
@@ -385,6 +394,7 @@ export interface Database {
           image?: string;
           title?: string;
           description?: string;
+          alt?: string | null;
           device?: DeviceKind | null;
           sort_order?: number;
         };
@@ -1187,6 +1197,7 @@ export interface Database {
           email: string;
           company: string | null;
           message: string;
+          source: RequestSource | null;
           status: InquiryStatus;
           created_at: string;
         };
@@ -1196,6 +1207,7 @@ export interface Database {
           email: string;
           company?: string | null;
           message: string;
+          source?: RequestSource | null;
           status?: InquiryStatus;
           created_at?: string;
         };
@@ -1205,6 +1217,7 @@ export interface Database {
           email?: string;
           company?: string | null;
           message?: string;
+          source?: RequestSource | null;
           status?: InquiryStatus;
           created_at?: string;
         };

@@ -36,14 +36,21 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
     });
     window.__kaguLenis = lenis;
 
+    // Run the rAF loop only while the tab is visible.
     let raf = 0;
     const loop = (time: number) => {
       lenis.raf(time);
       raf = requestAnimationFrame(loop);
     };
+    const onVisibility = () => {
+      cancelAnimationFrame(raf);
+      if (!document.hidden) raf = requestAnimationFrame(loop);
+    };
     raf = requestAnimationFrame(loop);
+    document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
       cancelAnimationFrame(raf);
       lenis.destroy();
       delete window.__kaguLenis;

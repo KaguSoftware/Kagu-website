@@ -173,3 +173,5 @@ export default function GizlilikPage() {
     />
   );
 }
+
+export const revalidate = 3600;

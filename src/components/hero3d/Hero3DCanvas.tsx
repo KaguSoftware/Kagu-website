@@ -58,8 +58,8 @@ function StudioLights({ reducedMotion }: { reducedMotion: boolean }) {
         intensity={1.7}
         color="#ffffff"
         castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
         shadow-bias={-0.0006}
         shadow-camera-near={1}
         shadow-camera-far={30}
@@ -178,6 +178,40 @@ function ReadySignal({ onReady }: { onReady: () => void }) {
   return null;
 }
 
+/* Stops the render loop while the hero is scrolled out of view or the tab is
+   hidden — otherwise the physical-material scene keeps burning GPU for the
+   whole visit. Reduced-motion stays on demand. */
+function VisibilityGate({ reducedMotion }: { reducedMotion: boolean }) {
+  const gl = useThree((s) => s.gl);
+  const setFrameloop = useThree((s) => s.setFrameloop);
+  const invalidate = useThree((s) => s.invalidate);
+
+  useEffect(() => {
+    if (reducedMotion) return;
+    let inView = true;
+    const apply = () => {
+      const run = inView && !document.hidden;
+      setFrameloop(run ? "always" : "never");
+      if (run) invalidate();
+    };
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        inView = entry.isIntersecting;
+        apply();
+      },
+      { threshold: 0 },
+    );
+    io.observe(gl.domElement);
+    document.addEventListener("visibilitychange", apply);
+    return () => {
+      io.disconnect();
+      document.removeEventListener("visibilitychange", apply);
+    };
+  }, [gl, setFrameloop, invalidate, reducedMotion]);
+
+  return null;
+}
+
 export interface Hero3DCanvasProps {
   reducedMotion: boolean;
   offsetX: number;
@@ -216,6 +250,7 @@ export default function Hero3DCanvas({
         coarse={coarse}
       />
       <ReadySignal onReady={onReady} />
+      <VisibilityGate reducedMotion={reducedMotion} />
     </Canvas>
   );
 }

@@ -14,6 +14,7 @@ const FeatureSchema = z.object({
   image: z.string().trim().min(1),
   title: z.string().trim().min(1),
   description: z.string().trim().min(1),
+  alt: z.string().trim().optional(),
   device: z.enum(["desktop", "mobile"]).nullable().optional(),
 });
 
@@ -31,6 +32,7 @@ const ProjectSchema = z.object({
   cover_bg: z.enum(["mint-pale", "mint-soft", "mint-deep", "slate-ink", "paper"]),
   cover_label: z.string().min(1, { error: "Cover label is required." }).trim(),
   thumbnail: z.string().trim().optional(),
+  thumbnail_alt: z.string().trim().optional(),
   device: z.enum(["desktop", "mobile"]).optional(),
   is_featured: z.boolean().default(false),
   featured_order: z.coerce.number().int().optional(),
@@ -58,6 +60,7 @@ function parse(formData: FormData) {
     cover_bg: formData.get("cover_bg"),
     cover_label: formData.get("cover_label"),
     thumbnail: formData.get("thumbnail") || undefined,
+    thumbnail_alt: formData.get("thumbnail_alt") || undefined,
     device: formData.get("device") || undefined,
     is_featured: formData.get("is_featured") === "on",
     featured_order: formData.get("featured_order") || undefined,
@@ -121,6 +124,7 @@ export const createProject = withFlash(async (formData: FormData) => {
       cover_bg: d.cover_bg,
       cover_label: d.cover_label,
       thumbnail: d.thumbnail ?? null,
+      thumbnail_alt: d.thumbnail_alt ?? null,
       device: d.device ?? null,
       is_featured: d.is_featured,
       featured_order: d.featured_order ?? null,
@@ -139,6 +143,7 @@ export const createProject = withFlash(async (formData: FormData) => {
         image: f.image,
         title: f.title,
         description: f.description,
+        alt: f.alt || null,
         device: f.device ?? null,
         sort_order: i,
       }))
@@ -176,6 +181,7 @@ export const updateProject = withFlash(async (formData: FormData) => {
       cover_bg: d.cover_bg,
       cover_label: d.cover_label,
       thumbnail: d.thumbnail ?? null,
+      thumbnail_alt: d.thumbnail_alt ?? null,
       device: d.device ?? null,
       is_featured: d.is_featured,
       featured_order: d.featured_order ?? null,
@@ -195,6 +201,7 @@ export const updateProject = withFlash(async (formData: FormData) => {
         image: f.image,
         title: f.title,
         description: f.description,
+        alt: f.alt || null,
         device: f.device ?? null,
         sort_order: i,
       }))

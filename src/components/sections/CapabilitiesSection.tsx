@@ -39,6 +39,9 @@ export function CapabilitiesSection({
   const n = capabilities.length;
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
+  // Autoplay only runs while the section is on screen and the tab is visible.
+  const [visible, setVisible] = useState(false);
+  const sectionRef = useRef<HTMLElement | null>(null);
   // While true the bar drains every segment to empty before restarting at 0,
   // so the loop never snaps the first segment from full back to nothing.
   const [resetting, setResetting] = useState(false);
@@ -59,7 +62,24 @@ export function CapabilitiesSection({
   // Drive the active fill and advance when it tops out. On the last segment we
   // enter the drain phase instead of wrapping straight to 0.
   useEffect(() => {
-    if (paused || reduced || resetting || n <= 1) return;
+    const el = sectionRef.current;
+    if (!el) return;
+    let inView = false;
+    const apply = () => setVisible(inView && !document.hidden);
+    const io = new IntersectionObserver(([e]) => {
+      inView = e.isIntersecting;
+      apply();
+    });
+    io.observe(el);
+    document.addEventListener("visibilitychange", apply);
+    return () => {
+      io.disconnect();
+      document.removeEventListener("visibilitychange", apply);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (paused || !visible || reduced || resetting || n <= 1) return;
     let prev: number | undefined;
     const tick = (ts: number) => {
       if (prev === undefined) prev = ts;
@@ -78,7 +98,7 @@ export function CapabilitiesSection({
     };
     rafRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafRef.current);
-  }, [index, paused, reduced, resetting, n]);
+  }, [index, paused, visible, reduced, resetting, n]);
 
   // After the drain animation finishes, restart the cycle from the first item.
   useEffect(() => {
@@ -112,6 +132,7 @@ export function CapabilitiesSection({
 
   return (
     <section
+      ref={sectionRef}
       aria-label="Capabilities"
       style={{ background: "var(--mint-pale)" }}
       className="px-(--container-x) py-(--section-y)"

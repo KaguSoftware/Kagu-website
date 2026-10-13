@@ -15,6 +15,8 @@ export type CaseFeature = {
   image: string;
   title: string;
   description: string;
+  /** Describes what the screenshot shows. Falls back to `title` when unset. */
+  alt?: string;
   device?: DeviceKind;
 };
 
@@ -31,6 +33,8 @@ export type Case = {
   body: readonly string[];
   cover: { bg: CoverBg; label: string };
   thumbnail?: string;
+  /** Describes what the cover screenshot shows. Falls back to `project` when unset. */
+  thumbnailAlt?: string;
   features?: readonly CaseFeature[];
   device?: DeviceKind;
 };
@@ -77,8 +81,11 @@ export type TeamMember = {
   segment: TeamSegment;
 };
 
-const PROJECT_SELECT =
-  "*, clients(name), project_features(image, title, description, device, sort_order)";
+// project_features(*) rather than a column list on purpose: naming a column
+// that doesn't exist yet fails the whole select, and getCases() swallows the
+// error into [], which empties /work and un-prerenders every case page. The
+// wildcard lets this deploy before or after supabase/case_alt_text.sql.
+const PROJECT_SELECT = "*, clients(name), project_features(*)";
 
 // The embedded row shape Supabase returns for PROJECT_SELECT.
 type ProjectJoinRow = {
@@ -94,16 +101,33 @@ type ProjectJoinRow = {
   cover_bg: CoverBg;
   cover_label: string;
   thumbnail: string | null;
+  thumbnail_alt: string | null;
   device: DeviceKind | null;
   clients: { name: string } | null;
   project_features: {
     image: string;
     title: string;
     description: string;
+    alt: string | null;
     device: DeviceKind | null;
     sort_order: number;
   }[];
 };
+
+/*
+  next/image rejects a local src that doesn't start with "/" — it answers the
+  optimizer request with 400 and the photo renders as a broken image. One
+  team_members row was saved as "team/Kemal.JPG", so that member's portrait was
+  missing on /about. Normalising here fixes the stored rows and stops the next
+  hand-typed path from doing it again; remote URLs pass through untouched.
+*/
+function normalizeImagePath(src: string | null): string | null {
+  if (!src) return null;
+  const trimmed = src.trim();
+  if (!trimmed) return null;
+  if (/^(https?:)?\/\//.test(trimmed)) return trimmed;
+  return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+}
 
 function toCase(p: ProjectJoinRow): Case {
   return {
@@ -118,15 +142,17 @@ function toCase(p: ProjectJoinRow): Case {
     lede: p.lede ?? "",
     body: p.body ?? [],
     cover: { bg: p.cover_bg, label: p.cover_label },
-    thumbnail: p.thumbnail ?? undefined,
+    thumbnail: normalizeImagePath(p.thumbnail) ?? undefined,
+    thumbnailAlt: p.thumbnail_alt ?? undefined,
     device: p.device ?? undefined,
     features: (p.project_features ?? [])
       .slice()
       .sort((a, b) => a.sort_order - b.sort_order)
       .map((f) => ({
-        image: f.image,
+        image: normalizeImagePath(f.image) ?? f.image,
         title: f.title,
         description: f.description,
+        alt: f.alt ?? undefined,
         device: f.device ?? undefined,
       })),
   };
@@ -244,7 +270,7 @@ export async function getTeam(): Promise<TeamMember[]> {
     name: m.name,
     role: m.role,
     bio: m.bio ?? "",
-    image: m.image_url ?? null,
+    image: normalizeImagePath(m.image_url),
     segment: m.segment,
   }));
 }
