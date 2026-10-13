@@ -103,17 +103,39 @@ async function getAccessToken(key: ServiceAccountKey): Promise<string> {
   return data.access_token;
 }
 
-/* The site's real queries over the last `days`, aggregated per query (the
-   API splits by page; we sum volume, impression-weight the position, and
-   keep the strongest page). Returns null when GSC isn't configured. */
-export async function fetchGscQueries(host: string, days = 90): Promise<GscRow[] | null> {
+/* One Search Analytics call over the last `days` (ending 2 days ago — GSC
+   data lags), split by query × page, aggregated per query: volume summed,
+   position impression-weighted, the strongest page kept. Shared by the
+   strategy's 90-day evidence pull and the weekly measurement loop. Returns
+   null when GSC isn't configured. */
+/* GSC_SITE_URL names ONE property (for a URL-prefix property). It must only
+   ever stand in for its own host: the worker tracks many hosts, and sending a
+   client's keywords to Kagu's property would store Kagu's positions as
+   theirs. Any other host gets its domain property. */
+function propertyFor(host: string): string {
+  const configured = config.gscSiteUrl;
+  if (configured) {
+    const h = configured.replace(/^sc-domain:/, "").replace(/^https?:\/\//, "").replace(/\/.*$/, "").replace(/^www\./, "");
+    if (h === host || host.endsWith(`.${h}`)) return configured;
+  }
+  return `sc-domain:${host}`;
+}
+
+async function querySearchAnalytics(
+  host: string,
+  days: number,
+  rowLimit: number,
+  endAt?: Date
+): Promise<GscRow[] | null> {
   const key = loadKey();
   if (!key) return null;
 
-  const property = config.gscSiteUrl || `sc-domain:${host}`;
+  const property = propertyFor(host);
   const token = await getAccessToken(key);
 
-  const end = new Date(Date.now() - 2 * 86_400_000); // GSC data lags ~2 days
+  // GSC data lags ~2 days; `endAt` asks for a historical window (the
+  // plan-check baseline — "the 7 days before the strategy ran").
+  const end = new Date(Math.min(Date.now() - 2 * 86_400_000, endAt?.getTime() ?? Infinity));
   const start = new Date(end.getTime() - days * 86_400_000);
   const day = (d: Date) => d.toISOString().slice(0, 10);
 
@@ -126,7 +148,7 @@ export async function fetchGscQueries(host: string, days = 90): Promise<GscRow[]
         startDate: day(start),
         endDate: day(end),
         dimensions: ["query", "page"],
-        rowLimit: 500,
+        rowLimit,
       }),
       signal: AbortSignal.timeout(20000),
     }
@@ -148,13 +170,19 @@ export async function fetchGscQueries(host: string, days = 90): Promise<GscRow[]
   const data = (await res.json()) as {
     rows?: Array<{ keys?: string[]; clicks?: number; impressions?: number; position?: number }>;
   };
+  return aggregateByQuery(data.rows ?? []);
+}
 
+/* Exported for tests: fold query × page rows into one row per query. */
+export function aggregateByQuery(
+  rows: Array<{ keys?: string[]; clicks?: number; impressions?: number; position?: number }>
+): GscRow[] {
   interface Agg extends GscRow {
     posWeight: number;
     topPageImpressions: number;
   }
   const byQuery = new Map<string, Agg>();
-  for (const row of data.rows ?? []) {
+  for (const row of rows) {
     const query = row.keys?.[0]?.trim();
     if (!query) continue;
     const impressions = row.impressions ?? 0;
@@ -185,8 +213,71 @@ export async function fetchGscQueries(host: string, days = 90): Promise<GscRow[]
       ...r,
       position: r.impressions > 0 ? Math.round((posWeight / r.impressions) * 10) / 10 : 0,
     }))
-    .sort((a, b) => b.impressions - a.impressions)
-    .slice(0, 250);
+    .sort((a, b) => b.impressions - a.impressions);
+}
+
+/* The site's real queries over the last `days`, aggregated per query (the
+   API splits by page; we sum volume, impression-weight the position, and
+   keep the strongest page). Returns null when GSC isn't configured. */
+export async function fetchGscQueries(host: string, days = 90): Promise<GscRow[] | null> {
+  const rows = await querySearchAnalytics(host, days, 500);
+  return rows ? rows.slice(0, 250) : null;
+}
+
+/* Query identity for matching planned keywords to GSC rows: trim, lowercase,
+   collapse whitespace, and drop the combining dot (U+0307) that lowercasing
+   Turkish "İ" inserts — same normalisation seo.ts's tokenize applies. */
+export function normalizeQuery(q: string): string {
+  return q.toLowerCase().replace(/\u0307/g, "").replace(/\s+/g, " ").trim();
+}
+
+export interface GscQueryStat {
+  position: number;
+  impressions: number;
+  clicks: number;
+  topPage: string;
+}
+
+/*
+  Measurement-loop lookup: last `days` of GSC data (one call, up to 5000
+  query × page rows) for exactly the requested queries, matched by
+  normalised equality. Keyed by the REQUESTED query string as passed in;
+  queries with no impressions in the window are simply absent from the map.
+  Returns null when GSC isn't configured; API errors throw.
+*/
+export async function fetchGscQueryStats(
+  host: string,
+  queries: string[],
+  days = 7,
+  endAt?: Date
+): Promise<Map<string, GscQueryStat> | null> {
+  const rows = await querySearchAnalytics(host, days, 5000, endAt);
+  if (!rows) return null;
+  // rows are impression-sorted, so the first spelling per normalised key wins.
+  const byNorm = new Map<string, GscRow>();
+  for (const r of rows) {
+    const k = normalizeQuery(r.query);
+    if (!byNorm.has(k)) byNorm.set(k, r);
+  }
+  const out = new Map<string, GscQueryStat>();
+  for (const q of queries) {
+    const r = byNorm.get(normalizeQuery(q));
+    if (r) {
+      out.set(q, {
+        position: r.position,
+        impressions: r.impressions,
+        clicks: r.clicks,
+        topPage: r.topPage,
+      });
+    }
+  }
+  return out;
+}
+
+/* Whether GSC is configured at all — lets callers skip work (and log the
+   right path) without paying for a token exchange. */
+export function gscConfigured(): boolean {
+  return loadKey() !== null;
 }
 
 /* Queries already on page 1–3 but not winning — lifting an existing page a

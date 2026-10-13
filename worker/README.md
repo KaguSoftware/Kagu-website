@@ -46,11 +46,18 @@ cp .env.example .env   # then fill in the values
 | `SEO_AUDIT_MAX_PAGES` | no | `12` | Site audit: page cap for the crawl (`--max-pages` overrides) |
 | `PSI_API_KEY` | no | — | Speed insights: Google API key for a 25k/day quota (anonymous works, but sparsely) |
 | `SEO_SPEED_RUNS` | no | `3` | Speed insights: Lighthouse runs per strategy, judged by the median (`--runs` overrides) |
+| `SERPER_API_KEY` | no | — | serper.dev key (free tier: 2,500 queries, no card) → real Google results for SERP checks. Unset or refused → DuckDuckGo fallback |
+| `SERPER_CREDIT_BUDGET` | no | `500` | Loud warning once one worker process has spent more Serper credits than this (spend is logged every ~50; Serper reports per-call cost, not balance — the balance is on serper.dev) |
+| `SEO_SERP_CACHE_HOURS` | no | `24` | How long a cached SERP answer is reused (memory + `seo_serp_cache`) before re-fetching |
 | `SEO_STRATEGY_SERP_QUERIES` | no | `10` | Strategy tool: candidate searches checked against the live SERP |
 | `SEO_STRATEGY_SITE_PAGES` | no | `6` | Strategy tool: site pages read to understand the business |
 | `SEO_STRATEGY_AUDIT_PAGES` | no | `6` | Strategy tool: page cap for its embedded audit (`--no-audit` skips) |
+| `GROQ_TPM_LIMIT` | no | `8000` | Groq tokens/minute for `GROQ_MODEL`; the strategy tool paces to 90% of it (on-demand gpt-oss-120b = 8000) |
+| `SEO_STRATEGY_WINNERS` | no | `3` | Strategy tool: top-ranking pages profiled per SERP check (shape: words, H2s, schema, prices, date); `--winners N` overrides, 0–5 |
 | `GSC_KEY_FILE` | no | `gsc-key.json` | Search Console service-account key path (see setup below) |
 | `GSC_SITE_URL` | no | `sc-domain:<host>` | Search Console property name if not a domain property |
+| `SEO_PLAN_CHECK_DAYS` | no | `7` | Measurement loop: days between plan checks of each host's latest strategy |
+| `SEO_FOLLOWUP_GRACE_DAYS` | no | `7` | Measurement loop: a planned `create` page only counts as "not shipped yet" this many days after the strategy finished |
 
 `worker/.env` is auto-loaded at startup (by `src/config.ts`) for the worker
 and every CLI tool — variables already present in the real environment win,
@@ -86,16 +93,31 @@ pages to the top. It runs two ways:
 
 How it works (`src/seo.ts`):
 
-1. Scrapes the Google results page for the top **organic** results, **skipping
-   sponsored/ad blocks** (`#tads` / `#tadsb` / `[data-text-ad]` / "Sponsored"
-   labels) — those rank by spend, not SEO, so counting them would poison the
-   signal. The skipped count is reported.
+1. Fetches the top **organic** results — real Google via serper.dev when
+   `SERPER_API_KEY` is set, else DuckDuckGo's HTML endpoint (also the fallback
+   whenever Serper refuses; quota/auth refusals switch Serper off for the rest
+   of the run). Ads never enter the list: they rank by spend, not SEO. Every
+   answer goes through the **SERP cache** (`src/serp-cache.ts`): an in-process
+   map plus the Supabase `seo_serp_cache` table, keyed by normalized query ×
+   region × language × depth and fresh for `SEO_SERP_CACHE_HOURS`, so repeat
+   runs don't burn credits. A cached DuckDuckGo answer is ignored while Serper
+   works — Bing's ranking isn't Google's. Run
+   `supabase/seo_serp_cache_module.sql` once to enable the shared layer;
+   without it (or without Supabase creds, as in the CLIs) only the memory
+   layer runs, silently.
 2. Fetches each top page (plain `fetch`, no browser) and pulls its on-page
    text split by SEO signal: `<title>`, meta description/keywords, h1–h3
-   headings, and visible body.
+   headings, and the **main content** — body text minus nav/header/footer/
+   aside/forms/buttons, ARIA landmark chrome and cookie/consent banners.
+   Menus and footers repeat on every page and used to outscore the topic.
+   (Regex-only, so a wrapper nesting its own tag name can leak a little.)
 3. Ranks candidate 1–3 word keyword phrases by how the *winning* pages use
    them: raw frequency, plus weight for appearing in titles (×5), headings
-   (×3), meta (×2), and across multiple top pages (cross-page coverage). An
+   (×3), meta (×2), and across multiple top pages (cross-page coverage).
+   Phrases sharing a word with the seed get ×1.5 (prefix-fuzzy, so Turkish
+   suffixes like *istanbul*/*istanbulda* match); the rest aren't penalised —
+   long-tail discovery is half the point. A phrase on **every** crawled page
+   but in no title/heading/meta is leftover boilerplate → ×0.3. An
    English+Turkish stopword list trims phrase edges so results read like real
    search queries.
 4. With `GROQ_API_KEY` set, hands the top candidates to Groq to dedupe
@@ -104,9 +126,13 @@ How it works (`src/seo.ts`):
    bad response) just falls back to the heuristic ranking — same graceful
    degradation as outreach drafts.
 
-Like the Maps crawl it uses one headless Chromium with human pacing and
-**aborts on CAPTCHA** (Google's results page is heavily anti-bot; space out
-runs). Requires `npx playwright install chromium`.
+No browser involved: SERPs come from APIs/plain HTML and pages from plain
+`fetch` with human pacing. Watch the `[seo] Serper credits spent this
+session: N` line — the free pool never refills, and past
+`SERPER_CREDIT_BUDGET` in one process it warns loudly (the API reports what
+each call cost, never the balance; that's on the serper.dev dashboard).
+`npm test` runs the offline unit tests (vitest: Serper parsing, main-content
+extraction, scoring, cache keys/TTL).
 
 ## SEO site audit
 
@@ -124,6 +150,7 @@ npm run seo:audit -- https://example.com
 npm run seo:audit -- --single example.com/pricing    # just that one page
 npm run seo:audit -- --max-pages 20 example.com      # crawl deeper (default 12)
 npm run seo:audit -- --json example.com              # machine-readable
+npm run seo:audit -- --static --single example.com   # no browser — static checks only (~1s; what plan tracking runs weekly)
 ```
 
 How it works (`src/audit.ts`) — two passes per page:
@@ -273,11 +300,26 @@ It runs two ways:
   audit and all. Run `supabase/seo_strategy_module.sql` once to create the
   table. Lead scrapes, SEO research, and audits drain first.
 
-  Completed strategies also seed their head keywords into weekly **rank
-  tracking** (`src/rank-tracking.ts`): when all queues are idle the worker
-  re-checks each host's keywords against the live SERP and the SEO tab
-  charts movement. Run `supabase/seo_rank_module.sql` once to create its
-  tables — until then the feature stays dormant (one log line, no errors).
+  Completed strategies also seed weekly **rank tracking**
+  (`src/rank-tracking.ts`): each planned page's head keyword (`kind`
+  `head`) plus up to 5 of its cluster queries (`kind` `cluster`), tagged
+  with the strategy's market country. When all queues are idle the worker
+  re-checks a host's keywords weekly, **GSC-first**: one Search Console call
+  (last 7 days) gives every keyword the site already has impressions for its
+  real average position, impressions and clicks (`source` `gsc`, zero SERP
+  credits). Only head keywords Search Console has no row for — or every head
+  keyword when GSC isn't configured — fall back to a live SERP check in that
+  keyword's own country (`source` `serp`). Cluster keywords never spend SERP
+  credits: with GSC they get a zero-impression snapshot when Google showed
+  nothing; without GSC they're skipped. The SEO tab shows the position, its
+  source and impressions, with cluster keywords grouped under their host's
+  heads. Run `supabase/seo_rank_module.sql` once to create its tables (re-run
+  it after upgrading — it adds the `country` / `kind` / `source` /
+  `position` / `impressions` / `clicks` columns idempotently). Until then
+  the feature stays dormant (one log line, no errors); an un-upgraded module
+  keeps working as head-only SERP checks.
+  Each finished strategy is also measured weekly by **plan tracking** — see
+  [Plan tracking & follow-up prompts](#plan-tracking--follow-up-prompts).
 - **CLI** (ad-hoc, writes nothing to the DB, needs no Supabase creds):
 
 ```sh
@@ -285,6 +327,7 @@ npm run seo:strategy -- kagusoftware.com
 npm run seo:strategy -- --context "our highlight: fully custom sites/systems/apps per request" kagusoftware.com
 npm run seo:strategy -- --out brief.md example.com     # choose the output file
 npm run seo:strategy -- --serp 6 example.com           # fewer live SERP checks
+npm run seo:strategy -- --winners 5 example.com        # profile more top pages per search (default 3)
 npm run seo:strategy -- --no-audit example.com         # skip the embedded audit
 npm run seo:strategy -- --json example.com             # full report as JSON
 npm run seo:strategy:mock -- example.com               # offline, deterministic
@@ -304,19 +347,31 @@ How it works (`src/strategy.ts`):
 2. **Generates the searches** its customers would type, across all four
    intents (informational / commercial / transactional / navigational), in
    the site's own language(s).
-3. **Checks each against the live SERP** (same DuckDuckGo endpoint as the
-   keyword tool): who ranks, whether the site appears at all, and what shape
-   the winners' content takes. Alongside each check it **pulls real typed
-   demand from Google Autocomplete** (query + shortened seed + question-word
-   expansions — the AnswerThePublic technique; true "People Also Ask" only
-   exists on Google's CAPTCHA'd SERP, and autocomplete yields the same class
-   of real typed questions for free).
+3. **Checks each against the live SERP** (same layer as the keyword tool:
+   Serper/Google when `SERPER_API_KEY` is set, DuckDuckGo fallback), in the
+   site's own **market country** — Groq derives it (ISO code) from the
+   site's locations, falling back to `SEO_REGION`, and it is the Google `gl`
+   for every check and market scan. Each check records who ranks and whether
+   the site appears at all; with Serper, Google's **People Also Ask**,
+   **related searches** and **answer box** (featured snippet) arrive with
+   the same call. Alongside each check it **pulls real typed demand from
+   Google Autocomplete** (query + shortened seed + question-word expansions
+   — the AnswerThePublic technique), which remains the free fallback for
+   real typed questions when only DuckDuckGo is available. Autocomplete
+   results are cached for the run, so vetting and the per-check probes
+   never ask Google twice.
 4. **Builds the strategy** — head topics worth owning plus a page plan where
    every page owns one intent *cluster*: representative long-tail queries
    (demand evidence, not strings to paste — modern retrieval is semantic)
    plus the entities the page must cover for full topical coverage, mapped
    to *update this existing path* or *create this slug*. Tail queries are
-   sourced from the autocomplete demand first (marked ✓ in the brief), each
+   sourced from the autocomplete/related-search demand first (marked ✓ in
+   the brief), People-Also-Ask questions become FAQ entries (marked ✓PAA)
+   and each page lists its **answer-engine targets** (those questions plus
+   the featured snippet it must beat). The top `SEO_STRATEGY_WINNERS` pages
+   per search are profiled — word count, H2 count, FAQ/HowTo schema, price
+   signals, publish date — and each page gets that **target shape**
+   (word-count range, H2 depth, schema, whether prices must show). Each
    head keyword gets a **winnability** grade (easy/medium/hard, judged from
    who currently ranks — forums/UGC in the top results mark a cluster a
    low-authority site can win), and a code-level near-duplicate pass
@@ -329,8 +384,10 @@ How it works (`src/strategy.ts`):
    fixes, `robots.txt` / `llms.txt` / sitemap / JSON-LD setup, and
    anti-duplication rules.
 
-Runtime is dominated by the SERP pacing (~2–3s between queries) and the
-audit (~20s/page): roughly 3–6 minutes at the defaults.
+Runtime is dominated by the SERP pacing (~2–3s between queries), the
+winner-page profiling (~1–2s per page, 3 per search by default — about
+another 30–60s at the defaults) and the audit (~20s/page): roughly 4–7
+minutes at the defaults.
 
 ### Search Console (free, strongly recommended)
 
@@ -358,7 +415,84 @@ One-time setup (~5 minutes):
 4. If your property is URL-prefix rather than domain, set
    `GSC_SITE_URL=https://example.com/` in `.env`.
 
-Without the key file the tool logs one skip line and works as before.
+Search Console also powers the **measurement loop**: weekly rank checks
+read positions from it first (no SERP credits for any keyword with
+impressions), and plan tracking sums each planned page's cluster-query
+impressions/clicks over the last 7 days against the strategy-time 90-day
+baseline. One API call per host per pass in each case (`fetchGscQueryStats`
+in `src/gsc.ts`, up to 5,000 query × page rows, matched to the planned
+queries case/whitespace-insensitively).
+
+Without the key file the tool logs one skip line and works as before; rank
+tracking falls back to SERP checks for head keywords and plan tracking
+leaves the impression columns empty.
+
+### Plan tracking & follow-up prompts
+
+The strategy is a one-shot plan; this loop checks whether it **shipped** and
+whether it **moved**, and turns what's actionable into a short follow-up
+prompt for the same coding agent.
+
+**What runs when.** In the worker's idle block (after rank and speed
+checks), `runDuePlanChecks` (`src/plan-tracking.ts`) wakes at most hourly,
+picks ONE host whose latest `done` strategy hasn't been checked for
+`SEO_PLAN_CHECK_DAYS` (default 7) and checks every planned page with plain
+HTTP — no browser, **no SERP credits**:
+
+- **shipped** — `GET origin + slug` (redirects followed) is 200 HTML; the
+  final URL and status are kept
+- **in sitemap** — robots.txt `Sitemap:` lines (or `/sitemap.xml`), one
+  level of sitemap index followed, fetched once per pass
+- **indexable** — no `noindex` in meta robots / `X-Robots-Tag`; canonical
+  absent or self
+- **title** — ≥ 60% of the head keyword's tokens (Turkish suffixes
+  tolerated) in `<title>`
+- **FAQ schema** — FAQPage JSON-LD present (only when the plan had ≥ 2 FAQs)
+- **movement** — 7-day impressions / clicks / weighted avg position over the
+  page's cluster queries + head keyword (one GSC call), and the baseline:
+  the same queries in the strategy's own 90-day GSC rows × 7/90
+
+Per-page audit issues are **not** collected yet: `audit.ts` only exposes
+`auditSite()`, which always launches a browser; the `audit_issues` column
+and the follow-up section are wired for when a static single-page entry
+point exists. Rows land in `seo_plan_checks`.
+
+**Follow-up prompts.** After each pass, `composeFollowup` (`src/followup.ts`
+— deterministic, no LLM) builds a markdown brief when anything is
+actionable:
+
+1. **Not shipped yet** — `create` pages not answering 200, once the strategy
+   is `SEO_FOLLOWUP_GRACE_DAYS` (default 7) old, each with its full brief
+   (title, meta, head keyword, cluster, outline, FAQ) so the agent needs no
+   original prompt; `update` pages that stopped answering are listed
+   immediately.
+2. **Shipped, but needs fixing** — not indexable / missing from the sitemap
+   / title missing the head keyword / FAQPage schema missing, each with the
+   exact fix.
+3. **New audit issues** — issues (warn+) not in the strategy's audit for the
+   same path (inactive until per-page audits are collected, see above).
+4. **Moved backwards** — cluster impressions < 70% of a baseline ≥ 20, or
+   avg position worse by > 3 since the previous check.
+5. **Wins** (informational, last) — impressions ≥ 1.5× baseline (or ≥ 10
+   from a zero baseline), or avg position moved into the top 10. Wins alone
+   never produce a follow-up.
+
+It ends with a **Verification** block (`npm run seo:audit -- --single …`
+per affected page, `npm run seo:speed -- …`). A follow-up is stored in
+`seo_strategy_followups` only when its fingerprint (sha256 of the sorted
+section × slug pairs) differs from the latest one for that strategy — no
+weekly copy of the same findings.
+
+**Setup.** Run `supabase/seo_plan_module.sql` once (after
+`seo_strategy_module.sql`), and re-run `supabase/seo_rank_module.sql` for
+the GSC-first rank columns. Until the plan module exists the pass logs one
+line and stays dormant. `MOCK_MODE` skips both passes.
+
+**Where to see it.** The strategy's detail page (`/admin/leads/seo/<id>`)
+shows **Plan status** (one row per planned page: shipped / indexable /
+sitemap / title / FAQ badges, impressions 7d vs baseline, avg position, last
+checked) and **Follow-up prompts** (newest first, with copy and `.md`
+download, like the master prompt).
 
 ### systemd unit (VPS)
 

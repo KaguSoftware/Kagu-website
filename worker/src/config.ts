@@ -64,6 +64,9 @@ export const config = {
   groqExtraParams: (process.env.GROQ_MODEL ?? "openai/gpt-oss-120b").includes("gpt-oss")
     ? { reasoning_effort: "low" }
     : {},
+  // Optional — real Google results via serper.dev's free tier (2,500 queries,
+  // no card). Unset → DuckDuckGo, which rate-limits and ranks differently.
+  serperApiKey: process.env.SERPER_API_KEY ?? "",
   // tr | ar | en — language the outreach drafts are written in.
   draftLanguage: (process.env.DRAFT_LANGUAGE ?? "tr") as "tr" | "ar" | "en",
   // Hard cap on listings collected per job (feed scrolling stops here).
@@ -103,11 +106,33 @@ export const config = {
   gscSiteUrl: process.env.GSC_SITE_URL ?? "",
 
   // --- SEO strategy tool (worker/src/strategy.ts, run via `npm run seo:strategy`) ---
-  // Candidate searches actually run against the SERP (each ≈ one DDG fetch
-  // plus two winner-page fetches, with pacing between queries).
+  // Candidate searches actually run against the SERP (each ≈ one Serper/DDG
+  // fetch plus SEO_STRATEGY_WINNERS winner-page fetches, paced).
   seoStrategySerpQueries: Number(process.env.SEO_STRATEGY_SERP_QUERIES) || 10,
   // Site pages read (plain fetch) to understand what the business does.
   seoStrategySitePages: Number(process.env.SEO_STRATEGY_SITE_PAGES) || 6,
   // Page cap for the embedded technical audit (`--no-audit` skips it).
   seoStrategyAuditPages: Number(process.env.SEO_STRATEGY_AUDIT_PAGES) || 6,
+
+  // --- SERP layer (worker/src/seo.ts + serp-cache.ts) ---
+  // Warn loudly once this process has spent more Serper credits than this
+  // (Serper's responses report cost, not balance — the balance is on its dashboard).
+  serperCreditBudget: Number(process.env.SERPER_CREDIT_BUDGET) || 500,
+  // How long a cached SERP (memory + Supabase seo_serp_cache) stays fresh.
+  seoSerpCacheHours: Number(process.env.SEO_SERP_CACHE_HOURS) || 24,
+
+  // --- Measurement loop (worker/src/plan-tracking.ts + followup.ts) ---
+  // Days between plan-status checks of a host's latest strategy (shipped /
+  // indexable / sitemap / title / FAQ schema / GSC movement).
+  seoPlanCheckDays: Number(process.env.SEO_PLAN_CHECK_DAYS) || 7,
+  // "Not shipped yet" only nags once the strategy is at least this old.
+  seoFollowupGraceDays: Number(process.env.SEO_FOLLOWUP_GRACE_DAYS) || 7,
+
+  // --- Strategy winner analysis (worker/src/strategy.ts) ---
+  // Top-ranking pages profiled per SERP check (word count, H2s, FAQ/HowTo
+  // schema, prices, freshness) — one plain fetch each. `--winners N`
+  // overrides; clamped to 0–5 in strategy.ts.
+  seoStrategyWinners: Number.isFinite(parseInt(process.env.SEO_STRATEGY_WINNERS ?? "", 10))
+    ? parseInt(process.env.SEO_STRATEGY_WINNERS ?? "", 10)
+    : 3,
 };

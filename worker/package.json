@@ -15,7 +15,8 @@
     "seo:strategy": "tsx src/strategy-cli.ts",
     "seo:strategy:mock": "MOCK_MODE=1 tsx src/strategy-cli.ts",
     "typecheck": "tsc --noEmit",
-    "deploy:mac": "rsync -a --delete --exclude worker.log ./ ~/kagu-worker/ && launchctl kickstart -k gui/$(id -u)/com.kagu.leads-worker && echo 'worker resynced + restarted'"
+    "deploy:mac": "rsync -a --delete --exclude worker.log ./ ~/kagu-worker/ && launchctl kickstart -k gui/$(id -u)/com.kagu.leads-worker && echo 'worker resynced + restarted'",
+    "test": "vitest run"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.2",
@@ -24,6 +25,7 @@
   "devDependencies": {
     "@types/node": "^20",
     "tsx": "^4.19.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.7"
   }
 }

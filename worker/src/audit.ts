@@ -200,6 +200,11 @@ const UA =
 
 export interface AuditOptions {
   maxPages?: number; // 1 = only the given URL
+  /* Skip the Playwright render entirely: static (plain-fetch) checks only,
+     mobile/speed categories drop out exactly as when a browser launch fails.
+     ~1s/page instead of ~20s — what the weekly plan check uses to spot new
+     on-page issues on shipped pages without a 6-minute render pass. */
+  staticOnly?: boolean;
   /* Called after each page is audited — lets a caller report progress and
      abort (by throwing) on job cancellation, exactly like researchKeywords.
      `total` is the page cap, not the pages that will actually be found. */
@@ -250,10 +255,12 @@ export async function auditSite(inputUrl: string, opts: AuditOptions = {}): Prom
     alpn,
     linkStatus: new Map(),
   };
-  try {
-    ctx.browser = await launchBrowser();
-  } catch (err) {
-    console.warn("[audit] browser launch failed — static checks only:", err instanceof Error ? err.message : err);
+  if (!opts.staticOnly) {
+    try {
+      ctx.browser = await launchBrowser();
+    } catch (err) {
+      console.warn("[audit] browser launch failed — static checks only:", err instanceof Error ? err.message : err);
+    }
   }
 
   // BFS queue: start page, then the site's own sitemap URLs, then whatever

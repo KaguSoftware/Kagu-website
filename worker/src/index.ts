@@ -43,6 +43,7 @@ import {
 import { buildSeoStrategy } from "./strategy.js";
 import { runDueRankChecks, seedTrackedKeywords } from "./rank-tracking.js";
 import { runDueSpeedChecks } from "./speed-tracking.js";
+import { runDuePlanChecks } from "./plan-tracking.js";
 import {
   claimNextSeoStrategyJob,
   completeSeoStrategyJob,
@@ -375,7 +376,7 @@ async function processSeoStrategyJob(job: SeoStrategyJobRow): Promise<void> {
   }
 
   await completeSeoStrategyJob(job.id, report);
-  await seedTrackedKeywords(report); // head keywords enter weekly rank tracking
+  await seedTrackedKeywords(report); // head + cluster keywords enter weekly rank tracking
   console.log(
     `[strategy-job ${job.id}] done — ${report.pages.length} pages planned, ` +
       `${report.headKeywords.length} head keywords, audit ${report.audit ? `${report.audit.score}/100` : "skipped"}`
@@ -470,9 +471,9 @@ async function main(): Promise<void> {
       console.log("No pending jobs. Exiting (RUN_ONCE=1).");
       break;
     }
-    // All four queues idle — spend the quiet time on weekly rank checks and
-    // weekly speed snapshots (each self-throttled to one attempt per hour,
-    // one host/URL per attempt).
+    // All four queues idle — spend the quiet time on weekly rank checks,
+    // weekly speed snapshots and weekly plan checks + follow-up prompts (each
+    // self-throttled to one attempt per hour, one host/URL per attempt).
     try {
       await runDueRankChecks();
     } catch (err) {
@@ -482,6 +483,11 @@ async function main(): Promise<void> {
       await runDueSpeedChecks();
     } catch (err) {
       console.warn("[speed-history] pass failed:", err instanceof Error ? err.message : err);
+    }
+    try {
+      await runDuePlanChecks();
+    } catch (err) {
+      console.warn("[plan] pass failed:", err instanceof Error ? err.message : err);
     }
     await sleep(config.pollIntervalMs);
   }

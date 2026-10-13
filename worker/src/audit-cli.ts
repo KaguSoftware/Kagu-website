@@ -5,6 +5,7 @@
     npm run seo:audit -- --single example.com/pricing    # just that one page
     npm run seo:audit -- --max-pages 20 example.com      # crawl deeper
     npm run seo:audit -- --json example.com              # machine-readable
+    npm run seo:audit -- --static --single example.com   # no browser: static checks only, ~1s
 
   Crawls the site (start page → sitemap URLs → internal links, capped at
   SEO_AUDIT_MAX_PAGES / --max-pages), renders every page as a throttled
@@ -20,12 +21,13 @@ async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const jsonOut = args.includes("--json");
   const single = args.includes("--single");
+  const staticOnly = args.includes("--static");
 
   let maxPages: number | undefined = single ? 1 : undefined;
   const rest: string[] = [];
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === "--json" || a === "--single") continue;
+    if (a === "--json" || a === "--single" || a === "--static") continue;
     if (a === "--max-pages") {
       maxPages = Number(args[++i]) || maxPages;
       continue;
@@ -41,12 +43,12 @@ async function main(): Promise<void> {
 
   if (!url) {
     console.error(
-      "Usage: npm run seo:audit -- <url>   (--single = one page, --max-pages N, --json)"
+      "Usage: npm run seo:audit -- <url>   (--single = one page, --static = no browser, --max-pages N, --json)"
     );
     process.exit(1);
   }
 
-  const report = await auditSite(url, { maxPages });
+  const report = await auditSite(url, { maxPages, staticOnly });
 
   if (jsonOut) {
     process.stdout.write(JSON.stringify(report, null, 2) + "\n");
@@ -62,7 +64,7 @@ function printReport(r: AuditReport): void {
   console.log(`SEO site audit: ${r.url}`);
   console.log(
     `host: ${r.siteHost}  •  ${r.pages.length} page(s) audited (cap ${r.maxPages})  •  ` +
-      `mobile-rendered, throttled 4G`
+      (r.pages.some((p) => p.renderOk) ? `mobile-rendered, throttled 4G` : `static checks only (no browser)`)
   );
   console.log(line);
 

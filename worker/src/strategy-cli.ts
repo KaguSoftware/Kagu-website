@@ -6,6 +6,7 @@
     npm run seo:strategy -- --out brief.md example.com     # choose the output file
     npm run seo:strategy -- --serp 6 example.com           # fewer live SERP checks
     npm run seo:strategy -- --no-audit example.com         # skip the technical audit
+    npm run seo:strategy -- --winners 5 example.com        # profile 5 ranking pages per search
     npm run seo:strategy -- --json example.com             # full report as JSON
 
   Reads the site, understands the business (Groq), generates customer
@@ -30,6 +31,8 @@ async function main(): Promise<void> {
   let serpQueries: number | undefined;
   let sitePages: number | undefined;
   let auditPages: number | undefined = noAudit ? 0 : undefined;
+  let winners: number | undefined;
+  const intOrUndef = (v: string | undefined) => (v !== undefined && /^\d+$/.test(v) ? Number(v) : undefined);
 
   const rest: string[] = [];
   for (let i = 0; i < args.length; i++) {
@@ -40,12 +43,14 @@ async function main(): Promise<void> {
     if (a === "--serp") { serpQueries = Number(args[++i]) || undefined; continue; }
     if (a === "--site-pages") { sitePages = Number(args[++i]) || undefined; continue; }
     if (a === "--audit-pages") { auditPages = Number(args[++i]) || auditPages; continue; }
-    const eq = a.match(/^--(out|context|serp|site-pages|audit-pages)=(.+)$/);
+    if (a === "--winners") { winners = intOrUndef(args[++i]); continue; }
+    const eq = a.match(/^--(out|context|serp|site-pages|audit-pages|winners)=(.+)$/);
     if (eq) {
       if (eq[1] === "out") out = eq[2];
       else if (eq[1] === "context") ownerNotes = eq[2];
       else if (eq[1] === "serp") serpQueries = Number(eq[2]) || undefined;
       else if (eq[1] === "site-pages") sitePages = Number(eq[2]) || undefined;
+      else if (eq[1] === "winners") winners = intOrUndef(eq[2]);
       else auditPages = Number(eq[2]) || auditPages;
       continue;
     }
@@ -65,12 +70,12 @@ async function main(): Promise<void> {
 
   if (!url) {
     console.error(
-      'Usage: npm run seo:strategy -- <url>   (--context "owner notes", --out FILE, --serp N, --site-pages N, --audit-pages N, --no-audit, --json)'
+      'Usage: npm run seo:strategy -- <url>   (--context "owner notes", --out FILE, --serp N, --site-pages N, --audit-pages N, --winners N, --no-audit, --json)'
     );
     process.exit(1);
   }
 
-  const report = await buildSeoStrategy(url, { serpQueries, sitePages, auditPages, ownerNotes });
+  const report = await buildSeoStrategy(url, { serpQueries, sitePages, auditPages, ownerNotes, winners });
 
   if (jsonOut) {
     process.stdout.write(JSON.stringify(report, null, 2) + "\n");
@@ -91,7 +96,7 @@ function printSummary(r: StrategyReport, file: string): void {
   console.log(`SEO strategy: ${r.url}`);
   console.log(
     `${u.brand} — ${u.sector}${u.subSector ? ` / ${u.subSector}` : ""} · ` +
-      `${u.languages.join("+")} · ${u.locations}`
+      `${u.languages.join("+")} · ${u.locations} · Google country ${u.marketCountry.toUpperCase()}`
   );
   if (u.coreValueProposition) console.log(`core: ${u.coreValueProposition}`);
   if (u.offerings.length) console.log(`offers: ${u.offerings.join("; ")}`);
@@ -99,7 +104,12 @@ function printSummary(r: StrategyReport, file: string): void {
 
   if (r.searchesChecked.length) {
     const typed = r.searchesChecked.reduce((s, e) => s + e.suggestions.length, 0);
-    console.log(`\nSERP + DEMAND CHECKS (${r.searchesChecked.length} searches, ${typed} real typed queries via autocomplete)`);
+    const paa = r.searchesChecked.reduce((s, e) => s + e.peopleAlsoAsk.length, 0);
+    const boxes = r.searchesChecked.filter((e) => e.answerBox).length;
+    console.log(
+      `\nSERP + DEMAND CHECKS (${r.searchesChecked.length} searches in ${u.marketCountry.toUpperCase()}, ` +
+        `${typed} real typed queries via autocomplete, ${paa} People-Also-Ask questions, ${boxes} answer box(es))`
+    );
     for (const e of r.searchesChecked) {
       const ours = e.error
         ? `SERP failed (${e.error.slice(0, 60)})`
@@ -107,7 +117,10 @@ function printSummary(r: StrategyReport, file: string): void {
           ? `we rank #${e.siteRank}`
           : "not in top results";
       console.log(
-        `  [${e.intent.slice(0, 4)}] "${e.query}" → ${ours} · ${e.suggestions.length} typed variants`
+        `  [${e.intent.slice(0, 4)}] "${e.query}" → ${ours} · ${e.suggestions.length} typed variants` +
+          (e.peopleAlsoAsk.length ? ` · ${e.peopleAlsoAsk.length} PAA` : "") +
+          (e.answerBox ? ` · snippet: ${e.answerBox.link.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]}` : "") +
+          (e.winners.length ? ` · ${e.winners.length} winner(s) profiled` : "")
       );
     }
   }

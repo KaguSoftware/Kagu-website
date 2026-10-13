@@ -31,12 +31,14 @@ import {
        in the site's own language(s) — anchored to the site's own
        top-of-page wording (titles/headings), so what the site leads with
        can't be paraphrased out of the plan.
-    3. CHECK each search against the live SERP (same DuckDuckGo endpoint as
-       seo.ts): who ranks, whether this site appears at all, and what shape
-       the winning pages' content takes (their headings). Alongside each
-       check, pull REAL TYPED DEMAND from Google Autocomplete (query +
-       shortened-seed + question-word probes) — free validation the LLM's
-       imagination lacks.
+    3. CHECK each search against the live SERP (seo.ts: Serper/Google when
+       keyed, DuckDuckGo fallback) in the site's own market country (`gl`):
+       who ranks, whether this site appears at all, Google's People Also
+       Ask / related searches / answer box, and what shape the winning
+       pages take (headings, length, H2 count, FAQ/HowTo schema, prices,
+       freshness). Alongside each check, pull REAL TYPED DEMAND from Google
+       Autocomplete (query + shortened-seed + question-word probes) — free
+       validation the LLM's imagination lacks.
     4. STRATEGIZE (Groq): head keywords worth owning — each graded for
        winnability against the current SERP (a low-authority site should
        fight where forums/UGC rank, not where established brands do) — plus
@@ -76,6 +78,10 @@ export interface SiteUnderstanding {
   languages: string[]; // primary first, e.g. ["tr", "en"]
   audience: string;
   locations: string;
+  /* ISO 3166-1 alpha-2, lowercase — the Google `gl` for every SERP check,
+     market scan and rank snapshot of this site. Derived from `locations`
+     (global sites fall back to config.seoRegion). */
+  marketCountry: string;
   offerings: string[];
   problemsSolved: string[];
   differentiators: string[];
@@ -89,14 +95,32 @@ export interface CandidateSearch {
   why: string;
 }
 
+/* Content-shape features of one top-ranking page — what "winning" looks like
+   for this query, so the page plan copies the shape rather than guessing. */
+export interface WinnerProfile {
+  rank: number;
+  title: string;
+  headings: string; // h1–h3 joined, truncated
+  wordCount: number;
+  h2Count: number;
+  hasFaqSchema: boolean; // FAQPage JSON-LD
+  hasHowToSchema: boolean; // HowTo JSON-LD
+  hasPriceSignals: boolean; // currency symbols / "fiyat" / "price" + numbers in the body
+  publishedDate: string | null; // article:published_time / datePublished, ISO or null
+}
+
 export interface SerpEvidence {
   query: string;
   intent: Intent;
   language: string;
   siteRank: number | null; // where the target site ranks, null = not in top results
   results: Array<{ rank: number; title: string; domain: string }>;
-  winners: Array<{ rank: number; title: string; headings: string }>; // content shape of the top pages
+  winners: WinnerProfile[]; // content shape of the top pages
   suggestions: string[]; // real typed queries from Google Autocomplete for this topic
+  /* Google's own SERP features (Serper only; empty under DuckDuckGo). */
+  peopleAlsoAsk: Array<{ question: string; snippet: string; link: string }>;
+  relatedSearches: string[];
+  answerBox: { title: string; snippet: string; link: string } | null; // featured snippet — the AEO target
   error?: string; // SERP fetch failed (rate limit etc.) — evidence missing, not fatal
 }
 
@@ -123,6 +147,10 @@ export interface PagePlan {
   intent: Intent;
   language: string;
   headKeyword: string;
+  /* The verified queries (SERP-checked, autocomplete, Search Console) the
+     planner assigned exclusively to this page. The measurement loop sums
+     Search Console impressions over these to tell whether the page moved. */
+  clusterQueries: string[];
   /* Representative queries in this page's intent cluster — demand evidence
      and dedup keys, NOT strings to paste. Modern retrieval matches meaning;
      the page must cover the cluster's meaning, not echo these verbatim. */
@@ -187,6 +215,7 @@ export interface StrategyOptions {
      be known for, when the site's own copy under-communicates it. Injected
      into the understanding and strategy passes and surfaced in the brief. */
   ownerNotes?: string;
+  winners?: number; // top-ranking pages profiled per SERP check (default config.seoStrategyWinners)
   /* Called after each coarse step (understanding, each SERP check, plan,
      each audited page) — lets a future DB-driven job report progress and
      abort (by throwing) on cancellation, exactly like the other tools. */
@@ -207,6 +236,8 @@ export async function buildSeoStrategy(
   const serpQueries = opts.serpQueries ?? config.seoStrategySerpQueries;
   const sitePages = opts.sitePages ?? config.seoStrategySitePages;
   const auditPages = opts.auditPages ?? config.seoStrategyAuditPages;
+  const winnersPerQuery = Math.max(0, Math.min(5, opts.winners ?? config.seoStrategyWinners));
+  suggestionCache.clear(); // per-run only — a fresh run must re-probe autocomplete
 
   const totalSteps = 2 + serpQueries + 2 + auditPages; // + competitor stage + plan
   let step = 0;
@@ -250,16 +281,21 @@ export async function buildSeoStrategy(
   await tick();
   console.log(
     `[strategy] ${understanding.brand || site.host} — ${understanding.sector}` +
-      (understanding.subSector ? ` / ${understanding.subSector}` : "")
+      (understanding.subSector ? ` / ${understanding.subSector}` : "") +
+      ` · market ${understanding.marketCountry.toUpperCase()}`
   );
 
   const candidates = await proposeSearches(understanding, topOfPageCopy(site));
-  const picked = pickBalanced(candidates, serpQueries);
-  console.log(`[strategy] checking ${picked.length} searches against the SERP …`);
+  const vetted = await vetSearches(candidates, understanding);
+  const picked = pickBalanced(vetted, serpQueries);
+  console.log(
+    `[strategy] checking ${picked.length} searches against the SERP (gl=${understanding.marketCountry}, ` +
+      `${winnersPerQuery} winner page(s) profiled each) …`
+  );
 
   const evidence: SerpEvidence[] = [];
   for (const search of picked) {
-    const e = await checkSerp(search, site.host);
+    const e = await checkSerp(search, site.host, understanding.marketCountry, winnersPerQuery);
     evidence.push(e);
     console.log(
       `[strategy]   "${e.query}" → ${e.error ? `SERP failed (${e.error})` : e.siteRank ? `we rank #${e.siteRank}` : "not in top results"}`
@@ -301,8 +337,11 @@ export async function buildSeoStrategy(
   // The LLM paraphrases instead of copying the verified queries (observed
   // live: 33 collected, 1 used) — so the code assigns them, not the model.
   const adopted = adoptVerifiedDemand(plan.pages, evidence);
-  if (adopted > 0) {
-    console.log(`[strategy] adopted ${adopted} verified autocomplete quer(y/ies) into the page plan`);
+  if (adopted.tails + adopted.faqs > 0) {
+    console.log(
+      `[strategy] adopted ${adopted.tails} verified autocomplete quer(y/ies) as tails and ` +
+        `${adopted.faqs} People-Also-Ask question(s) as FAQ entries`
+    );
   }
   await tick();
 
@@ -538,7 +577,10 @@ const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
    window that sleeps until the next window when the budget would overflow.
    Combined with the chunked strategy pass below, big jobs simply spread over
    two-or-so minutes instead of failing. */
-const GROQ_TPM_BUDGET = 10000; // margin under the 12k limit
+/* Groq's on-demand tier enforces 8,000 tokens/minute for gpt-oss-120b (seen
+   live as a 429: "Limit 8000, Used 2986, Requested 5043"). Budget under it;
+   GROQ_TPM_LIMIT raises it for a paid tier. */
+const GROQ_TPM_BUDGET = Math.round((Number(process.env.GROQ_TPM_LIMIT) || 8000) * 0.9);
 
 let tpmWindowStart = 0;
 let tpmWindowTokens = 0;
@@ -614,6 +656,14 @@ async function groqJson<T>(label: string, prompt: string, maxTokens: number): Pr
 const str = (v: unknown): string => (typeof v === "string" ? v.trim() : "");
 const strArr = (v: unknown): string[] =>
   Array.isArray(v) ? v.map((x) => str(x)).filter(Boolean) : [];
+/* The model is asked for ISO codes but emits "turkish" / "tr-TR" often
+   enough; the value goes straight to Google as `hl`, so anything that isn't
+   two letters is dropped and the caller's default applies. */
+function langCode(raw: string): string {
+  const m = raw.trim().toLowerCase().match(/^([a-z]{2})(?:[-_][a-z]{2,4})?$/);
+  return m ? m[1] : "";
+}
+
 function asIntent(v: unknown): Intent {
   const s = str(v).toLowerCase();
   return (INTENTS as string[]).includes(s) ? (s as Intent) : "informational";
@@ -648,6 +698,7 @@ Describe what this business actually is. Respond with STRICT JSON, nothing else:
   "languages": ["site language codes, primary first, e.g. tr, en"],
   "audience": "who buys this — one sentence",
   "locations": "geographic market it serves (city/country), or 'global'",
+  "marketCountry": "ISO 3166-1 alpha-2 code of the country most of its customers search from (e.g. tr, de, us) — the country of 'locations', or the primary language's home country when global",
   "offerings": ["each concrete product/service it sells"],
   "problemsSolved": ["each customer problem it fixes, phrased the way the customer would say it"],
   "differentiators": ["what it claims makes it better than alternatives"],
@@ -669,6 +720,9 @@ Describe what this business actually is. Respond with STRICT JSON, nothing else:
     languages: strArr(raw.languages).map((l) => l.toLowerCase()).slice(0, 3) || ["en"],
     audience: str(raw.audience),
     locations: str(raw.locations) || "unspecified",
+    marketCountry: /^[a-z]{2}$/i.test(str(raw.marketCountry))
+      ? str(raw.marketCountry).toLowerCase()
+      : config.seoRegion,
     offerings: strArr(raw.offerings).slice(0, 12),
     problemsSolved: strArr(raw.problemsSolved).slice(0, 12),
     differentiators: strArr(raw.differentiators).slice(0, 8),
@@ -699,38 +753,181 @@ function topOfPageCopy(site: SiteData): string {
     .slice(0, 2600);
 }
 
+/* How many candidates the LLM over-generates; vetSearches cuts them down to
+   the ones real people type, and only those spend a SERP check. */
+const CANDIDATE_POOL = 30;
+
 async function proposeSearches(u: SiteUnderstanding, siteCopy: string): Promise<CandidateSearch[]> {
   const primary = u.languages[0] ?? "en";
   const prompt = `You are an SEO strategist. This business:
 ${JSON.stringify(u, null, 2)}
-${siteCopy ? `\nTHE SITE'S OWN TOP-OF-PAGE COPY (verbatim titles and headings — how it names what it sells):\n${siteCopy}\n` : ""}
-Generate the real searches its potential customers type into Google, in the site's primary language (${primary}${u.languages.length > 1 ? `, plus a few in ${u.languages.slice(1).join("/")}` : ""}). Cover all four intents with 4 searches each:
-- informational: researching the problem or topic
-- commercial: comparing providers/solutions ("best …", "… prices", "X vs Y")
-- transactional: ready to buy / book / hire right now
-- navigational: looking for this brand or its pages specifically
+${siteCopy ? `\nTHE SITE'S OWN TOP-OF-PAGE COPY (titles and headings, verbatim). It is polluted with banner, popup, button, slogan, blog-post and third-party-widget text — use it ONLY to learn what NAMES the business gives its own products/services, never as a source of searches:\n${siteCopy}\n` : ""}
+Write ${CANDIDATE_POOL} Google searches that a stranger who has NEVER heard of this brand would type when they need what it sells. Every search must be one a real person plausibly types, in ${u.locations === "global" ? "its main markets" : u.locations} — the searches will be checked on Google for country "${u.marketCountry.toUpperCase()}", so localise place names and local modifiers ("near me", city names such as "istanbul", local currency/price words) to that country.
 
-Rules: realistic phrasing (what people actually type, including question forms); include the geographic market where a local searcher would (${u.locations}); do not invent competitor brand names; ANCHOR to the site's own words — for each main offering named in the top-of-page copy above, at least one search must keep that exact naming (plus a buyer modifier like price/cost/quote or its ${primary} equivalent), e.g. a site leading with "custom website price estimation" must yield a search like "custom website price" — never swap the site's own term for a generic category word.
+How real searches look:
+- 2–6 words, the way people type into Google: "araç kiralama fiyatları", "cheap car rental istanbul airport", "vize başvurusu nasıl yapılır". No punctuation, no exclamation or question marks, never a full sentence or slogan.
+- ONE language per query — never mix languages or scripts inside a query. Write them in ${primary}${u.languages.length > 1 ? ` (and ${u.languages.slice(1).join("/")} only for markets this business really serves in that language)` : ""}; do not invent other languages.
+- Name the thing the business sells with the plain words customers use (its offering names above), plus a buyer modifier where natural (price, cost, cheap, best, near me, booking, online, or the ${primary} equivalents) and the place for local services.
+
+Focus: the business's core is "${u.coreValueProposition || u.subSector}". At least two thirds of the searches must be about that core. Anything it merely hosts or resells on the side (partner widgets, affiliate products, add-ons) gets at most 2 searches in total. Non-${primary} searches are at most a quarter of the list.
+
+What to avoid (these made previous runs useless):
+- NEVER lift UI text, banner/popup copy, calls to action ("download now", "contact us", "exclusive deals"), blog-post titles, or the names of partner/affiliate products shown in widgets. If the business does not itself sell it, nobody searching it wants this business.
+- Brand-name searches are almost never typed for a small brand: include AT MOST 2 navigational searches in total, and only the bare brand name or "brand + what it is" (e.g. "${u.brand}", "${u.brand} reviews"). No "About us", "FAQ", "contact" style navigational searches.
+- No competitor brand names. No two searches that mean the same thing.
+
+Mix: about 60% commercial + transactional (comparing, pricing, booking, hiring — the money searches), about 35% informational (the problems it solves, phrased the way a customer says them), and the at-most-2 navigational.
 
 Respond with STRICT JSON, nothing else:
-{"searches": [{"query": "...", "intent": "informational|commercial|transactional|navigational", "language": "${primary}", "why": "one short clause"}]}`;
+{"searches": [{"query": "...", "intent": "informational|commercial|transactional|navigational", "language": "iso code of the query", "why": "one short clause"}]}`;
 
-  const raw = await groqJson<{ searches?: unknown }>("searches", prompt, 2048);
+  const raw = await groqJson<{ searches?: unknown }>("searches", prompt, 3072);
   const list = Array.isArray(raw.searches) ? raw.searches : [];
   const out: CandidateSearch[] = [];
   for (const item of list) {
     const s = item as Record<string, unknown>;
-    const query = str(s.query);
+    const query = str(s.query).replace(/[!?]+$/g, "").trim();
     if (!query) continue;
     out.push({
       query,
       intent: asIntent(s.intent),
-      language: str(s.language).toLowerCase() || primary,
+      language: langCode(str(s.language)) || primary,
       why: str(s.why),
     });
   }
   if (out.length === 0) throw new Error("Groq returned no usable candidate searches");
   return out;
+}
+
+/* Cheap structural filter — queries nobody types: sentence-length, slogan
+   punctuation, or two scripts glued together ("… Kezdura موقع التواصل"). */
+function looksTypeable(query: string): boolean {
+  const words = query.trim().split(/\s+/);
+  if (words.length < 2 && !/^\S{3,}$/.test(query.trim())) return false;
+  if (words.length > 8 || query.length > 70) return false;
+  if (/[!:;]/.test(query)) return false;
+  const scripts = new Set<string>();
+  if (/\p{Script=Latin}/u.test(query)) scripts.add("latin");
+  if (/\p{Script=Arabic}/u.test(query)) scripts.add("arabic");
+  if (/\p{Script=Cyrillic}/u.test(query)) scripts.add("cyrillic");
+  return scripts.size <= 1;
+}
+
+/* Share of the query's own tokens found in a suggestion (fuzzy: plurals etc). */
+function queryCoverage(suggestion: string, query: string): number {
+  const tq = normalizeQuery(query).split(" ").filter(Boolean);
+  const ts = normalizeQuery(suggestion).split(" ").filter(Boolean);
+  if (tq.length === 0) return 0;
+  return tq.filter((x) => ts.some((y) => fuzzyTokenEq(x, y))).length / tq.length;
+}
+
+/* Demand vetting: keep a candidate only if Google autocomplete shows real
+   people typing it (or a near variant). Autocomplete is free and takes no
+   SERP credit, so the garbage dies here instead of eating checks. One bare
+   brand-name search is exempt — it checks whether the site owns its name,
+   and a small brand has no autocomplete yet. Fails open: if autocomplete is
+   unreachable (no candidate got ANY suggestion) the rule-filtered list is
+   returned as-is rather than emptying the run. */
+
+/* Minimum searches vetting hands on. Below this the plan has too little SERP
+   evidence to cluster into 5+ heads, so vetting tops up with structurally-clean but unverified candidates. It is a floor,
+   not a target — real demand always wins the slots first. */
+const VET_FLOOR = 6;
+
+async function vetSearches(
+  candidates: CandidateSearch[],
+  u: SiteUnderstanding
+): Promise<CandidateSearch[]> {
+  const typeable: CandidateSearch[] = [];
+  for (const c of candidates) {
+    if (!looksTypeable(c.query)) {
+      console.log(`[strategy]   drop (not how people type): "${c.query}"`);
+      continue;
+    }
+    if (typeable.some((t) => similarQuery(t.query, c.query))) continue;
+    typeable.push(c);
+  }
+
+  const brand = normalizeQuery(u.brand);
+  const kept: CandidateSearch[] = [];
+  const dropped: CandidateSearch[] = [];
+  let sawAnySuggestion = false;
+  let brandExempt = false;
+
+  for (const c of typeable) {
+    // Real demand = Google completes THIS query (the suggestion contains
+    // essentially all of its words). A suggestion that only echoes a prefix
+    // of it is another search, not evidence for this one.
+    // Through the run cache: gatherAutocomplete probes this exact query again
+    // later for every picked search. One Google attempt (then DDG) here —
+    // 30 candidates × the full retry ladder would stall vetting.
+    const lang = c.language || config.seoLanguage;
+    const sugg = await fetchSuggestions(c.query, lang, 1);
+    if (sugg.length) sawAnySuggestion = true;
+    const demand = sugg.some((x) => queryCoverage(x, c.query) >= 0.8);
+    const isBareBrand = brand !== "" && normalizeQuery(c.query) === brand;
+    if (demand) kept.push(c);
+    else if (isBareBrand && !brandExempt) {
+      brandExempt = true;
+      kept.push(c);
+    } else {
+      // Nobody types the model's phrasing — but they may type its first few
+      // words. Ask autocomplete for the shortened prefix and adopt Google's
+      // own completion when it still means the same thing: the candidate's
+      // intent survives, in words with proven demand. (Seen live: 2/32 kept
+      // before this, because gpt-oss writes 6-word Turkish noun phrases.)
+      const rewritten = await rewriteFromAutocomplete(c, lang);
+      if (rewritten && !kept.some((k) => similarQuery(k.query, rewritten.query))) {
+        sawAnySuggestion = true;
+        console.log(`[strategy]   rewrote "${c.query}" → "${rewritten.query}" (autocomplete)`);
+        kept.push(rewritten);
+      } else dropped.push(c);
+    }
+    await sleep(rand(150, 350));
+  }
+
+  if (!sawAnySuggestion) {
+    console.warn("[strategy] autocomplete unreachable — skipping demand vetting");
+    return typeable;
+  }
+  console.log(
+    `[strategy] demand vetting: ${kept.length}/${typeable.length} searches kept` +
+      (dropped.length ? ` — dropped (nobody types these): ${dropped.map((d) => `"${d.query}"`).join(", ")}` : "")
+  );
+  // Too few survivors makes a thin strategy: top up with the best of the
+  // rest (they at least passed the structural filter) up to VET_FLOOR.
+  for (const d of dropped) {
+    if (kept.length >= VET_FLOOR) break;
+    if (d.intent !== "navigational") kept.push(d);
+  }
+  return kept;
+}
+
+/* Prefix ladder: the query minus its last word, then its first three, then
+   first two. The first prefix Google completes wins, and the completion that
+   keeps the most of the ORIGINAL's words (≥ 60% of them — so "özel butik
+   otel yazılımı fiyatları" may become "özel butik otel yazılımı fiyat" but
+   never "özel butik otel isimleri") replaces it. */
+async function rewriteFromAutocomplete(c: CandidateSearch, lang: string): Promise<CandidateSearch | null> {
+  const words = c.query.split(/\s+/);
+  const lengths = [...new Set([words.length - 1, 3, 2])].filter((n) => n >= 2 && n < words.length);
+  for (const n of lengths) {
+    const prefix = words.slice(0, n).join(" ");
+    const sugg = await fetchSuggestions(prefix, lang, 1);
+    if (!sugg.length) continue;
+    // Google sometimes answers a prefix with a reordered or different query
+    // ("turkish english bilingual" → "turkish to english google translate");
+    // only completions that literally continue the prefix keep its meaning.
+    const prefixNorm = normalizeQuery(prefix);
+    const best = sugg
+      .filter((x) => looksTypeable(x) && normalizeQuery(x).startsWith(prefixNorm))
+      .map((x) => ({ x, kept: queryCoverage(x, c.query) }))
+      .sort((p, q) => q.kept - p.kept)[0];
+    if (best && best.kept >= 0.6) {
+      return { ...c, query: best.x, why: `${c.why} (autocomplete rewrite of "${c.query}")` };
+    }
+  }
+  return null;
 }
 
 /* Round-robin across intents so a cap of N still touches all four. */
@@ -757,9 +954,9 @@ function pickBalanced(candidates: CandidateSearch[], max: number): CandidateSear
 /* ------------------------------------------------------------------------ */
 
 /* Words that turn a seed into the question-form completions searchers type —
-   the AnswerThePublic technique. True "People Also Ask" only exists on
-   Google's SERP (which CAPTCHAs scrapers); question-prefix autocomplete
-   yields the same class of real typed questions for free. */
+   the AnswerThePublic technique. Google's real People Also Ask arrives with
+   every Serper-backed SERP check; question-prefix autocomplete is the free
+   fallback that still yields real typed questions under DuckDuckGo. */
 const QUESTION_WORDS: Record<string, string[]> = {
   tr: ["nedir", "fiyat"],
   en: ["how", "price"],
@@ -808,13 +1005,27 @@ async function ddgSuggest(query: string, language: string): Promise<string[]> {
   }
 }
 
-async function fetchSuggestions(query: string, language: string): Promise<string[]> {
-  for (let attempt = 1; attempt <= 2; attempt++) {
-    const got = await googleSuggest(query, language);
-    if (got.length) return got;
-    await sleep(rand(500, 1200));
+/* In-run suggestion cache: vetSearches and gatherAutocomplete probe the same
+   queries. Keyed `${lang}|${normalizedQuery}`; empty results are cached too
+   so a tarpitted probe isn't retried. Cleared at the start of every
+   buildSeoStrategy run — autocomplete drifts, so it never outlives a run. */
+const suggestionCache = new Map<string, string[]>();
+
+async function fetchSuggestions(query: string, language: string, googleAttempts = 2): Promise<string[]> {
+  const key = `${language}|${normalizeQuery(query)}`;
+  const cached = suggestionCache.get(key);
+  // An empty answer from the single-attempt vetting probe is not final —
+  // the later autocomplete pass may retry it once (and only once).
+  if (cached && (cached.length > 0 || googleAttempts <= 1)) return cached;
+  let got: string[] = [];
+  for (let attempt = 1; attempt <= googleAttempts; attempt++) {
+    got = await googleSuggest(query, language);
+    if (got.length) break;
+    if (attempt < googleAttempts) await sleep(rand(500, 1200));
   }
-  return ddgSuggest(query, language);
+  if (!got.length) got = await ddgSuggest(query, language);
+  suggestionCache.set(key, got);
+  return got;
 }
 
 /* Real typed demand around one candidate search: completions of the query
@@ -840,22 +1051,122 @@ async function gatherAutocomplete(search: CandidateSearch): Promise<string[]> {
   return out;
 }
 
-async function checkSerp(search: CandidateSearch, host: string): Promise<SerpEvidence> {
+/* Profiles one top-ranking page from its raw HTML — fetched here rather than
+   via fetchPageText because the shape signals (JSON-LD, <h2> count, meta
+   dates) live in markup that the text digest strips. Same UA/timeout/size
+   cap as fetchPageText. Null on any failure: a missing winner costs one
+   data point, never the check. */
+const JSON_LD_RE = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+const PRICE_SYMBOL_RE = /[₺$€£]\s?\d|\d[\d.,]*\s?(?:[₺$€£]|\bTL\b|\bTRY\b|\bUSD\b|\bEUR\b)/;
+// Lookbehind, not \b: JS \b is ASCII-only, so it never fires before "ücret"
+// or after "fiyatı". "ücretsiz" (free) and bare years ("fiyatları 2026")
+// are not price signals.
+const PRICE_WORD_RE =
+  /(?<!\p{L})(?:fiyat|price|pricing|ücret(?!siz)|cost|maliyet)\p{L}*[^.\n]{0,30}?(?<![\d.,])(?!(?:19|20)\d\d(?!\d))\d/iu;
+
+function isoDay(raw: string): string | null {
+  const s = raw.trim();
+  if (!s) return null;
+  const m = s.match(/^\d{4}-\d{2}-\d{2}/);
+  if (m) return m[0];
+  const t = Date.parse(s);
+  return Number.isNaN(t) ? null : new Date(t).toISOString().slice(0, 10);
+}
+
+async function profileWinner(
+  url: string,
+  rank: number,
+  fallbackTitle: string
+): Promise<WinnerProfile | null> {
+  let html: string;
+  try {
+    const res = await fetch(url, {
+      redirect: "follow",
+      signal: AbortSignal.timeout(12000),
+      headers: { "user-agent": "Mozilla/5.0 (compatible; KaguSEO/1.0)" },
+    });
+    if (!res.ok) return null;
+    const ct = res.headers.get("content-type") || "";
+    if (ct && !/html|text/i.test(ct)) return null; // PDFs/images/etc.
+    html = (await res.text()).slice(0, 600_000);
+  } catch {
+    return null;
+  }
+
+  const ld = allMatches(html, JSON_LD_RE).join("\n");
+  const text = visibleText(html);
+
+  // Freshness: article:published_time (property= or name=, either attribute
+  // order) first, then JSON-LD datePublished.
+  const metaDate =
+    firstMatch(html, /<meta[^>]+(?:property|name)=["']article:published_time["'][^>]*content=["']([^"']+)["']/i) ||
+    firstMatch(html, /<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["']article:published_time["']/i);
+  const ldDate = firstMatch(ld, /"datePublished"\s*:\s*"([^"]+)"/i);
+
+  return {
+    rank,
+    title: stripTags(firstMatch(html, /<title[^>]*>([\s\S]*?)<\/title>/i)) || fallbackTitle,
+    headings: allMatches(html, /<h[1-3][^>]*>([\s\S]*?)<\/h[1-3]>/gi)
+      .map(stripTags)
+      .join(" . ")
+      .slice(0, 400),
+    wordCount: text.split(/\s+/).filter(Boolean).length,
+    h2Count: (html.match(/<h2[\s>]/gi) ?? []).length,
+    hasFaqSchema: /"@type"\s*:\s*(?:\[[^\]]*)?"FAQPage"/i.test(ld),
+    hasHowToSchema: /"@type"\s*:\s*(?:\[[^\]]*)?"HowTo"/i.test(ld),
+    hasPriceSignals: PRICE_SYMBOL_RE.test(text) || PRICE_WORD_RE.test(text),
+    publishedDate: isoDay(metaDate) ?? isoDay(ldDate),
+  };
+}
+
+/* The winners' shape in one line — what the planning prompts copy. */
+function winnerShape(winners: WinnerProfile[]): string {
+  if (winners.length === 0) return "";
+  const n = winners.length;
+  const words = winners.map((w) => w.wordCount).sort((a, b) => a - b);
+  const h2s = winners.map((w) => w.h2Count).sort((a, b) => a - b);
+  const median = (xs: number[]) => xs[Math.floor((xs.length - 1) / 2)];
+  const count = (f: (w: WinnerProfile) => boolean) => winners.filter(f).length;
+  const newest = winners
+    .map((w) => w.publishedDate)
+    .filter((d): d is string => !!d)
+    .sort()
+    .pop();
+  return [
+    `~${median(words).toLocaleString("en-US")} words` +
+      (n > 1 ? ` (${words[0].toLocaleString("en-US")}–${words[n - 1].toLocaleString("en-US")})` : ""),
+    `${median(h2s)} H2s`,
+    `${count((w) => w.hasFaqSchema)}/${n} have FAQ schema`,
+    count((w) => w.hasHowToSchema) ? `${count((w) => w.hasHowToSchema)}/${n} HowTo schema` : "",
+    `${count((w) => w.hasPriceSignals)}/${n} show prices`,
+    newest ? `newest ${newest.slice(0, 7)}` : "",
+  ]
+    .filter(Boolean)
+    .join(", ");
+}
+
+async function checkSerp(
+  search: CandidateSearch,
+  host: string,
+  gl: string,
+  winnersPerQuery: number = config.seoStrategyWinners
+): Promise<SerpEvidence> {
   const suggestions = await gatherAutocomplete(search);
   try {
-    const { results } = await scrapeOrganicResults(
-      search.query,
-      config.seoRegion,
-      search.language || config.seoLanguage
-    );
+    const serp = await scrapeOrganicResults(search.query, gl, search.language || config.seoLanguage, {
+      features: true, // PAA / related / answer box — Serper omits them on gl-scoped calls
+    });
+    const { results } = serp;
     const top = results.slice(0, 8);
     const mine = top.find((r) => r.domain === host || r.domain.endsWith(`.${host}`));
 
-    // The top two winners' headings show what content shape wins this query.
+    // The top winners' shape (headings, length, H2s, schema, prices,
+    // freshness) shows what content wins this query. Our own page is not a
+    // benchmark to copy, so it's skipped.
     const winners: SerpEvidence["winners"] = [];
-    for (const r of top.slice(0, 2)) {
-      const p = await fetchPageText(r.url);
-      if (p) winners.push({ rank: r.rank, title: p.title || r.title, headings: p.headings.slice(0, 400) });
+    for (const r of top.filter((x) => x !== mine).slice(0, winnersPerQuery)) {
+      const w = await profileWinner(r.url, r.rank, r.title);
+      if (w) winners.push(w);
       await sleep(rand(400, 900));
     }
 
@@ -867,6 +1178,9 @@ async function checkSerp(search: CandidateSearch, host: string): Promise<SerpEvi
       results: top.map(({ rank, title, domain }) => ({ rank, title, domain })),
       winners,
       suggestions,
+      peopleAlsoAsk: serp.peopleAlsoAsk.map(({ question, snippet, link }) => ({ question, snippet, link })),
+      relatedSearches: serp.relatedSearches,
+      answerBox: serp.answerBox,
     };
   } catch (err) {
     return {
@@ -877,6 +1191,9 @@ async function checkSerp(search: CandidateSearch, host: string): Promise<SerpEvi
       results: [],
       winners: [],
       suggestions,
+      peopleAlsoAsk: [],
+      relatedSearches: [],
+      answerBox: null,
       error: err instanceof Error ? err.message : String(err),
     };
   }
@@ -929,12 +1246,18 @@ async function proposeMarketScanQueries(u: SiteUnderstanding): Promise<string[]>
   const prompt = `This business:
 ${JSON.stringify(u)}
 
-Generate 6 searches a buyer would type into Google to FIND AND COMPARE providers of what this business sells, in its market (${u.locations}). Provider-list searches only — "best <offering> companies <city>", "<offering> firmaları", "top <sector> agencies" and the like. No how-to/informational queries, no invented brand names. Write them in the site's language(s) (${u.languages.join(", ")}), at least half in the primary language.
+Generate 6 searches a buyer would type into Google to FIND AND COMPARE providers of what this business sells, in its market (${u.locations}; searched on Google for country "${u.marketCountry.toUpperCase()}"). Provider-list searches only — "best <offering> companies <city>", "<offering> firmaları", "top <sector> agencies" and the like. No how-to/informational queries, no invented brand names. Write them in the site's language(s) (${u.languages.join(", ")}), at least half in the primary language.
 
-Respond with STRICT JSON, nothing else:
+Respond with STRICT JSON, nothing else — each array item is ONE plain search string (no language labels, no "en:" prefixes, no objects):
 {"queries": ["..."]}`;
   const raw = await groqJson<{ queries?: unknown }>("market-scan", prompt, 600);
-  return strArr(raw.queries).slice(0, 6);
+  // Seen live: ["en", ":", "best … istanbul", "tr", ":", "…"] — the model
+  // tokenised its language labels into the array. Strip label prefixes and
+  // keep only strings a person would actually type.
+  return strArr(raw.queries)
+    .map((q) => q.replace(/^\s*[a-z]{2}\s*[:\-–]\s*/i, "").trim())
+    .filter((q) => looksTypeable(q) && /\p{L}{3,}/u.test(q))
+    .slice(0, 6);
 }
 
 /* Homepage plus up to two priority internal pages (services/pricing/about —
@@ -1020,7 +1343,7 @@ async function mapMarket(
     try {
       const { results } = await scrapeOrganicResults(
         q,
-        config.seoRegion,
+        u.marketCountry,
         u.languages[0] ?? config.seoLanguage
       );
       for (const r of results.slice(0, 8)) {
@@ -1185,7 +1508,7 @@ async function planHeads(
   ownerNotes?: string,
   gsc?: GscRow[] | null
 ): Promise<PlannedHead[]> {
-  const serpLines = evidence
+  const serpLinesFull = evidence
     .map((e) => {
       const ours = e.siteRank ? `we rank #${e.siteRank}` : "we are NOT in the top results";
       const top = e.results
@@ -1196,15 +1519,28 @@ async function planHeads(
         )
         .join(" | ");
       const typed = e.suggestions.slice(0, 10).map((s) => `"${s}"`).join(", ");
+      const paa = e.peopleAlsoAsk.slice(0, 4).map((p) => `"${p.question}"`).join(", ");
+      const rel = e.relatedSearches.slice(0, 5).map((s) => `"${s}"`).join(", ");
+      const shape = winnerShape(e.winners);
       return (
         `SEARCH "${e.query}" (${e.intent}, ${e.language}) — ${ours}` +
         (e.error ? ` [SERP check failed: ${e.error}]` : "") +
         (typed ? `\n  typed-in-Google (autocomplete — VERIFIED real searches): ${typed}` : "") +
-        (top ? `\n  top: ${top}` : "")
+        (paa ? `\n  people-also-ask (Google's own questions — VERIFIED): ${paa}` : "") +
+        (rel ? `\n  related (Google's related searches — VERIFIED): ${rel}` : "") +
+        (e.answerBox ? `\n  answer box owned by ${domainOf(e.answerBox.link)}` : "") +
+        (top ? `\n  top: ${top}` : "") +
+        (shape ? `\n  winners: ${shape}` : "")
       );
     })
-    .join("\n")
-    .slice(0, 11000);
+    .join("\n");
+  // The evidence block is the one part of this prompt that can shrink: it
+  // starts at 13k chars (room for the PAA/related/winner lines) and is cut
+  // back until the whole call fits GROQ_TPM_BUDGET — a site with GSC data and
+  // a full competitor block otherwise lands over Groq's 12k TPM and 413s.
+  const SERP_BLOCK_MAX = 13000;
+  const SERP_BLOCK_MIN = 5000;
+  const HEADS_MAX_TOKENS = 2500;
 
   const gscRow = (r: GscRow) =>
     `"${r.query}" — ${r.impressions} impressions, ${r.clicks} clicks, avg position ${r.position}` +
@@ -1237,13 +1573,13 @@ async function planHeads(
       }`
     : "";
 
-  const prompt = `You are an SEO strategist planning intent clusters for ${u.brand} (${u.sector}${u.subSector ? ` — ${u.subSector}` : ""}). Modern search retrieval is SEMANTIC — plan topic clusters a page can own, not strings to repeat.
+  const buildPrompt = (serpCap: number) => `You are an SEO strategist planning intent clusters for ${u.brand} (${u.sector}${u.subSector ? ` — ${u.subSector}` : ""}). Modern search retrieval is SEMANTIC — plan topic clusters a page can own, not strings to repeat.
 
 BUSINESS:
 ${JSON.stringify(u)}
 ${ownerNotes ? `\nOWNER CONTEXT (ground truth — the plan must foreground this): ${ownerNotes}\n` : ""}${gscBlock}${competitorBlock}
 LIVE SERP + DEMAND EVIDENCE (who currently ranks, and what people actually type):
-${serpLines || "(all SERP checks failed — plan from the business description alone)"}
+${serpLinesFull.slice(0, serpCap) || "(all SERP checks failed — plan from the business description alone)"}
 
 EXISTING SITE PATHS (never plan a duplicate of one of these — plan an "update" of it instead):
 ${existingPaths.join(", ")}
@@ -1251,7 +1587,7 @@ ${existingPaths.join(", ")}
 Plan 5–10 HEAD topics, each becoming exactly one page. Rules:
 - Each head is a short (1–3 word) semantically distinct topic grounded in the evidence — never two heads that mean roughly the same thing (they would cannibalize each other).
 - WINNABILITY: assume this site is small with LOW domain authority. "easy" = the current top results include forums/UGC/directories/thin or off-topic pages (marked [forum/UGC — beatable] above); "hard" = the top 5 are all established brands with exact-topic pages; "medium" otherwise. Prefer easy/medium heads — include a hard one only when it is the core money topic, and say so in its rationale.${gsc?.length ? `\n- Search Console striking-distance queries are the cheapest traffic available — build heads around them first, and use each query's "ranks via" page to choose "update" (that page) over "create".` : ""}
-- clusterQueries: assign the REAL queries above (the checked searches, the typed-in-Google lines, the Search Console queries) to the ONE head they belong to — a query must never appear under two heads. 3–8 per head, keep their exact phrasing.
+- clusterQueries: assign the REAL queries above (the checked searches, the typed-in-Google and related lines, the Search Console queries — not the people-also-ask questions, which become the pages' FAQs) to the ONE head they belong to — a query must never appear under two heads. 3–8 per head, keep their exact phrasing.
 - action: "update" with the existing path when the site already covers that topic; "create" with a new slug otherwise.
 - slug: lowercase ASCII kebab-case ONLY. Romanize Turkish characters (ç→c, ş→s, ı→i, ğ→g, ö→o, ü→u) and give Arabic-language pages a romanized or English slug (e.g. /ar/custom-software) — never put non-ASCII characters in a slug.
 - Cover all four intents (informational / commercial / transactional / navigational) across the heads: money pages first, then guides, one navigational item for the homepage/brand.${competitors.length ? `\n- COMPETITORS: a topic several direct competitors target is table stakes for the money searches — the plan must cover it at least as completely. Their listed gaps${market ? ` and the market overview's openings` : ""} are the cheapest differentiation — work them into the relevant heads, and cite the competitor in that head's rationale.` : ""}
@@ -1270,7 +1606,17 @@ Respond with STRICT JSON, nothing else:
   "clusterQueries": ["..."]
 }]}`;
 
-  const raw = await groqJson<{ heads?: unknown }>("heads", prompt, 2500);
+  let serpCap = SERP_BLOCK_MAX;
+  let prompt = buildPrompt(serpCap);
+  while (estimateTokens(prompt, HEADS_MAX_TOKENS) > GROQ_TPM_BUDGET && serpCap > SERP_BLOCK_MIN) {
+    serpCap = Math.max(SERP_BLOCK_MIN, serpCap - 2000);
+    prompt = buildPrompt(serpCap);
+  }
+  if (serpCap < SERP_BLOCK_MAX) {
+    console.log(`[strategy] heads prompt trimmed to fit Groq's TPM budget (SERP evidence block ${serpCap} chars)`);
+  }
+
+  const raw = await groqJson<{ heads?: unknown }>("heads", prompt, HEADS_MAX_TOKENS);
 
   const heads: PlannedHead[] = [];
   for (const item of Array.isArray(raw.heads) ? raw.heads : []) {
@@ -1280,23 +1626,25 @@ Respond with STRICT JSON, nothing else:
     // A head that near-duplicates an earlier one is cannibalization — drop it.
     if (heads.some((h) => similarQuery(h.keyword, keyword))) continue;
     const w = str(k.winnability).toLowerCase();
-    const action = str(k.action).toLowerCase() === "update" ? "update" : "create";
     const slugRaw = str(k.slug);
     const asIs = slugRaw.startsWith("/") ? slugRaw : `/${slugRaw}`;
+    // "update" is only honest for a path that exists — the model regularly
+    // says "update /hizmetler/x" for pages it imagined. Those are creates;
+    // otherwise the measurement loop would report a never-built page as a
+    // route that broke.
+    const action =
+      str(k.action).toLowerCase() === "update" && existingPaths.includes(asIs) ? "update" : "create";
     heads.push({
       keyword,
       intent: asIntent(k.intent),
       winnability: w === "easy" || w === "hard" ? w : "medium",
       rationale: str(k.rationale),
-      language: str(k.language).toLowerCase() || u.languages[0] || "en",
+      language: langCode(str(k.language)) || u.languages[0] || "en",
       action,
       // An "update" of a path that really exists keeps it verbatim; anything
       // else goes through the sanitizer (the LLM sometimes emits non-ASCII
       // or mixed-script slugs despite the rules).
-      slug:
-        action === "update" && existingPaths.includes(asIs)
-          ? asIs
-          : sanitizeSlug(slugRaw || keyword, keyword, heads.length),
+      slug: action === "update" ? asIs : sanitizeSlug(slugRaw || keyword, keyword, heads.length),
       pageType: str(k.pageType) || "landing",
       clusterQueries: strArr(k.clusterQueries).slice(0, 8),
     });
@@ -1304,6 +1652,43 @@ Respond with STRICT JSON, nothing else:
   }
   if (heads.length === 0) throw new Error("Groq returned no usable head topics");
   return heads;
+}
+
+/* The SERP checks that belong to one page's cluster: a checked query the
+   planner assigned to it, or one that clearly restates its head. Shared by
+   planPage and composePrompt so the brief shows the same evidence the page
+   was planned from. */
+function clusterEvidence(
+  headKeyword: string,
+  clusterQueries: string[],
+  evidence: SerpEvidence[]
+): SerpEvidence[] {
+  return evidence.filter(
+    (e) =>
+      clusterQueries.some((q) => similarQuery(q, e.query)) ||
+      tokenOverlap(headKeyword, e.query) >= 0.75
+  );
+}
+
+/* Google's People-Also-Ask questions for one cluster: every PAA on the
+   cluster's own SERPs, plus PAA from other SERPs that share most of the
+   head's tokens. Near-duplicates collapsed. */
+function clusterPaa(
+  headKeyword: string,
+  related: SerpEvidence[],
+  evidence: SerpEvidence[],
+  max = 6
+): Array<{ question: string; snippet: string; link: string }> {
+  const out: Array<{ question: string; snippet: string; link: string }> = [];
+  const push = (p: { question: string; snippet: string; link: string }) => {
+    if (out.length < max && !out.some((o) => similarQuery(o.question, p.question))) out.push(p);
+  };
+  for (const e of related) for (const p of e.peopleAlsoAsk) push(p);
+  for (const e of evidence) {
+    if (related.includes(e)) continue;
+    for (const p of e.peopleAlsoAsk) if (tokenOverlap(headKeyword, p.question) >= 0.5) push(p);
+  }
+  return out;
 }
 
 /* Pass 2: one small call per page, seeing ONLY its own cluster's evidence. */
@@ -1314,27 +1699,37 @@ async function planPage(
   gsc: GscRow[] | null | undefined,
   ownerNotes?: string
 ): Promise<PagePlan | null> {
-  // This cluster's demand: the assigned queries plus autocomplete/GSC lines
-  // that clearly belong to this topic.
-  const related = evidence.filter(
-    (e) =>
-      head.clusterQueries.some((q) => similarQuery(q, e.query)) ||
-      tokenOverlap(head.keyword, e.query) >= 0.75
-  );
+  // This cluster's demand: the assigned queries plus autocomplete / related-
+  // search / GSC lines that clearly belong to this topic.
+  const related = clusterEvidence(head.keyword, head.clusterQueries, evidence);
+  const onTopic = (s: string) => tokenOverlap(head.keyword, s) >= 0.5;
   const realQueries = [
     ...new Set(
       [
         ...head.clusterQueries,
-        ...related.flatMap((e) => e.suggestions.filter((s) => tokenOverlap(head.keyword, s) >= 0.5)),
-      ].slice(0, 14)
+        ...related.flatMap((e) => e.suggestions.filter(onTopic)),
+        ...related.flatMap((e) => e.relatedSearches.filter(onTopic)),
+      ].slice(0, 16)
     ),
   ];
+  const paa = clusterPaa(head.keyword, related, evidence);
+  const answerBoxes = related
+    .filter((e) => e.answerBox)
+    .slice(0, 2)
+    .map(
+      (e) =>
+        `- "${e.query}": owned by ${domainOf(e.answerBox!.link)} — "${e.answerBox!.snippet.slice(0, 200)}"`
+    );
   const gscLines = (gsc ?? [])
     .filter((r) => tokenOverlap(head.keyword, r.query) >= 0.5)
     .slice(0, 8)
     .map((r) => `"${r.query}" — ${r.impressions} impressions, avg position ${r.position}`);
-  const winnerLines = related
-    .flatMap((e) => e.winners)
+  const clusterWinners = related.flatMap((e) => e.winners);
+  const shape = winnerShape(clusterWinners);
+  const targetH2 = clusterWinners.length
+    ? clusterWinners.map((w) => w.h2Count).sort((a, b) => a - b)[Math.floor((clusterWinners.length - 1) / 2)]
+    : 0;
+  const winnerLines = clusterWinners
     .slice(0, 3)
     .map((w) => `#${w.rank} headings: ${w.headings.slice(0, 180)}`);
 
@@ -1357,13 +1752,14 @@ THE PAGE: ${head.action.toUpperCase()} ${head.slug} — a ${head.pageType} page 
 
 REAL QUERIES THIS PAGE MUST WIN (verified demand — build tailQueries from these first, keeping their natural phrasing):
 ${realQueries.map((q) => `- "${q}"`).join("\n") || "- (none collected — infer realistic ones)"}
-${gscLines.length ? `\nTHIS SITE'S OWN SEARCH CONSOLE QUERIES FOR THIS TOPIC (proven demand):\n${gscLines.join("\n")}` : ""}${winnerLines.length ? `\nWHAT CURRENTLY WINS THIS TOPIC (top results' headings):\n${winnerLines.join("\n")}` : ""}
+${paa.length ? `\nREAL QUESTIONS PEOPLE ASK (Google's "People also ask" for this topic — use these as FAQ entries / H2s verbatim where natural):\n${paa.map((p) => `- "${p.question}"`).join("\n")}` : ""}${answerBoxes.length ? `\nFEATURED SNIPPET (answer box) CURRENTLY SHOWN — this page's answer-first paragraph must beat it: ≤ 50 words, direct, states the fact first:\n${answerBoxes.join("\n")}` : ""}
+${gscLines.length ? `\nTHIS SITE'S OWN SEARCH CONSOLE QUERIES FOR THIS TOPIC (proven demand):\n${gscLines.join("\n")}` : ""}${winnerLines.length ? `\nWHAT CURRENTLY WINS THIS TOPIC (top results' headings):\n${winnerLines.join("\n")}` : ""}${shape ? `\nWINNERS' SHAPE: ${shape}` : ""}
 
 Rules:
 - tailQueries: 4–8, drawn from the real queries above first; invent one only to fill an obvious gap.
 - entities: 5–10 concrete concepts the page must cover for full topical coverage — the offering, its attributes (price factors, timeline, process, requirements), the audience, the location, alternatives.
-- faq: 2–6 entries; "question" as a searcher would naturally ask it, "answerGuidance" listing the facts the FIRST sentence of the answer must state.
-- outline: the page's H2 headings in order — several must directly ADDRESS the cluster's questions (natural phrasing beats echoing exact words).
+- faq: 2–6 entries; "question" as a searcher would naturally ask it${paa.length ? ` — the people-also-ask questions above come first, kept verbatim` : ""}, "answerGuidance" listing the facts the FIRST sentence of the answer must state.
+- outline: the page's H2 headings in order — several must directly ADDRESS the cluster's questions (natural phrasing beats echoing exact words).${targetH2 ? ` The pages winning this topic use about ${targetH2} H2s — match or slightly exceed that depth (at most 10).` : ""}
 - title ≤ 60 characters with the head topic at the front; metaDescription 70–160 characters, written like ad copy.
 
 Respond with STRICT JSON, nothing else:
@@ -1371,7 +1767,7 @@ Respond with STRICT JSON, nothing else:
 
   let raw: Record<string, unknown>;
   try {
-    raw = await groqJson<Record<string, unknown>>(`page ${head.slug}`, prompt, 1200);
+    raw = await groqJson<Record<string, unknown>>(`page ${head.slug}`, prompt, 1400);
   } catch (err) {
     console.warn(
       `[strategy] page ${head.slug} failed — skipping:`,
@@ -1396,6 +1792,7 @@ Respond with STRICT JSON, nothing else:
     intent: head.intent,
     language: head.language,
     headKeyword: head.keyword,
+    clusterQueries: head.clusterQueries,
     tailQueries: strArr(raw.tailQueries).slice(0, 8),
     entities: strArr(raw.entities).slice(0, 10),
     faq: faq.slice(0, 6),
@@ -1569,9 +1966,20 @@ function tokenOverlap(a: string, b: string): number {
    mostly paraphrases them away — so after the plan lands, the code assigns
    every still-unclaimed verified query to the best-matching page itself:
    same language, strongest head-keyword overlap, intent agreement as a
-   tiebreaker. Verified demand must not die in a prompt. */
-function adoptVerifiedDemand(pages: PagePlan[], evidence: SerpEvidence[]): number {
-  let adopted = 0;
+   tiebreaker. Verified demand must not die in a prompt.
+   Google's People-Also-Ask questions are verified demand of the same rank:
+   they go through the same matching but land as FAQ entries (they ARE the
+   questions), deduped against every existing FAQ/tail/head. A SERP whose
+   query the planner already assigned to a page pulls its demand toward
+   that page (+0.5) — it is that cluster's own evidence. */
+const MAX_TAILS = 8;
+const MAX_FAQ = 8;
+
+function adoptVerifiedDemand(
+  pages: PagePlan[],
+  evidence: SerpEvidence[]
+): { tails: number; faqs: number } {
+  const adopted = { tails: 0, faqs: 0 };
   const taken: string[] = pages.flatMap((p) => [
     p.headKeyword,
     ...p.tailQueries,
@@ -1579,22 +1987,42 @@ function adoptVerifiedDemand(pages: PagePlan[], evidence: SerpEvidence[]): numbe
   ]);
 
   for (const e of evidence) {
-    for (const s of e.suggestions) {
+    const items: Array<{ text: string; paa?: { snippet: string; link: string } }> = [
+      ...e.suggestions.map((text) => ({ text })),
+      ...e.peopleAlsoAsk.map((p) => ({ text: p.question, paa: { snippet: p.snippet, link: p.link } })),
+    ];
+    for (const item of items) {
+      const s = item.text;
       if (taken.some((t) => similarQuery(t, s))) continue;
       let best: PagePlan | null = null;
       let bestScore = 0;
       for (const p of pages) {
-        if (p.tailQueries.length >= 8 || p.language !== e.language) continue;
-        const score = tokenOverlap(p.headKeyword, s) + (p.intent === e.intent ? 0.25 : 0);
+        if (p.language !== e.language) continue;
+        if (item.paa ? p.faq.length >= MAX_FAQ : p.tailQueries.length >= MAX_TAILS) continue;
+        const score =
+          tokenOverlap(p.headKeyword, s) +
+          (p.intent === e.intent ? 0.25 : 0) +
+          (p.clusterQueries.some((q) => similarQuery(q, e.query)) ? 0.5 : 0);
         if (score > bestScore) {
           bestScore = score;
           best = p;
         }
       }
       if (!best || bestScore < 0.75) continue; // unrelated to every page — leave it out
-      best.tailQueries.push(s);
+      if (item.paa) {
+        const hint = item.paa.snippet.replace(/\s+/g, " ").trim().slice(0, 160).replace(/[.…\s]+$/, "");
+        best.faq.push({
+          question: s,
+          answerGuidance:
+            `the direct answer, stated with this business's own facts` +
+            (hint ? ` (Google currently shows ${domainOf(item.paa.link)}: "${hint}…" — beat it, don't copy it)` : ""),
+        });
+        adopted.faqs++;
+      } else {
+        best.tailQueries.push(s);
+        adopted.tails++;
+      }
       taken.push(s);
-      adopted++;
     }
   }
   return adopted;
@@ -1632,7 +2060,8 @@ function composePrompt(args: {
             .slice(0, 3)
             .map((r) => `${r.domain} (#${r.rank})`)
             .join(", ");
-          return `- \`${e.query}\` (${e.intent}) — ${ours}${winners ? `; currently won by ${winners}` : ""}`;
+          const snippet = e.answerBox ? `; featured snippet held by ${domainOf(e.answerBox.link)}` : "";
+          return `- \`${e.query}\` (${e.intent}) — ${ours}${winners ? `; currently won by ${winners}` : ""}${snippet}`;
         })
         .join("\n")
     : "_No SERP checks completed for this run._";
@@ -1670,22 +2099,74 @@ A topic several competitors target is table stakes — the matching §4 page mus
   // Demand provenance per tail: the site's own GSC data beats autocomplete,
   // which beats the strategist's inference. Marked visibly so the executing
   // agent knows which queries are verified and which are guesses.
-  const typedDemand = evidence.flatMap((e) => e.suggestions);
+  const typedDemand = evidence.flatMap((e) => [...e.suggestions, ...e.relatedSearches]);
+  const paaDemand = evidence.flatMap((e) => e.peopleAlsoAsk.map((p) => p.question));
   const demandMark = (q: string): string => {
     const own = gsc?.find((r) => similarQuery(r.query, q));
     if (own) return ` ✓✓ (your own Search Console: ${own.impressions} impressions, avg position ${own.position})`;
     if (typedDemand.some((s) => similarQuery(s, q))) return " ✓ (verified: people type this into Google)";
+    if (paaDemand.some((s) => similarQuery(s, q))) return " ✓PAA (Google's People Also Ask)";
     return "";
   };
 
+  const paaClaimed: string[] = []; // PAA questions already listed for an earlier page
+  const boxClaimed = new Set<SerpEvidence>(); // featured snippets already assigned to a page
   const pagesBlock = pages
     .map((p, i) => {
       const tails = p.tailQueries.map((q) => `  - "${q}"${demandMark(q)}`).join("\n");
       const entities = p.entities.join("; ");
       const outline = p.outline.map((o, n) => `  ${n + 1}. ${o}`).join("\n");
       const faq = p.faq
-        .map((f) => `  - Q: "${f.question}"\n    → the first sentence of the answer must state: ${f.answerGuidance || "the direct factual answer"}`)
+        .map((f) => `  - Q: "${f.question}"${demandMark(f.question)}\n    → the first sentence of the answer must state: ${f.answerGuidance || "the direct factual answer"}`)
         .join("\n");
+
+      // Answer-engine targets: the PAA questions this page must answer and
+      // the featured snippet it must take — the AEO surface of the cluster.
+      // A question already in another page's FAQ, or listed for an earlier
+      // page, belongs there — one question, one page (§9).
+      const related = clusterEvidence(p.headKeyword, p.clusterQueries, evidence);
+      const inOtherFaq = (q: string) =>
+        pages.some((o) => o !== p && o.faq.some((f) => similarQuery(f.question, q)));
+      const inOwnFaq = (q: string) => p.faq.some((f) => similarQuery(f.question, q));
+      const paaQs = [
+        ...p.faq.map((f) => f.question).filter((q) => paaDemand.some((s) => similarQuery(s, q))),
+        ...clusterPaa(p.headKeyword, related, evidence).map((x) => x.question),
+      ]
+        .filter((q, n, all) => all.findIndex((o) => similarQuery(o, q)) === n)
+        .filter((q) => !inOtherFaq(q) && !paaClaimed.some((c) => similarQuery(c, q)));
+      paaClaimed.push(...paaQs);
+      const boxes = related.filter((e) => e.answerBox && !boxClaimed.has(e));
+      for (const e of boxes) boxClaimed.add(e);
+      const aeo = [
+        ...paaQs.map((q) => `  - Answer: "${q}" ✓PAA${inOwnFaq(q) ? " (FAQ entry below)" : ""}`),
+        ...boxes.map(
+          (e) =>
+            `  - Featured snippet for \`${e.query}\` is held by **${domainOf(e.answerBox!.link)}**: "${e.answerBox!.snippet.slice(0, 220)}" — this page's answer-first paragraph must beat it: ≤ 50 words, direct, the fact stated in the first clause.`
+        ),
+      ].join("\n");
+
+      // Target shape from the profiled winners of this cluster's SERPs.
+      const ws = related.flatMap((e) => e.winners);
+      let shapeLine = "";
+      if (ws.length) {
+        const words = ws.map((w) => w.wordCount).sort((a, b) => a - b);
+        const h2s = ws.map((w) => w.h2Count).sort((a, b) => a - b);
+        const half = (f: (w: WinnerProfile) => boolean) => ws.filter(f).length * 2 >= ws.length;
+        const schema = [
+          "FAQPage",
+          ...(half((w) => w.hasHowToSchema) ? ["HowTo"] : []),
+        ];
+        const faqNote = half((w) => w.hasFaqSchema) ? "" : " (most winners lack it — an edge)";
+        const lo = words[0].toLocaleString("en-US");
+        const hi = words[words.length - 1].toLocaleString("en-US");
+        shapeLine =
+          `\n- target shape (from ${ws.length} profiled winner page(s): ${winnerShape(ws)}): ` +
+          `${lo === hi ? `about ${lo}` : `${lo}–${hi}`} words, ` +
+          `about ${h2s[Math.floor((h2s.length - 1) / 2)]} H2s; JSON-LD: ${schema.join(" + ")}${faqNote}; ` +
+          (half((w) => w.hasPriceSignals)
+            ? "prices MUST be shown on the page (the winners show them — use real figures or `TODO(owner)` per ground rule 3)."
+            : "prices are optional (most winners don't show them).");
+      }
       // The LLM sometimes ignores its length rules — annotate violations so
       // the executing agent fixes them instead of shipping them.
       const titleNote =
@@ -1702,7 +2183,8 @@ A topic several competitors target is table stakes — the matching §4 page mus
 - \`<title>\` (≤60 chars): ${p.title || "TODO"}${titleNote}
 - meta description (70–160 chars): ${p.metaDescription || "TODO"}${metaNote}
 - representative queries in this page's cluster (demand evidence — satisfy these searchers' MEANING; do not paste the strings; each cluster is exclusive to this page):
-${tails || "  - (see FAQ)"}
+${tails || "  - (see FAQ)"}${shapeLine}
+${aeo ? `- **Answer-engine targets** (Google's own questions and featured snippet for this cluster — each question gets a visible, answer-first passage or FAQ entry):\n${aeo}` : ""}
 ${entities ? `- entities & concepts the page must cover (topical completeness — this is what makes the page retrievable for queries nobody predicted): ${entities}` : ""}
 ${outline ? `- outline (H2 headings, in order — each question-style heading gets an answer-first passage per §5):\n${outline}` : ""}
 ${faq ? `- FAQ section (visible on the page AND mirrored verbatim in FAQPage JSON-LD):\n${faq}` : ""}`;
@@ -1741,7 +2223,7 @@ ${faq ? `- FAQ section (visible on the page AND mirrored verbatim in FAQPage JSO
 
   return `# SEO build brief — ${host}
 
-You are an expert SEO engineer working inside the codebase of **${host}** (${u.brand}). Execute this brief completely: apply the technical fixes, set up the SEO infrastructure files, and create/update the pages. Everything below was derived from the live site, the live search results, and a technical audit run on ${new Date().toISOString().slice(0, 10)}.
+You are an expert SEO engineer working inside the codebase of **${host}** (${u.brand}). Execute this brief completely: apply the technical fixes, set up the SEO infrastructure files, and create/update the pages. Everything below was derived from the live site, the live search results (Google, country **${u.marketCountry.toUpperCase()}**), and a technical audit run on ${new Date().toISOString().slice(0, 10)}.
 
 ## 0. Ground rules
 
@@ -1756,7 +2238,7 @@ You are an expert SEO engineer working inside the codebase of **${host}** (${u.b
 - **Sector:** ${u.sector}${u.subSector ? ` — ${u.subSector}` : ""}
 - **Core value proposition (lead with this on every page):** ${u.coreValueProposition || "TODO(owner)"}${ownerNotes ? `\n- **Owner context (ground truth):** ${ownerNotes}` : ""}
 - **Audience:** ${u.audience || "TODO(owner)"}
-- **Market:** ${u.locations} · **Languages:** ${u.languages.join(", ")}
+- **Market:** ${u.locations} · **Search country:** ${u.marketCountry.toUpperCase()} · **Languages:** ${u.languages.join(", ")}
 - **Offerings:** ${u.offerings.join("; ") || "TODO(owner)"}
 - **Problems it solves:** ${u.problemsSolved.join("; ") || "TODO(owner)"}
 - **Differentiators:** ${u.differentiators.join("; ") || "TODO(owner)"}
@@ -1769,7 +2251,7 @@ These real searches were checked against the search results:
 
 ${serpBlock}
 
-Where the site is absent, the pages in §4 exist to change that. Where it already ranks, the fixes and content upgrades protect and improve the position.${typedDemand.length ? ` In addition, **${typedDemand.length} real typed queries** were collected from Google Autocomplete around these topics — §4 tail queries marked ✓ come from that verified demand, not from inference.` : ""}
+Where the site is absent, the pages in §4 exist to change that. Where it already ranks, the fixes and content upgrades protect and improve the position.${typedDemand.length ? ` In addition, **${typedDemand.length} real typed queries** were collected from Google Autocomplete and Google's related searches around these topics — §4 tail queries marked ✓ come from that verified demand, not from inference.` : ""}${paaDemand.length ? ` Google's **People Also Ask** boxes contributed **${paaDemand.length} real question(s)** — marked ✓PAA in §4.` : ""}
 ${(() => {
   if (gsc == null) return "\n_Search Console is not connected — connect it (worker/README.md) to ground future briefs in the site's own impression data._";
   if (gsc.length === 0)
@@ -1809,6 +2291,8 @@ ${headsBlock}
 ## 4. Pages to create or update
 
 Each page owns one **intent cluster**: a head topic plus representative queries. The queries are demand evidence — modern search retrieval (Google's ranking systems, AI Overviews, answer engines) matches passages by MEANING, entities, and topical completeness, not by exact phrase matching. So a page wins its cluster by fully covering its meaning, not by echoing the query strings. **Do not merge pages, and never let two pages cover the same cluster** — the assignments below are final and already deduplicated.
+
+Demand markers: **✓✓** = the site's own Search Console data · **✓** = people type it into Google (autocomplete / related searches) · **✓PAA** = a question from Google's "People also ask" box · unmarked = the strategist's inference. "Target shape" is measured from the pages currently ranking for the cluster; "Answer-engine targets" are the questions and featured snippet Google already shows for it.
 
 ${pagesBlock}
 
@@ -1928,6 +2412,7 @@ function mockStrategy(inputUrl: string): StrategyReport {
     languages: ["tr", "en"],
     audience: "small business owners in Istanbul who need a first website",
     locations: "Istanbul, Turkey",
+    marketCountry: "tr",
     offerings: ["custom website design", "e-commerce setup", "SEO services"],
     problemsSolved: ["no online presence", "outdated site that loses customers"],
     differentiators: ["fixed pricing", "2-week delivery"],
@@ -1949,8 +2434,25 @@ function mockStrategy(inputUrl: string): StrategyReport {
         { rank: 1, title: "Web Tasarım İstanbul — Rakip A", domain: "rakip-a.com" },
         { rank: 2, title: "İstanbul Web Ajansı", domain: "rakip-b.com" },
       ],
-      winners: [{ rank: 1, title: "Web Tasarım İstanbul", headings: "Hizmetler . Fiyatlar . SSS" }],
+      winners: [
+        {
+          rank: 1,
+          title: "Web Tasarım İstanbul",
+          headings: "Hizmetler . Fiyatlar . SSS",
+          wordCount: 1400,
+          h2Count: 6,
+          hasFaqSchema: true,
+          hasHowToSchema: false,
+          hasPriceSignals: true,
+          publishedDate: "2026-03-01",
+        },
+      ],
       suggestions: ["web tasarım istanbul fiyat", "istanbul web tasarım firması tavsiye"],
+      peopleAlsoAsk: [
+        { question: "Web tasarım fiyatları ne kadar?", snippet: "Kurumsal web sitesi 15.000–60.000 TL arası…", link: "https://rakip-a.com/fiyatlar" },
+      ],
+      relatedSearches: ["web tasarım istanbul fiyat", "kurumsal web sitesi tasarımı"],
+      answerBox: null,
     },
     {
       query: "web sitesi fiyatları ne kadar",
@@ -1960,6 +2462,9 @@ function mockStrategy(inputUrl: string): StrategyReport {
       results: [{ rank: 1, title: "Web Sitesi Fiyatları 2026", domain: "rakip-c.com" }],
       winners: [],
       suggestions: ["web sitesi fiyatları ne kadar 2026", "web sitesi yıllık ücreti"],
+      peopleAlsoAsk: [],
+      relatedSearches: [],
+      answerBox: { title: "Web Sitesi Fiyatları 2026", snippet: "Basit bir web sitesi 10.000 TL'den başlar…", link: "https://rakip-c.com/fiyatlar" },
     },
   ];
 
@@ -1989,6 +2494,7 @@ function mockStrategy(inputUrl: string): StrategyReport {
       intent: "commercial",
       language: "tr",
       headKeyword: "web tasarım istanbul",
+      clusterQueries: ["web tasarım istanbul", "web tasarım istanbul fiyat"],
       tailQueries: ["istanbul web tasarım firması tavsiye", "küçük işletme için web sitesi yaptırma"],
       entities: ["özel web tasarım", "sabit fiyat", "teslim süresi", "küçük işletmeler", "İstanbul"],
       faq: [
@@ -2009,6 +2515,7 @@ function mockStrategy(inputUrl: string): StrategyReport {
       intent: "transactional",
       language: "tr",
       headKeyword: "web sitesi fiyatları",
+      clusterQueries: ["web sitesi fiyatları ne kadar", "web sitesi yıllık ücreti"],
       tailQueries: ["web sitesi fiyatları ne kadar 2026", "e-ticaret sitesi kurma maliyeti"],
       entities: ["paket fiyatları", "e-ticaret maliyeti", "bakım ücreti", "fiyatı etkileyen faktörler"],
       faq: [
@@ -2048,6 +2555,9 @@ function mockStrategy(inputUrl: string): StrategyReport {
     openings: ["fixed delivery time", "transparent public pricing"],
   };
 
+  // Same post-plan pass as the real pipeline — exercises PAA → FAQ adoption.
+  adoptVerifiedDemand(pages, evidence);
+
   const prompt = composePrompt({
     url,
     host,
@@ -2085,6 +2595,14 @@ function mockStrategy(inputUrl: string): StrategyReport {
 function normalizeInputUrl(raw: string): string {
   const trimmed = raw.trim();
   return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
+function domainOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url || "unknown";
+  }
 }
 
 function pathOf(url: string): string {
