@@ -33,7 +33,7 @@ cp .env.example .env   # then fill in the values
 | `SUPABASE_URL` | yes | — | Same project the admin panel uses |
 | `SUPABASE_SERVICE_ROLE_KEY` | yes | — | Service role (bypasses RLS). Keep this machine private. |
 | `GROQ_API_KEY` | no | — | Groq key for outreach drafts. Unset = leads saved without drafts. |
-| `GROQ_MODEL` | no | `llama-3.3-70b-versatile` | Groq model used for drafting |
+| `GROQ_MODEL` | no | `openai/gpt-oss-120b` | Groq model used for drafting |
 | `DRAFT_LANGUAGE` | no | `tr` | Outreach draft language: `tr` / `ar` / `en` |
 | `MAX_LISTINGS` | no | `60` | Cap on listings collected per job |
 | `POLL_INTERVAL_MS` | no | `15000` | Idle delay between polls for pending jobs |

@@ -532,7 +532,7 @@ async function renderHomepageText(url: string): Promise<string> {
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
-/* Groq's on-demand tier caps llama-3.3-70b at 12k tokens per minute, counted
+/* Groq's on-demand tier caps the model at 12k tokens per minute, counted
    as prompt tokens + the completion cap (seen live as HTTP 413). Rather than
    praying single calls fit, every call passes this gate: a rolling 60s
    window that sleeps until the next window when the budget would overflow.

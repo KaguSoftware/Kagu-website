@@ -56,7 +56,7 @@ export const config = {
   // Optional — drafting is skipped (with a warning) when unset, the panel
   // works fine without drafts.
   groqApiKey: process.env.GROQ_API_KEY ?? "",
-  groqModel: process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile",
+  groqModel: process.env.GROQ_MODEL ?? "openai/gpt-oss-120b",
   // tr | ar | en — language the outreach drafts are written in.
   draftLanguage: (process.env.DRAFT_LANGUAGE ?? "tr") as "tr" | "ar" | "en",
   // Hard cap on listings collected per job (feed scrolling stops here).
