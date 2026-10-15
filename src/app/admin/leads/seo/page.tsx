@@ -10,7 +10,15 @@ type TrackedKeyword = {
   host: string;
   keyword: string;
   language: string;
-  seo_rank_snapshots: Array<{ rank: number | null; checked_at: string }>;
+  kind?: "head" | "cluster"; // absent until seo_rank_module.sql is re-run
+  seo_rank_snapshots: Array<{
+    rank: number | null;
+    source?: "serp" | "gsc";
+    position?: number | null;
+    impressions?: number | null;
+    clicks?: number | null;
+    checked_at: string;
+  }>;
 };
 
 type SpeedTrackedUrl = {
@@ -32,10 +40,14 @@ type SpeedSnapshot = SpeedTrackedUrl["seo_speed_snapshots"][number];
 
 const rankLabel = (r: number | null) => (r === null ? "—" : `#${r}`);
 
-/* Movement between the two latest snapshots. Lower rank = better, so an
-   improvement is previous minus latest. */
+/* Movement between the latest snapshot and the most recent earlier one from
+   the SAME source. Lower rank = better, so an improvement is previous minus
+   latest. A SERP snapshot (top-10 or nothing) and a GSC one (average position,
+   can be 48) are not comparable — mixing them would show a keyword "entering"
+   at #48 the week GSC first answered. */
 function Delta({ snaps }: { snaps: TrackedKeyword["seo_rank_snapshots"] }) {
-  const [latest, previous] = snaps;
+  const [latest] = snaps;
+  const previous = snaps.slice(1).find((s) => (s.source ?? "serp") === (latest?.source ?? "serp"));
   if (!latest || !previous) return <span className="text-slate-ink">—</span>;
   if (latest.rank === null && previous.rank === null)
     return <span className="text-slate-ink">—</span>;
@@ -122,17 +134,42 @@ export default async function SeoPage() {
 
   // Rank tracking tables come from supabase/seo_rank_module.sql — until that
   // module is applied this query errors and the section shows the setup hint.
-  const { data: trackedData, error: trackedError } = await supabase
-    .from("seo_tracked_keywords")
-    .select("id, host, keyword, language, seo_rank_snapshots(rank, checked_at)")
-    .eq("active", true)
-    .order("host")
-    .order("checked_at", {
-      referencedTable: "seo_rank_snapshots",
-      ascending: false,
-    })
-    .limit(6, { referencedTable: "seo_rank_snapshots" });
-  const tracked = (trackedData ?? []) as TrackedKeyword[];
+  // The extended select (kind + GSC columns) also errors on a database that
+  // only has the original module, so retry the original columns before giving
+  // up and treat those rows as head keywords from the SERP.
+  const rankQuery = (select: string) =>
+    supabase
+      .from("seo_tracked_keywords")
+      .select(select)
+      .eq("active", true)
+      .order("host")
+      .order("checked_at", {
+        referencedTable: "seo_rank_snapshots",
+        ascending: false,
+      })
+      .limit(6, { referencedTable: "seo_rank_snapshots" });
+  let { data: trackedData, error: trackedError } = await rankQuery(
+    "id, host, keyword, language, kind, seo_rank_snapshots(rank, source, position, impressions, clicks, checked_at)"
+  );
+  let rankLegacy = false;
+  if (trackedError) {
+    const fallback = await rankQuery(
+      "id, host, keyword, language, seo_rank_snapshots(rank, checked_at)"
+    );
+    trackedData = fallback.data;
+    trackedError = fallback.error;
+    rankLegacy = !fallback.error;
+  }
+  // Per host: head keywords first, then their cluster keywords.
+  const tracked = ((trackedData ?? []) as unknown as TrackedKeyword[])
+    .map((t, i) => ({ t, i }))
+    .sort(
+      (a, b) =>
+        a.t.host.localeCompare(b.t.host) ||
+        Number(a.t.kind === "cluster") - Number(b.t.kind === "cluster") ||
+        a.i - b.i
+    )
+    .map(({ t }) => t);
 
   // Speed history tables come from supabase/seo_speed_module.sql — until that
   // module is applied this query errors and the section shows the setup hint.
@@ -190,7 +227,8 @@ export default async function SeoPage() {
         <StrategyJobsLive initial={jobs ?? []} />
       </div>
 
-      {/* Weekly SERP positions for every strategy's head keywords. */}
+      {/* Weekly positions — Search Console first, live SERP as fallback — for
+          every strategy's head and cluster keywords. */}
       <div>
         <Eyebrow>Rank tracking ({tracked.length} keywords)</Eyebrow>
         {trackedError ? (
@@ -198,14 +236,24 @@ export default async function SeoPage() {
             Not set up yet — run{" "}
             <code className="text-ink">supabase/seo_rank_module.sql</code> once
             in the Supabase SQL editor. After that, every finished strategy
-            seeds its head keywords here and the worker re-checks them weekly.
+            seeds its head and cluster keywords here and the worker re-checks
+            them weekly, Search Console first with the live SERP as fallback.
           </p>
         ) : tracked.length === 0 ? (
           <p className="mt-3 max-w-prose text-xs leading-relaxed text-slate-ink">
-            No tracked keywords yet — they are seeded automatically when a
-            strategy job finishes.
+            No tracked keywords yet — head and cluster keywords are seeded
+            automatically when a strategy job finishes, then tracked weekly
+            (Search Console first, live SERP as fallback).
           </p>
         ) : (
+          <>
+          {rankLegacy ? (
+            <p className="mt-3 max-w-prose text-xs leading-relaxed text-slate-ink">
+              Re-run{" "}
+              <code className="text-ink">supabase/seo_rank_module.sql</code> to
+              enable GSC-first tracking and cluster keywords.
+            </p>
+          ) : null}
           <div className="mt-3 overflow-x-auto border border-neutral">
             <table className="w-full text-left text-sm">
               <thead>
@@ -221,11 +269,18 @@ export default async function SeoPage() {
               <tbody>
                 {tracked.map((t) => {
                   const latest = t.seo_rank_snapshots[0];
+                  const isCluster = t.kind === "cluster";
+                  const source = latest?.source ?? "serp";
                   return (
                     <tr key={t.id} className="border-b border-neutral last:border-0">
-                      <td className="px-4 py-3 text-ink">
+                      <td className={`py-3 pr-4 text-ink ${isCluster ? "pl-8" : "pl-4"}`}>
                         {t.keyword}
                         <span className="ml-2 text-xs text-slate-ink">{t.language}</span>
+                        {isCluster ? (
+                          <span className="ml-2 text-[10px] font-mono uppercase tracking-[0.14em] text-slate-ink">
+                            cluster
+                          </span>
+                        ) : null}
                       </td>
                       <td className="px-4 py-3 text-xs text-slate-ink">{t.host}</td>
                       <td className="px-4 py-3">
@@ -234,6 +289,17 @@ export default async function SeoPage() {
                             className={`font-mono ${latest.rank !== null ? "text-ink" : "text-slate-ink"}`}
                           >
                             {rankLabel(latest.rank)}
+                            {source === "gsc" && typeof latest.position === "number" ? (
+                              <span className="ml-1 text-xs text-slate-ink">
+                                ({Number(latest.position).toFixed(1)})
+                              </span>
+                            ) : null}
+                            <span className="ml-2 text-[10px] uppercase tracking-[0.14em] text-slate-ink">
+                              {source === "gsc" ? "GSC" : "SERP"}
+                              {source === "gsc" && typeof latest.impressions === "number"
+                                ? ` · ${latest.impressions} impr`
+                                : ""}
+                            </span>
                           </span>
                         ) : (
                           <span className="text-xs text-slate-ink">first check pending</span>
@@ -260,6 +326,7 @@ export default async function SeoPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
 

@@ -156,6 +156,7 @@ export type SeoStrategyUnderstanding = {
   languages: string[];
   audience: string;
   locations: string;
+  marketCountry?: string; // ISO 3166-1 alpha-2, lowercase; absent on older reports
   offerings: string[];
   problemsSolved: string[];
   differentiators: string[];
@@ -168,8 +169,24 @@ export type SeoStrategyEvidence = {
   language: string;
   siteRank: number | null; // null = not in the top results
   results: Array<{ rank: number; title: string; domain: string }>;
-  winners: Array<{ rank: number; title: string; headings: string }>;
+  // Content shape of the top pages. Only rank/title/headings exist on older
+  // reports; the rest were added with the winner-profile feature.
+  winners: Array<{
+    rank: number;
+    title: string;
+    headings: string;
+    wordCount?: number;
+    h2Count?: number;
+    hasFaqSchema?: boolean;
+    hasHowToSchema?: boolean;
+    hasPriceSignals?: boolean;
+    publishedDate?: string | null;
+  }>;
   suggestions: string[]; // real typed queries from autocomplete
+  // Google's own SERP features (Serper only). Absent on older reports.
+  peopleAlsoAsk?: Array<{ question: string; snippet: string; link: string }>;
+  relatedSearches?: string[];
+  answerBox?: { title: string; snippet: string; link: string } | null;
   error?: string;
 };
 
@@ -199,6 +216,7 @@ export type SeoStrategyPage = {
   intent: SeoStrategyIntent;
   language: string;
   headKeyword: string;
+  clusterQueries?: string[]; // verified queries assigned exclusively to this page
   tailQueries: string[];
   entities: string[];
   faq: SeoStrategyFaq[];
@@ -252,6 +270,33 @@ export type SeoStrategyReport = {
   audit: SeoAuditReport | null; // null = skipped or failed
   prompt: string; // the master prompt — the deliverable
   pageCheck?: SeoStrategyPageCheck; // added by the admin's "Verify pages" action
+};
+
+// SEO plan-tracking module (supabase/seo_plan_module.sql). Written by the
+// worker (worker/src/plan-tracking.ts, worker/src/followup.ts).
+export type SeoPlanAuditIssue = {
+  severity: SeoAuditSeverity;
+  label: string;
+  issue: string;
+  fix: string;
+};
+
+export type SeoFollowupSectionId =
+  | "not_shipped"
+  | "fix_shipped"
+  | "audit_issues"
+  | "regressed"
+  | "wins";
+
+export type SeoFollowupSummary = {
+  host: string;
+  checkedAt: string;
+  pagesPlanned: number;
+  shipped: number;
+  indexable: number;
+  impressions7d: number | null;
+  baselineImpressions7d: number | null;
+  sections: Array<{ id: SeoFollowupSectionId; title: string; slugs: string[] }>;
 };
 
 export interface Database {
@@ -1045,6 +1090,8 @@ export interface Database {
           host: string;
           keyword: string;
           language: string;
+          country: string;
+          kind: "head" | "cluster";
           active: boolean;
           created_at: string;
         };
@@ -1053,6 +1100,8 @@ export interface Database {
           host: string;
           keyword: string;
           language?: string;
+          country?: string;
+          kind?: "head" | "cluster";
           active?: boolean;
           created_at?: string;
         };
@@ -1061,6 +1110,8 @@ export interface Database {
           host?: string;
           keyword?: string;
           language?: string;
+          country?: string;
+          kind?: "head" | "cluster";
           active?: boolean;
           created_at?: string;
         };
@@ -1071,18 +1122,30 @@ export interface Database {
           id: string;
           tracked_id: string;
           rank: number | null;
+          source: "serp" | "gsc";
+          position: number | null;
+          impressions: number | null;
+          clicks: number | null;
           checked_at: string;
         };
         Insert: {
           id?: string;
           tracked_id: string;
           rank?: number | null;
+          source?: "serp" | "gsc";
+          position?: number | null;
+          impressions?: number | null;
+          clicks?: number | null;
           checked_at?: string;
         };
         Update: {
           id?: string;
           tracked_id?: string;
           rank?: number | null;
+          source?: "serp" | "gsc";
+          position?: number | null;
+          impressions?: number | null;
+          clicks?: number | null;
           checked_at?: string;
         };
         Relationships: [
@@ -1091,6 +1154,109 @@ export interface Database {
             columns: ["tracked_id"];
             isOneToOne: false;
             referencedRelation: "seo_tracked_keywords";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      seo_plan_checks: {
+        Row: {
+          id: string;
+          strategy_job_id: string;
+          slug: string;
+          action: "create" | "update";
+          checked_at: string;
+          shipped: boolean;
+          final_url: string | null;
+          http_status: number | null;
+          in_sitemap: boolean | null;
+          indexable: boolean | null;
+          title_has_head: boolean | null;
+          has_faq_schema: boolean | null;
+          impressions_7d: number | null;
+          clicks_7d: number | null;
+          avg_position: number | null;
+          baseline_impressions_7d: number | null;
+          audit_issues: SeoPlanAuditIssue[] | null;
+        };
+        Insert: {
+          id?: string;
+          strategy_job_id: string;
+          slug: string;
+          action: "create" | "update";
+          checked_at?: string;
+          shipped?: boolean;
+          final_url?: string | null;
+          http_status?: number | null;
+          in_sitemap?: boolean | null;
+          indexable?: boolean | null;
+          title_has_head?: boolean | null;
+          has_faq_schema?: boolean | null;
+          impressions_7d?: number | null;
+          clicks_7d?: number | null;
+          avg_position?: number | null;
+          baseline_impressions_7d?: number | null;
+          audit_issues?: SeoPlanAuditIssue[] | null;
+        };
+        Update: {
+          id?: string;
+          strategy_job_id?: string;
+          slug?: string;
+          action?: "create" | "update";
+          checked_at?: string;
+          shipped?: boolean;
+          final_url?: string | null;
+          http_status?: number | null;
+          in_sitemap?: boolean | null;
+          indexable?: boolean | null;
+          title_has_head?: boolean | null;
+          has_faq_schema?: boolean | null;
+          impressions_7d?: number | null;
+          clicks_7d?: number | null;
+          avg_position?: number | null;
+          baseline_impressions_7d?: number | null;
+          audit_issues?: SeoPlanAuditIssue[] | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "seo_plan_checks_strategy_job_id_fkey";
+            columns: ["strategy_job_id"];
+            isOneToOne: false;
+            referencedRelation: "seo_strategy_jobs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      seo_strategy_followups: {
+        Row: {
+          id: string;
+          strategy_job_id: string;
+          created_at: string;
+          summary: SeoFollowupSummary;
+          prompt: string;
+          fingerprint: string;
+        };
+        Insert: {
+          id?: string;
+          strategy_job_id: string;
+          created_at?: string;
+          summary: SeoFollowupSummary;
+          prompt: string;
+          fingerprint: string;
+        };
+        Update: {
+          id?: string;
+          strategy_job_id?: string;
+          created_at?: string;
+          summary?: SeoFollowupSummary;
+          prompt?: string;
+          fingerprint?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "seo_strategy_followups_strategy_job_id_fkey";
+            columns: ["strategy_job_id"];
+            isOneToOne: false;
+            referencedRelation: "seo_strategy_jobs";
             referencedColumns: ["id"];
           },
         ];

@@ -5,6 +5,7 @@ import { useTransition } from "react";
 import type { ActionResult } from "../../_actions/action-result";
 import type { Tables } from "@/lib/supabase/database.types";
 import { cancelSeoStrategyJob, retrySeoStrategyJob } from "../../_actions/seo-strategy-jobs";
+import { RerunStrategyButton } from "./RerunStrategyButton";
 import { adminToast } from "../../_components/toast";
 import { EmptyState } from "../../_components/ui";
 import { JobStatusBadge } from "./JobStatusBadge";
@@ -74,15 +75,19 @@ function JobActions({ job }: { job: StrategyJob }) {
   }
   if (job.status === "done") {
     return (
-      <Link
-        href={`/admin/leads/seo/${job.id}`}
-        className="text-xs font-mono uppercase tracking-[0.18em] text-mint-deep underline-offset-4 transition-colors hover:underline"
-      >
-        View →
-      </Link>
+      <span className="inline-flex items-center gap-4">
+        <RerunStrategyButton jobId={job.id} variant="link" />
+        <Link
+          href={`/admin/leads/seo/${job.id}`}
+          className="text-xs font-mono uppercase tracking-[0.18em] text-mint-deep underline-offset-4 transition-colors hover:underline"
+        >
+          View →
+        </Link>
+      </span>
     );
   }
-  return null;
+  // cancelled: nothing to retry in place, but the same settings can be re-queued.
+  return <RerunStrategyButton jobId={job.id} variant="link" />;
 }
 
 export function StrategyJobsLive({

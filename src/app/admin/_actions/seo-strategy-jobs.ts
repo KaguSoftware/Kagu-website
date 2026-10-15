@@ -128,6 +128,43 @@ export const verifySeoStrategyPages = withResult(async (id: string) => {
   revalidatePath("/admin/leads/seo", "layout");
 });
 
+/*
+  "Run again": queue a NEW job with this one's settings. Unlike retry (failed
+  jobs only, same row wiped) the old report stays — with its plan checks and
+  follow-ups — so two runs of the same site can be compared, and the newest
+  done job per host is what the weekly plan check follows from then on.
+  Returns the new job id so the caller can navigate to it.
+*/
+export const rerunSeoStrategyJob = withResult(async (id: string) => {
+  const user = await requireAdmin();
+  const jobId = z.uuid().parse(id);
+  const db = createAdminClient();
+  const { data: job, error } = await db
+    .from("seo_strategy_jobs")
+    .select("url, context, serp_queries, audit_pages, status")
+    .eq("id", jobId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!job) throw new Error("Job not found.");
+  if (job.status === "pending" || job.status === "running") {
+    throw new Error("This job is still running — cancel it first or wait for it to finish.");
+  }
+  const { data: created, error: insertError } = await db
+    .from("seo_strategy_jobs")
+    .insert({
+      url: job.url,
+      context: job.context,
+      serp_queries: job.serp_queries,
+      audit_pages: job.audit_pages,
+      requested_by: user.id,
+    })
+    .select("id")
+    .single();
+  if (insertError) throw new Error(insertError.message);
+  revalidatePath("/admin/leads/seo", "layout");
+  return created.id as string;
+});
+
 /* Cooperative cancellation — the worker checks the status between steps. */
 export const cancelSeoStrategyJob = withResult(async (id: string) => {
   await requireAdmin();

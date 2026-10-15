@@ -585,8 +585,11 @@ const GROQ_TPM_BUDGET = Math.round((Number(process.env.GROQ_TPM_LIMIT) || 8000) 
 let tpmWindowStart = 0;
 let tpmWindowTokens = 0;
 
+/* 3 chars/token, not the English 3.5–4: Turkish and Arabic tokenise worse,
+   and an undercount here shows up as a 429 + 60s retry (seen live: "Used
+   7011, Requested 2081" after the gate had let the call through). */
 function estimateTokens(prompt: string, maxTokens: number): number {
-  return Math.ceil(prompt.length / 3.5) + maxTokens;
+  return Math.ceil(prompt.length / 3) + maxTokens;
 }
 
 async function tpmGate(cost: number): Promise<void> {

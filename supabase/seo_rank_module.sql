@@ -3,6 +3,9 @@
 -- when a strategy job completes (worker/src/seo-strategy-jobs.ts); the worker
 -- re-checks each host's keywords when its latest snapshot is older than 7
 -- days (worker/src/rank-tracking.ts) and the admin SEO tab charts movement.
+-- Checks are GSC-first: when Search Console is configured the snapshot is the
+-- real impression-weighted position (source = 'gsc'); otherwise it falls back
+-- to a live SERP check (source = 'serp'). See "Columns added later" below.
 -- Run this once in the Supabase SQL editor. Safe to re-run (idempotent).
 -- Mirrors the shape in src/lib/supabase/database.types.ts
 -- (seo_tracked_keywords / seo_rank_snapshots) and worker/src/rank-tracking.ts.
@@ -58,3 +61,40 @@ create policy "seo_tracked_keywords admin update"
 drop policy if exists "seo_rank_snapshots admin read" on public.seo_rank_snapshots;
 create policy "seo_rank_snapshots admin read"
   on public.seo_rank_snapshots for select to authenticated using (true);
+
+-- ---------------------------------------------------------------------------
+-- Columns added later (GSC-first checks, per-market SERPs, cluster keywords)
+-- ---------------------------------------------------------------------------
+-- Idempotent: safe on tables created by an earlier version of this file.
+
+-- Google `gl` / market country for the SERP check (ISO 3166-1 alpha-2, lowercase).
+alter table public.seo_tracked_keywords
+  add column if not exists country text not null default 'tr';
+
+-- 'head' = the page's head keyword; 'cluster' = a verified cluster query.
+alter table public.seo_tracked_keywords
+  add column if not exists kind text not null default 'head';
+alter table public.seo_tracked_keywords
+  drop constraint if exists seo_tracked_keywords_kind_check;
+alter table public.seo_tracked_keywords
+  add constraint seo_tracked_keywords_kind_check
+    check (kind in ('head', 'cluster'));
+
+-- Where the snapshot came from. NOTE: "rank" keeps its meaning (integer
+-- position); for GSC rows it is round(position), so it can exceed 10.
+alter table public.seo_rank_snapshots
+  add column if not exists source text not null default 'serp';
+alter table public.seo_rank_snapshots
+  drop constraint if exists seo_rank_snapshots_source_check;
+alter table public.seo_rank_snapshots
+  add constraint seo_rank_snapshots_source_check
+    check (source in ('serp', 'gsc'));
+
+-- GSC impression-weighted average position (fractional); null for SERP rows.
+alter table public.seo_rank_snapshots
+  add column if not exists position numeric;
+-- GSC impressions / clicks over the snapshot window; null for SERP rows.
+alter table public.seo_rank_snapshots
+  add column if not exists impressions integer;
+alter table public.seo_rank_snapshots
+  add column if not exists clicks integer;

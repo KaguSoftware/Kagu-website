@@ -6,6 +6,7 @@ import { EmptyState, Eyebrow } from "../../../_components/ui";
 import { JobStatusBadge } from "../../_components/JobStatusBadge";
 import { AuditReportView } from "../../_components/AuditReportView";
 import { CopyPromptButton } from "../../_components/CopyPromptButton";
+import { RerunStrategyButton } from "../../_components/RerunStrategyButton";
 import { VerifyPagesButton } from "../../_components/VerifyPagesButton";
 import {
   SEO_INTENT_CLASSES,
@@ -176,6 +177,51 @@ function PageCard({
   );
 }
 
+const GOOD = "border-[#3fb27f] text-[#3fb27f]";
+const BAD = "border-[#e5594e] text-[#e5594e]";
+const NEUTRAL = "border-neutral text-slate-ink";
+
+/* true = green, false = red, null = neutral "—". */
+function TriBadge({
+  value,
+  yes,
+  no,
+  none = "—",
+}: {
+  value: boolean | null;
+  yes: string;
+  no: string;
+  none?: string;
+}) {
+  if (value === null) return <Badge label={none} classes={NEUTRAL} />;
+  return <Badge label={value ? yes : no} classes={value ? GOOD : BAD} />;
+}
+
+/* Lower position = better, so an improvement is previous minus latest. */
+function PositionCell({
+  latest,
+  previous,
+}: {
+  latest: number | null;
+  previous: number | null;
+}) {
+  if (latest === null) return <span className="text-xs text-slate-ink">—</span>;
+  const diff = previous === null ? 0 : previous - latest;
+  return (
+    <span className="font-mono text-xs text-ink">
+      #{latest.toFixed(1)}
+      {diff >= 0.05 ? (
+        <span className="ml-2 text-[#3fb27f]">▲ {diff.toFixed(1)}</span>
+      ) : diff <= -0.05 ? (
+        <span className="ml-2 text-[#e5594e]">▼ {(-diff).toFixed(1)}</span>
+      ) : null}
+    </span>
+  );
+}
+
+const toNum = (v: number | string | null | undefined) =>
+  v === null || v === undefined ? null : Number(v);
+
 export default async function SeoJobDetailPage({
   params,
 }: {
@@ -193,6 +239,39 @@ export default async function SeoJobDetailPage({
   const report = job.report;
   const u = report?.understanding;
 
+  // Plan tracking tables come from supabase/seo_plan_module.sql — until that
+  // module is applied these queries error and the section shows the setup hint.
+  const { data: checkRows, error: checksError } = await supabase
+    .from("seo_plan_checks")
+    .select("*")
+    .eq("strategy_job_id", id)
+    .order("checked_at", { ascending: false })
+    .limit(500);
+  const { data: followupRows, error: followupsError } = await supabase
+    .from("seo_strategy_followups")
+    .select("*")
+    .eq("strategy_job_id", id)
+    .order("created_at", { ascending: false })
+    .limit(20);
+  const checks = checkRows ?? [];
+  const followups = followupRows ?? [];
+
+  // Newest-first rows: the first hit per slug is the latest check, the second
+  // the previous one (for the position delta).
+  const checksBySlug = new Map<string, typeof checks>();
+  for (const c of checks) {
+    const list = checksBySlug.get(c.slug);
+    if (list) list.push(c);
+    else checksBySlug.set(c.slug, [c]);
+  }
+  const latestChecks = report
+    ? report.pages.flatMap((p) => {
+        const c = checksBySlug.get(p.slug)?.[0];
+        return c ? [c] : [];
+      })
+    : [];
+  const lastCheckedAt = checks[0]?.checked_at ?? null;
+
   return (
     <div className="flex flex-col gap-12">
       <div>
@@ -205,6 +284,9 @@ export default async function SeoJobDetailPage({
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <h2 className="display text-2xl text-ink">{displayUrl(job.url)}</h2>
           <JobStatusBadge status={job.status} />
+          {job.status !== "pending" && job.status !== "running" ? (
+            <RerunStrategyButton jobId={job.id} />
+          ) : null}
         </div>
         {job.error ? (
           <p className="mt-3 max-w-prose text-xs text-[#e5594e]">{job.error}</p>
@@ -584,9 +666,250 @@ export default async function SeoJobDetailPage({
             </div>
           </section>
 
+          {/* Weekly plan check by the worker: did the planned pages ship, are
+              they indexable, and is Search Console moving? */}
+          <section>
+            <SectionHeading index="06">Plan status</SectionHeading>
+            {checksError ? (
+              <p className="mt-4 max-w-prose text-xs leading-relaxed text-slate-ink">
+                Not set up yet — run{" "}
+                <code className="text-ink">supabase/seo_plan_module.sql</code>{" "}
+                once in the Supabase SQL editor. After that, the worker checks
+                this plan weekly — shipped, indexable, in the sitemap, title,
+                FAQ schema, and Search Console movement — and writes follow-up
+                prompts when something needs fixing.
+              </p>
+            ) : checks.length === 0 ? (
+              <p className="mt-4 max-w-prose text-xs leading-relaxed text-slate-ink">
+                No plan check yet — the worker checks the latest finished
+                strategy per site weekly while idle.
+              </p>
+            ) : (
+              <>
+                <p className="mt-3 text-xs text-slate-ink">
+                  <span className="font-mono text-ink">
+                    {latestChecks.filter((c) => c.shipped).length}/
+                    {report.pages.length}
+                  </span>{" "}
+                  shipped ·{" "}
+                  <span className="font-mono text-ink">
+                    {latestChecks.filter((c) => c.indexable === true).length}
+                  </span>{" "}
+                  indexable · last checked{" "}
+                  {lastCheckedAt
+                    ? new Date(lastCheckedAt).toLocaleDateString("en-GB")
+                    : "—"}
+                </p>
+                <div className="mt-3 overflow-x-auto border border-neutral">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-neutral">
+                        <th className="eyebrow px-4 py-3 font-normal">Page</th>
+                        <th className="eyebrow px-4 py-3 font-normal">Shipped</th>
+                        <th className="eyebrow px-4 py-3 font-normal">Indexable</th>
+                        <th className="eyebrow px-4 py-3 font-normal">Sitemap</th>
+                        <th className="eyebrow px-4 py-3 font-normal">Title</th>
+                        <th className="eyebrow px-4 py-3 font-normal">FAQ schema</th>
+                        <th className="eyebrow px-4 py-3 font-normal">Impressions 7d</th>
+                        <th className="eyebrow px-4 py-3 font-normal">Avg position</th>
+                        <th className="eyebrow px-4 py-3 font-normal">Issues</th>
+                        <th className="eyebrow px-4 py-3 font-normal">Checked</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {report.pages.map((page) => {
+                        const [c, prev] = checksBySlug.get(page.slug) ?? [];
+                        const pageCell = (
+                          <td className="px-4 py-3">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-mono text-xs text-ink">{page.slug}</span>
+                              <Badge
+                                label={page.action}
+                                classes={
+                                  page.action === "create"
+                                    ? "border-mint-deep text-mint-deep"
+                                    : "border-[#d9a13b] text-[#d9a13b]"
+                                }
+                              />
+                            </div>
+                          </td>
+                        );
+                        if (!c) {
+                          return (
+                            <tr key={page.slug} className="border-b border-neutral last:border-0">
+                              {pageCell}
+                              <td colSpan={9} className="px-4 py-3 text-xs text-slate-ink">
+                                not checked yet
+                              </td>
+                            </tr>
+                          );
+                        }
+                        const imp = c.impressions_7d;
+                        const base = c.baseline_impressions_7d;
+                        const pct =
+                          imp !== null && base !== null && base > 0
+                            ? Math.round(((imp - base) / base) * 100)
+                            : null;
+                        return (
+                          <tr key={page.slug} className="border-b border-neutral last:border-0">
+                            {pageCell}
+                            <td className="px-4 py-3">
+                              <Badge
+                                label={
+                                  c.shipped
+                                    ? "live ✓"
+                                    : c.http_status
+                                      ? `missing (${c.http_status})`
+                                      : "unreachable"
+                                }
+                                classes={c.shipped ? GOOD : BAD}
+                              />
+                            </td>
+                            <td className="px-4 py-3">
+                              <TriBadge value={c.indexable} yes="yes" no="no" />
+                            </td>
+                            <td className="px-4 py-3">
+                              <TriBadge value={c.in_sitemap} yes="yes" no="no" none="n/a" />
+                            </td>
+                            <td className="px-4 py-3">
+                              <TriBadge value={c.title_has_head} yes="ok" no="no head kw" />
+                            </td>
+                            <td className="px-4 py-3">
+                              {c.has_faq_schema === null ? (
+                                <span className="text-xs text-slate-ink">—</span>
+                              ) : (
+                                <TriBadge value={c.has_faq_schema} yes="yes" no="missing" />
+                              )}
+                            </td>
+                            <td className="px-4 py-3 font-mono text-xs">
+                              {imp === null ? (
+                                <span className="font-sans text-slate-ink">no GSC</span>
+                              ) : (
+                                <>
+                                  <span className="text-ink">
+                                    {imp} / {base ?? "—"}
+                                  </span>
+                                  {pct !== null && pct !== 0 ? (
+                                    <span
+                                      className={`ml-2 ${pct > 0 ? "text-[#3fb27f]" : "text-[#e5594e]"}`}
+                                    >
+                                      {pct > 0 ? `▲ +${pct}%` : `▼ ${pct}%`}
+                                    </span>
+                                  ) : null}
+                                </>
+                              )}
+                            </td>
+                            <td className="px-4 py-3">
+                              <PositionCell
+                                latest={toNum(c.avg_position)}
+                                previous={toNum(prev?.avg_position)}
+                              />
+                            </td>
+                            <td className="px-4 py-3 font-mono text-xs text-slate-ink">
+                              {c.audit_issues ? c.audit_issues.length : "—"}
+                            </td>
+                            <td className="px-4 py-3 text-xs text-slate-ink">
+                              {new Date(c.checked_at).toLocaleDateString("en-GB")}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </section>
+
+          {/* Prompts the worker writes when a plan check finds something
+              actionable — newest open, older collapsed. */}
+          <section>
+            <SectionHeading index="07">
+              Follow-up prompts{followupsError ? "" : ` (${followups.length})`}
+            </SectionHeading>
+            {followupsError ? (
+              <p className="mt-4 max-w-prose text-xs leading-relaxed text-slate-ink">
+                Needs <code className="text-ink">supabase/seo_plan_module.sql</code>{" "}
+                (see Plan status above).
+              </p>
+            ) : followups.length === 0 ? (
+              <p className="mt-4 max-w-prose text-xs leading-relaxed text-slate-ink">
+                No follow-ups yet — one is written after a plan check finds
+                something actionable (and only when the findings change).
+              </p>
+            ) : (
+              <div className="mt-4 flex flex-col gap-4">
+                {followups.map((f, i) => {
+                  const s = f.summary;
+                  const day = f.created_at.slice(0, 10);
+                  const toolbar = (
+                    <div
+                      className={`flex flex-wrap items-center justify-between gap-3 bg-mint-pale px-4 py-3 ${i === 0 ? "border-b border-neutral" : ""}`}
+                    >
+                      <div>
+                        <Eyebrow>
+                          Follow-up · {new Date(f.created_at).toLocaleDateString("en-GB")}
+                          {i === 0 ? " · latest" : ""}
+                        </Eyebrow>
+                        <p className="mt-0.5 text-xs text-slate-ink">
+                          {s.shipped}/{s.pagesPlanned} shipped · {s.indexable} indexable ·
+                          impressions 7d: {s.impressions7d ?? "—"} (baseline{" "}
+                          {s.baselineImpressions7d ?? "—"})
+                        </p>
+                        {s.sections?.length ? (
+                          <ul className="mt-2 flex flex-wrap gap-1.5">
+                            {s.sections.map((sec) => (
+                              <li key={sec.id}>
+                                <Badge
+                                  label={`${sec.title} · ${sec.slugs.length}`}
+                                  classes={NEUTRAL}
+                                />
+                              </li>
+                            ))}
+                          </ul>
+                        ) : null}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CopyPromptButton prompt={f.prompt} />
+                        <a
+                          href={`data:text/markdown;charset=utf-8,${encodeURIComponent(f.prompt)}`}
+                          download={`seo-followup-${s.host}-${day}.md`}
+                          className="border border-neutral px-4 py-2 text-xs font-mono uppercase tracking-[0.18em] text-slate-ink transition-colors hover:text-ink"
+                        >
+                          Download .md
+                        </a>
+                      </div>
+                    </div>
+                  );
+                  const pre = (
+                    <pre className="max-h-80 overflow-auto whitespace-pre-wrap p-5 font-mono text-xs leading-relaxed text-slate-ink">
+                      {f.prompt}
+                    </pre>
+                  );
+                  return (
+                    <div key={f.id} className="border border-neutral">
+                      {toolbar}
+                      {i === 0 ? (
+                        pre
+                      ) : (
+                        // Older follow-ups: prompt text behind a native <details>.
+                        <details className="border-t border-neutral">
+                          <summary className="cursor-pointer px-4 py-2 text-xs font-mono uppercase tracking-[0.18em] text-slate-ink hover:text-ink">
+                            Show prompt
+                          </summary>
+                          {pre}
+                        </details>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
           {/* Embedded technical audit. */}
           <section>
-            <SectionHeading index="06">Technical audit</SectionHeading>
+            <SectionHeading index="08">Technical audit</SectionHeading>
             {report.audit ? (
               <div className="mt-6 flex flex-col gap-10">
                 <AuditReportView report={report.audit} />
