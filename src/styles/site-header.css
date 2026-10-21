@@ -8,6 +8,7 @@
   position: sticky;
   top: 0;
   z-index: 20;
+  view-transition-name: site-header; /* stays put during page transitions */
   padding-top: env(safe-area-inset-top, 0px);
   background: color-mix(in srgb, var(--bg) 86%, transparent);
   -webkit-backdrop-filter: blur(14px);

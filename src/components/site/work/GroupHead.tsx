@@ -5,7 +5,7 @@
   dialog (a centred card on desktop, a bottom sheet on phones). Native
   <dialog> gives focus trapping and Escape; everything visible is custom.
 */
-import Link from "next/link";
+import { NavLink } from "@/components/site/NavLink";
 import { useRef } from "react";
 import type { ProductGroup } from "@/lib/productGroups";
 import { GroupIcon } from "./GroupIcon";
@@ -68,9 +68,9 @@ export function GroupHead({ group: g }: { group: ProductGroup }) {
             ))}
           </ul>
           <p className="gd__note">{g.more.note}</p>
-          <Link href="/contact" className="site-btn gd__cta">
+          <NavLink href="/contact" className="site-btn gd__cta">
             Let&rsquo;s talk
-          </Link>
+          </NavLink>
         </div>
       </dialog>
     </div>

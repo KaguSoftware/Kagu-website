@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { NavLink } from "@/components/site/NavLink";
 import type { Case } from "@/lib/content";
 import "./home.css";
 
@@ -32,7 +32,7 @@ export function HomeWork({ cases }: { cases: readonly Case[] }) {
       <h2 id="home-work">Our work.</h2>
       <div className="rows">
         {cases.map((c) => (
-          <Link key={c.slug} className="row" href={`/work/${c.slug}`}>
+          <NavLink key={c.slug} className="row" href={`/work/${c.slug}`}>
             <span className="row__name">{c.client}</span>
             <span className="row__meta">
               <small>{sector(c)}</small>
@@ -41,7 +41,7 @@ export function HomeWork({ cases }: { cases: readonly Case[] }) {
             <span className="row__arr" aria-hidden="true">
               &rarr;
             </span>
-          </Link>
+          </NavLink>
         ))}
       </div>
     </section>

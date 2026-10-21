@@ -6,7 +6,7 @@
   to sit on the cream footer. Plain server component.
 */
 
-import Link from "next/link";
+import { NavLink } from "@/components/site/NavLink";
 import Image from "next/image";
 import { legalLinks } from "@/lib/legal";
 
@@ -16,9 +16,9 @@ export function FooterLegalStrip() {
       <div className="site-wrap site-legal__inner">
         <nav aria-label="Yasal / Legal" lang="tr" className="site-legal__links">
           {legalLinks.map((l) => (
-            <Link key={l.href} href={l.href}>
+            <NavLink key={l.href} href={l.href}>
               {l.tr}
-            </Link>
+            </NavLink>
           ))}
         </nav>
         <div className="site-legal__pay">

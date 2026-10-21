@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef, useEffect, useId, useRef, type RefObject } from "react";
-import Link from "next/link";
+import { NavLink } from "@/components/site/NavLink";
 import { usePathname } from "next/navigation";
 import { menuItems, FALLBACK_EMAIL } from "./navItems";
 
@@ -120,14 +120,14 @@ export function MobileNav({
         {menuItems.map((item) => {
           const active = !item.href.includes("#") && pathname === item.href;
           return (
-            <Link
+            <NavLink
               key={item.href}
               href={item.href}
               onClick={onClose}
               aria-current={active ? "page" : undefined}
             >
               {item.label}
-            </Link>
+            </NavLink>
           );
         })}
       </nav>

@@ -4,6 +4,7 @@ import "@/styles/site.css";
 import { siteFontVars } from "@/lib/siteFonts";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooterServer } from "@/components/layout/SiteFooterServer";
+import { PageTransition } from "@/components/site/PageTransition";
 
 export const viewport: Viewport = {
   themeColor: "#faf7f2",
@@ -18,8 +19,10 @@ export default function SiteLayout({
   return (
     <div className={`site ${siteFontVars}`}>
       <SiteHeader />
-      <main id="main">{children}</main>
-      <SiteFooterServer />
+      <PageTransition>
+        <main id="main">{children}</main>
+        <SiteFooterServer />
+      </PageTransition>
     </div>
   );
 }

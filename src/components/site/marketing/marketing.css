@@ -206,3 +206,16 @@
   margin: 0 0 28px;
   font-size: clamp(36px, 6vw, 64px);
 }
+
+/* arriving through the major page transition: draw once the new page has risen */
+@media (prefers-reduced-motion: no-preference) {
+  :root:active-view-transition-type(nav-major) .mk-draw__p--1 {
+    animation-delay: 0.7s;
+  }
+  :root:active-view-transition-type(nav-major) .mk-draw__p--2 {
+    animation-delay: 1.05s;
+  }
+  :root:active-view-transition-type(nav-major) .mk-draw__p--3 {
+    animation-delay: 1.4s;
+  }
+}

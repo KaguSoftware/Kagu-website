@@ -202,3 +202,14 @@
     will-change: auto;
   }
 }
+
+/* arriving through the major page transition: wait until the new page has risen */
+:root:active-view-transition-type(nav-major) .cx-w > span {
+  animation-delay: calc(var(--i) * 60ms + 0.7s);
+}
+:root:active-view-transition-type(nav-major) .cx-fade {
+  animation-delay: 1s;
+}
+:root:active-view-transition-type(nav-major) .cx-fade--2 {
+  animation-delay: 1.12s;
+}

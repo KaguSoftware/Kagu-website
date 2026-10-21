@@ -6,7 +6,7 @@
   Only transform / opacity / filter are written, directly to refs (no React
   re-renders per frame).
 */
-import Link from "next/link";
+import { NavLink } from "@/components/site/NavLink";
 import { useEffect, useRef } from "react";
 import { KaguMark } from "@/components/KaguMark";
 import { HeroTrails, type TrailsControl } from "./HeroTrails";
@@ -157,12 +157,12 @@ export function HomeScrollScene() {
               <h1>Software, done right.</h1>
               <p className="hero__sub">Websites, apps and AI.</p>
               <div className="hero__acts">
-                <Link className="site-btn" href="/contact">
+                <NavLink className="site-btn" href="/contact">
                   Let&rsquo;s talk
-                </Link>
-                <Link className="site-btn site-btn--ghost" href="/work">
+                </NavLink>
+                <NavLink className="site-btn site-btn--ghost" href="/work">
                   Our work
-                </Link>
+                </NavLink>
               </div>
             </div>
             <span className="hero__cue" ref={cueRef} aria-hidden="true" />
@@ -170,10 +170,10 @@ export function HomeScrollScene() {
           <div className="hero__rise">
             <div className="offer" ref={cardsRef}>
               {GROUPS.map((g) => (
-                <Link key={g.title} className="offer__row" href="/work">
+                <NavLink key={g.title} className="offer__row" href="/work">
                   <span className="offer__word">{g.title}</span>
                   <span className="offer__line">{g.text}</span>
-                </Link>
+                </NavLink>
               ))}
             </div>
           </div>

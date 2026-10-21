@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { NavLink } from "@/components/site/NavLink";
 import { usePathname } from "next/navigation";
 import { KaguMark } from "@/components/KaguMark";
 import { MenuButton, MobileNav } from "./MobileNav";
@@ -42,28 +42,28 @@ export function SiteHeader() {
         className={`site-header${scrolled ? " is-scrolled" : ""}${open ? " is-open" : ""}`}
       >
         <div className="site-wrap site-header__bar">
-          <Link href="/" className="site-brand" aria-label="Kagu home" onClick={close}>
+          <NavLink href="/" className="site-brand" aria-label="Kagu home" onClick={close}>
             <KaguMark variant="outline" height={17} />
             <span>kagu</span>
-          </Link>
+          </NavLink>
 
           <nav className="site-header__links" aria-label="Main">
             {navItems.map((item) => {
               const active =
                 pathname === item.href || pathname?.startsWith(`${item.href}/`);
               return (
-                <Link
+                <NavLink
                   key={item.href}
                   href={item.href}
                   aria-current={active ? "page" : undefined}
                 >
                   {item.label}
-                </Link>
+                </NavLink>
               );
             })}
-            <Link href={contactHref} className="site-btn">
+            <NavLink href={contactHref} className="site-btn">
               Contact
-            </Link>
+            </NavLink>
           </nav>
 
           <MenuButton ref={buttonRef} open={open} onToggle={toggle} />

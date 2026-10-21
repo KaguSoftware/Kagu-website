@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { NavLink } from "@/components/site/NavLink";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getCases } from "@/lib/content";
@@ -47,9 +47,9 @@ export default async function CasePage({ params }: PageProps) {
 
   return (
     <article className="site-wrap">
-      <Link href="/work" className="case-back">
+      <NavLink href="/work" className="case-back">
         ← Work
-      </Link>
+      </NavLink>
 
       <header className="case-head">
         {meta && <p className="case-meta">{meta}</p>}
@@ -81,10 +81,10 @@ export default async function CasePage({ params }: PageProps) {
         </ul>
       )}
 
-      <Link href={`/work/${next.slug}`} className="case-next">
+      <NavLink href={`/work/${next.slug}`} className="case-next">
         <small>Next project</small>
         <span>{next.client}</span>
-      </Link>
+      </NavLink>
     </article>
   );
 }

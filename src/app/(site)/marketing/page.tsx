@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { NavLink } from "@/components/site/NavLink";
 import { KAGU_VIEWBOX, RIBBON, FOLD, WING } from "@/components/KaguMark";
 import { GroupIcon } from "@/components/site/work/GroupIcon";
 import { pageMetadata, webPageJsonLd } from "@/lib/seo";
@@ -105,9 +105,9 @@ export default function MarketingPage() {
         <div className="mk-hero__text">
           <h1>Marketing</h1>
           <p>Get found.</p>
-          <Link href="/contact?topic=marketing" className="site-btn">
+          <NavLink href="/contact?topic=marketing" className="site-btn">
             Let&apos;s talk
-          </Link>
+          </NavLink>
         </div>
         <svg
           className="mk-draw"
@@ -163,16 +163,16 @@ export default function MarketingPage() {
 
         <section className="mk-with">
           <p>We build the site too, so it all fits together.</p>
-          <Link href="/work" className="mk-with__link">
+          <NavLink href="/work" className="mk-with__link">
             See our work <span aria-hidden="true">&rarr;</span>
-          </Link>
+          </NavLink>
         </section>
 
         <section className="mk-close">
           <h2>Got an idea?</h2>
-          <Link href="/contact?topic=marketing" className="site-btn">
+          <NavLink href="/contact?topic=marketing" className="site-btn">
             Let&apos;s talk
-          </Link>
+          </NavLink>
         </section>
       </div>
     </>

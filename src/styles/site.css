@@ -98,7 +98,16 @@ html:has(.site)::-webkit-scrollbar-thumb:hover,
   font-size: 16px;
   line-height: 1.6;
 }
-.site > main {
+/* page-stage wraps main + footer for the page transition (PageTransition.tsx);
+   it needs its own solid background so the outgoing page never shows through */
+.site > .page-stage {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--bg);
+}
+.page-stage > main {
   flex: 1 0 auto;
   min-width: 0;
 }

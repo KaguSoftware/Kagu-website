@@ -5,7 +5,7 @@
   Server component (no client state). Styles: src/styles/site.css (.site-footer).
 */
 
-import Link from "next/link";
+import { NavLink } from "@/components/site/NavLink";
 import { KaguMark } from "@/components/KaguMark";
 import { FooterLegalStrip } from "./FooterLegalStrip";
 import { FALLBACK_EMAIL, contactHref } from "./navItems";
@@ -31,24 +31,24 @@ export function SiteFooter({ studio }: { studio?: FooterStudio }) {
     <footer className="site-footer">
       <div className="site-wrap">
         <div className="site-footer__row">
-          <Link href="/" className="site-brand site-brand--sm" aria-label="Kagu home">
+          <NavLink href="/" className="site-brand site-brand--sm" aria-label="Kagu home">
             <KaguMark variant="outline" height={14} />
             <span>kagu</span>
-          </Link>
+          </NavLink>
           <nav className="site-footer__links" aria-label="Footer">
-            <Link href="/work">Work</Link>
-            <Link href="/marketing">Marketing</Link>
-            <Link href="/about">About</Link>
-            <Link href={contactHref}>Contact</Link>
+            <NavLink href="/work">Work</NavLink>
+            <NavLink href="/marketing">Marketing</NavLink>
+            <NavLink href="/about">About</NavLink>
+            <NavLink href={contactHref}>Contact</NavLink>
             <a href={`mailto:${email}`}>{email}</a>
           </nav>
         </div>
         {/* SEO topic pages: quiet sitewide links so they keep inbound links */}
         <nav className="site-footer__guides" aria-label="Guides">
           {guides.map((g) => (
-            <Link key={g.href} href={g.href} lang={g.lang}>
+            <NavLink key={g.href} href={g.href} lang={g.lang}>
               {g.label}
-            </Link>
+            </NavLink>
           ))}
         </nav>
       </div>

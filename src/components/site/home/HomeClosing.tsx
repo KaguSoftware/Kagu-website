@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { NavLink } from "@/components/site/NavLink";
 import "./home.css";
 
 export function HomeClosing({ email }: { email: string }) {
@@ -7,9 +7,9 @@ export function HomeClosing({ email }: { email: string }) {
       <div className="cta-band">
         <h2 id="home-idea">Got an idea?</h2>
         <span className="mail">{email}</span>
-        <Link className="site-btn" href="/contact">
+        <NavLink className="site-btn" href="/contact">
           Let&rsquo;s talk
-        </Link>
+        </NavLink>
       </div>
     </section>
   );

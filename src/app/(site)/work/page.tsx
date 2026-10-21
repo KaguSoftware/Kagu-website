@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { NavLink } from "@/components/site/NavLink";
 import Image from "next/image";
 import { getCases } from "@/lib/content";
 import { groups, caseGroup, oneLiner } from "@/lib/productGroups";
@@ -36,7 +36,7 @@ export default async function WorkPage() {
               {items.length > 0 ? (
                 <div className="work-projects">
                   {items.map((c) => (
-                    <Link key={c.slug} href={`/work/${c.slug}`} className="work-proj">
+                    <NavLink key={c.slug} href={`/work/${c.slug}`} className="work-proj">
                       <div className={`work-thumb${c.device === "mobile" ? " work-thumb--phone" : ""}`}>
                         {c.thumbnail && (
                           <Image
@@ -51,7 +51,7 @@ export default async function WorkPage() {
                         <h3>{c.client}</h3>
                         <p>{oneLiner(c)}</p>
                       </div>
-                    </Link>
+                    </NavLink>
                   ))}
                 </div>
               ) : (
@@ -65,9 +65,9 @@ export default async function WorkPage() {
 
         <section className="work-cta">
           <h2>Got an idea?</h2>
-          <Link href="/contact" className="site-btn">
+          <NavLink href="/contact" className="site-btn">
             Let&apos;s talk
-          </Link>
+          </NavLink>
         </section>
       </div>
     </>

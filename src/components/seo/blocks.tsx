@@ -15,7 +15,7 @@
     array, so they can never drift apart (Google cross-checks verbatim).
 */
 
-import Link from "next/link";
+import { NavLink } from "@/components/site/NavLink";
 import type { ReactNode } from "react";
 import { Eyebrow } from "@/components/layout/Eyebrow";
 import { JsonLd } from "./JsonLd";
@@ -46,7 +46,7 @@ export function SeoHero({ eyebrow, title, lede, langSwitchHref, langSwitchLabel 
           <span className="eyebrow block" style={{ marginBottom: "var(--space-6)" }}>
             {eyebrow}
           </span>
-          <Link
+          <NavLink
             href={langSwitchHref}
             data-cursor="nav-link"
             className="font-mono"
@@ -60,7 +60,7 @@ export function SeoHero({ eyebrow, title, lede, langSwitchHref, langSwitchLabel 
             }}
           >
             {langSwitchLabel}
-          </Link>
+          </NavLink>
         </div>
         <h1
           className="display"
@@ -134,13 +134,13 @@ export function P({ children }: { children: ReactNode }) {
 /** Inline internal link with the site's underline treatment. */
 export function A({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <Link
+    <NavLink
       href={href}
       data-cursor="read"
       style={{ color: "var(--mint-text)", borderBottom: "1px solid var(--mint-text)" }}
     >
       {children}
-    </Link>
+    </NavLink>
   );
 }
 
@@ -343,7 +343,7 @@ export function CtaBand({ title, href, label, secondaryHref, secondaryLabel }: C
           {title}
         </p>
         <div className="flex flex-wrap items-center gap-6">
-          <Link
+          <NavLink
             href={href}
             data-cursor="view"
             className="inline-flex items-center gap-3"
@@ -361,9 +361,9 @@ export function CtaBand({ title, href, label, secondaryHref, secondaryLabel }: C
           >
             {label}
             <ArrowGlyph length={24} color="var(--ink)" />
-          </Link>
+          </NavLink>
           {secondaryHref && secondaryLabel ? (
-            <Link
+            <NavLink
               href={secondaryHref}
               data-cursor="nav-link"
               className="font-mono inline-flex items-center gap-3"
@@ -380,7 +380,7 @@ export function CtaBand({ title, href, label, secondaryHref, secondaryLabel }: C
             >
               {secondaryLabel}
               <ArrowGlyph length={24} />
-            </Link>
+            </NavLink>
           ) : null}
         </div>
       </div>

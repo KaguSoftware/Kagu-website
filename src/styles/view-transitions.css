@@ -1,26 +1,110 @@
 /*
-  Next 16 / React <ViewTransition> styles — SHARED-ELEMENT MORPHS ONLY.
-  Route-level page-curtain transitions are handled by GSAP (per brief M12).
-  This file exists for shared-element morphs between paired ViewTransition
-  elements (e.g. work-card thumbnail → case-study hero), which the brief
-  did not explicitly cover and which GSAP would require FLIP for.
+  Page transitions (Next 16 / React <ViewTransition>, see components/site/PageTransition.tsx).
+  The class names come from PageTransition; the type from NavLink (nav-major / nav-minor).
 
-  If we end up not using shared-element morphs at all, delete this file
-  and remove experimental.viewTransition from next.config.ts.
+  MAJOR, two distinct steps (460ms + 630ms):
+    1. the old page drifts back, shrinks and blurs
+    2. only after that, the new page slides up from the bottom
+  MINOR, one quick fade with a small lift (about 250ms): moves inside a section,
+  browser back/forward, and anything untagged.
+
+  The header never animates. Reduced motion collapses everything to an instant swap.
 */
 
-::view-transition-group(.morph) {
-  animation-duration: var(--dur-mask);
-  animation-timing-function: var(--ease-curtain);
-}
-::view-transition-image-pair(.morph) {
-  animation-name: kagu-via-blur;
+::view-transition {
+  pointer-events: none;
 }
 
-/* Site header — never animate even if View Transitions are active */
+/* the old and new page share one frame; never blend them */
+::view-transition-group(.page-major-in),
+::view-transition-group(.page-major-out),
+::view-transition-group(.page-minor-in),
+::view-transition-group(.page-minor-out) {
+  animation: none;
+}
+::view-transition-image-pair(.page-major-in),
+::view-transition-image-pair(.page-major-out),
+::view-transition-image-pair(.page-minor-in),
+::view-transition-image-pair(.page-minor-out) {
+  isolation: auto;
+}
+::view-transition-old(.page-major-out),
+::view-transition-new(.page-major-in),
+::view-transition-old(.page-minor-out),
+::view-transition-new(.page-minor-in) {
+  mix-blend-mode: normal;
+  animation-fill-mode: both;
+}
+
+/* ---- major ---- */
+::view-transition-group(.page-major-out) {
+  z-index: 1;
+}
+::view-transition-group(.page-major-in) {
+  z-index: 2;
+}
+::view-transition-old(.page-major-out) {
+  transform-origin: 50% 30%;
+  animation: 460ms cubic-bezier(0.4, 0, 0.2, 1) both page-recede;
+}
+::view-transition-new(.page-major-in) {
+  animation: 630ms cubic-bezier(0.32, 0.72, 0, 1) 460ms both page-rise;
+}
+:root:active-view-transition-type(nav-major)::view-transition {
+  animation: 460ms ease both page-backdrop;
+}
+@keyframes page-recede {
+  to {
+    transform: translateY(-1.5%) scale(0.88);
+    filter: blur(10px);
+    opacity: 0.7;
+    border-radius: 28px;
+  }
+}
+@keyframes page-rise {
+  from {
+    transform: translateY(100%);
+    border-radius: 28px 28px 0 0;
+    box-shadow: 0 -24px 60px rgba(27, 34, 43, 0.2);
+  }
+  to {
+    transform: none;
+    border-radius: 0;
+    box-shadow: 0 -24px 60px rgba(27, 34, 43, 0);
+  }
+}
+@keyframes page-backdrop {
+  from {
+    background: #faf7f2;
+  }
+  to {
+    background: #e6e0d4;
+  }
+}
+
+/* ---- minor ---- */
+::view-transition-old(.page-minor-out) {
+  animation: 115ms cubic-bezier(0.22, 1, 0.36, 1) both page-fade-out;
+}
+::view-transition-new(.page-minor-in) {
+  animation: 250ms cubic-bezier(0.22, 1, 0.36, 1) 70ms both page-fade-in;
+}
+@keyframes page-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* Site header: never animate, even while a transition runs. */
 ::view-transition-group(site-header) {
   animation: none;
-  z-index: var(--z-nav);
+  z-index: 100;
 }
 ::view-transition-old(site-header) {
   display: none;
@@ -29,17 +113,11 @@
   animation: none;
 }
 
-@keyframes kagu-via-blur {
-  30% {
-    filter: blur(3px);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-old(*),
   ::view-transition-new(*),
-  ::view-transition-group(*) {
-    animation-duration: 0s !important;
-    animation-delay: 0s !important;
+  ::view-transition-group(*),
+  ::view-transition {
+    animation: none !important;
   }
 }
