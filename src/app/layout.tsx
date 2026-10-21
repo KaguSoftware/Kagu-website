@@ -22,9 +22,9 @@ const publicSans = Public_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Kagu · Software for boutique operators",
+  title: "Kagu — Software, done right.",
   description:
-    "Kagu builds Next.js + Supabase platforms for hospitality and service businesses. Founded 2025, Istanbul.",
+    "Websites, apps and AI. Built properly by Kagu, Istanbul.",
   metadataBase: new URL(SITE_URL),
   openGraph: {
     siteName: "Kagu",
