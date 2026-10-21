@@ -14,6 +14,8 @@ import "./contact-form.css";
 type Stage = "default" | "submitting" | "success" | "error";
 type Errors = { name?: string; email?: string; message?: string };
 
+const TYPES = ["App", "Platform", "Hosting", "AI", "Not sure"] as const;
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function ContactForm({
@@ -27,6 +29,7 @@ export function ContactForm({
 }) {
   const [stage, setStage] = useState<Stage>("default");
   const [errors, setErrors] = useState<Errors>({});
+  const [type, setType] = useState<string | null>(null);
   const source = topic === "marketing" ? "start-marketing" : "contact";
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -63,7 +66,7 @@ export function ContactForm({
         name,
         email: senderEmail,
         company: null,
-        message,
+        message: type ? `Type: ${type}\n\n${message}` : message,
         source,
       });
       if (error) {
@@ -83,6 +86,9 @@ export function ContactForm({
 
   return (
     <div className={`cf${done ? " cf--done" : ""}`}>
+      <h2 className="cf__title">
+        {topic === "marketing" ? "Tell us about your brand." : "Tell us about it."}
+      </h2>
       <form
         className="cf__form"
         onSubmit={onSubmit}
@@ -91,6 +97,24 @@ export function ContactForm({
         aria-hidden={done}
         inert={done}
       >
+        <div className="cf__field">
+          <span className="cf__label" id="cf-type-l">
+            What is it?
+          </span>
+          <div className="cf__chips" role="group" aria-labelledby="cf-type-l">
+            {TYPES.map((t) => (
+              <button
+                key={t}
+                type="button"
+                className="cf__chip"
+                aria-pressed={type === t}
+                onClick={() => setType(type === t ? null : t)}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
         <Field id="cf-name" name="name" label="Name" autoComplete="name" error={errors.name} />
         <Field
           id="cf-email"
@@ -101,7 +125,7 @@ export function ContactForm({
           inputMode="email"
           error={errors.email}
         />
-        <Field id="cf-message" name="message" label="Message" multiline error={errors.message} />
+        <Field id="cf-message" name="message" label="A few words" multiline error={errors.message} />
 
         <div className="cf__hp" aria-hidden="true">
           <label htmlFor="website">Website</label>
@@ -110,8 +134,12 @@ export function ContactForm({
 
         <div className="cf__actions">
           <button type="submit" className="site-btn cf__send" disabled={busy}>
-            {busy ? "Sending…" : "Send"}
+            <span>{busy ? "Sending…" : "Send"}</span>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
           </button>
+          <p className="cf__note">No spam. Just a reply.</p>
         </div>
         <p className="cf__fail" role="status" aria-live="polite">
           {stage === "error" ? (

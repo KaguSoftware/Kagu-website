@@ -1,0 +1,204 @@
+/* Contact page — big headline, tappable rows, form card, blurred logo behind. */
+.cx {
+  position: relative;
+  isolation: isolate;
+  overflow-x: clip;
+  padding-block: 40px calc(env(safe-area-inset-bottom, 0px) + 72px);
+}
+.cx-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.cx-bg__logo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(1100px, 120vw);
+  color: var(--mark);
+  opacity: 0.14;
+  filter: blur(10px);
+  transform: translate3d(calc(-50% + var(--dx, 0px)), calc(-48% + var(--dy, 0px)), 0);
+  will-change: transform;
+}
+.cx-bg__logo svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.cx-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 40px;
+}
+.cx-left {
+  min-width: 0;
+}
+.cx-h1 {
+  margin: 0;
+  font-size: clamp(56px, 8vw, 120px);
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+}
+.cx-w {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding-bottom: 0.12em;
+  margin-bottom: -0.12em;
+}
+.cx-w > span {
+  display: inline-block;
+  animation: cx-rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: calc(var(--i) * 60ms);
+}
+.cx-sub {
+  margin: 18px 0 0;
+  color: var(--muted);
+  font-size: 18px;
+}
+.cx-rows {
+  list-style: none;
+  margin: 36px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+.cx-rowwrap {
+  position: relative;
+  border-bottom: 1px solid var(--line);
+}
+.cx-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "label arrow" "value arrow";
+  align-items: center;
+  column-gap: 16px;
+  row-gap: 2px;
+  min-height: 48px;
+  padding: 18px 0;
+  color: var(--ink);
+}
+.cx-row__label {
+  grid-area: label;
+  font-size: 13px;
+  color: var(--muted);
+}
+.cx-row__value {
+  grid-area: value;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(24px, 6.4vw, 32px);
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+.cx-row__arrow {
+  grid-area: arrow;
+  color: var(--muted);
+  transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1), color 0.2s;
+}
+.cx-row:hover .cx-row__arrow,
+.cx-row:focus-visible .cx-row__arrow {
+  transform: translateX(6px);
+  color: var(--ink);
+}
+.cx-copy {
+  position: absolute;
+  top: 10px;
+  right: 40px;
+  width: 72px; /* fixed: "Copied" never shifts layout */
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.cx-copy:hover {
+  border-color: var(--ink);
+}
+.cx-time {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 22px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.cx-time__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.cx-time__t {
+  display: inline-block;
+  min-width: 4.2ch;
+}
+.cx-right {
+  position: relative;
+  min-width: 0;
+  scroll-margin-top: calc(var(--site-header-h) + 20px);
+}
+.cx-fade {
+  animation: cx-fade 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: 0.3s;
+}
+.cx-fade--2 {
+  animation-delay: 0.42s;
+}
+
+@media (min-width: 960px) {
+  .cx {
+    padding-block: 72px 110px;
+  }
+  .cx-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 520px);
+    gap: 72px;
+    align-items: start;
+  }
+  .cx-left {
+    position: sticky;
+    top: calc(var(--site-header-h) + 32px);
+  }
+  .cx-row__value {
+    font-size: clamp(26px, 2.4vw, 34px);
+  }
+}
+
+@keyframes cx-rise {
+  from {
+    transform: translateY(105%);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes cx-fade {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cx-w > span,
+  .cx-fade {
+    animation: none;
+  }
+  .cx-bg__logo {
+    transform: translate3d(-50%, -48%, 0);
+    will-change: auto;
+  }
+}
