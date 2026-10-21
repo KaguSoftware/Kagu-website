@@ -165,7 +165,7 @@ export function TeamRoster({
               <span className="member__frame">
                 <Photo
                   member={m}
-                  sizes="(max-width: 760px) 50vw, 360px"
+                  sizes="(max-width: 760px) 50vw, 280px"
                 />
               </span>
               <span className="member__name">{m.name}</span>

@@ -17,6 +17,34 @@ html:has(.site),
 html:has(.site) body {
   background: #faf7f2;
 }
+/* Custom scrollbars everywhere on the public site (page + any scroll container). */
+html:has(.site),
+.site * {
+  scrollbar-width: thin;
+  scrollbar-color: #c9c1b3 transparent;
+}
+html:has(.site)::-webkit-scrollbar,
+.site *::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+html:has(.site)::-webkit-scrollbar-track,
+.site *::-webkit-scrollbar-track {
+  background: transparent;
+}
+html:has(.site)::-webkit-scrollbar-thumb,
+.site *::-webkit-scrollbar-thumb {
+  background: #c9c1b3;
+  border-radius: 999px;
+  border: 3px solid #faf7f2;
+}
+html:has(.site)::-webkit-scrollbar-thumb:hover,
+.site *::-webkit-scrollbar-thumb:hover {
+  background: #a9a092;
+}
+.site ::selection {
+  background: color-mix(in srgb, #1f8fe0 22%, transparent);
+}
 
 .site {
   /* ---- new clean tokens ---- */
