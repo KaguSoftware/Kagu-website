@@ -49,7 +49,11 @@ const angd = (a: number, b: number) => {
   return d;
 };
 
-export function HeroTrails({ control }: { control: MutableRefObject<TrailsControl> }) {
+export function HeroTrails({
+  control,
+}: {
+  control: MutableRefObject<TrailsControl>;
+}) {
   const nearRef = useRef<HTMLCanvasElement>(null);
   const farRef = useRef<HTMLCanvasElement>(null);
 
@@ -179,8 +183,8 @@ export function HeroTrails({ control }: { control: MutableRefObject<TrailsContro
         N: Math.round(Math.pow(Math.random(), 1.5) * 190 * u + 25),
         blue: Math.random() < 0.18,
         v: Math.pow(rand(0.6, 1.5), 2),
-        lw: Math.pow(Math.random(), 2) * 4.6 + 0.9,
-        al: rand(0.22, 0.9),
+        lw: Math.pow(Math.random(), 1.6) * 5 + 1.6,
+        al: rand(0.5, 1),
         k0: sign() * Math.pow(Math.random(), 1.6) * 0.011,
         ph: rand(0, 6.28),
         s: 0,
@@ -201,7 +205,8 @@ export function HeroTrails({ control }: { control: MutableRefObject<TrailsContro
       } else {
         t.x = rand(a0, a1);
         t.y = rand(0, H);
-        t.th = (Math.random() < 0.5 ? PI / 2 : -PI / 2) + sign() * rand(0.3, 0.8);
+        t.th =
+          (Math.random() < 0.5 ? PI / 2 : -PI / 2) + sign() * rand(0.3, 0.8);
       }
       if (warm) {
         const dist = rand(0.2, 0.65) * t.life * baseSpeed(t);
@@ -213,7 +218,7 @@ export function HeroTrails({ control }: { control: MutableRefObject<TrailsContro
     };
 
     const initTrails = () => {
-      const n = narrow ? 6 : 12;
+      const n = narrow ? 9 : 18;
       trails = [];
       introT = mq.matches ? 99 : 0;
       for (let i = 0; i < n; i++) trails.push(spawn(i, true, 6));
@@ -250,7 +255,11 @@ export function HeroTrails({ control }: { control: MutableRefObject<TrailsContro
       if (fade <= 0.01) return;
       const m = n + 1;
       const c = t.far ? ctxf : ctx;
-      const headA = t.al * (t.blue ? 0.8 : 1) * smooth(fade) * smooth(clamp01(introT / 1.6));
+      const headA =
+        t.al *
+        (t.blue ? 0.8 : 1) *
+        smooth(fade) *
+        smooth(clamp01(introT / 1.6));
       const rgb = t.blue ? "31,143,224" : "27,34,43";
       for (let b = 0; b < B; b++) {
         const i0 = Math.floor((b * (m - 1)) / B);
@@ -259,7 +268,8 @@ export function HeroTrails({ control }: { control: MutableRefObject<TrailsContro
         if (al < 0.01 || i1 <= i0) continue;
         c.beginPath();
         c.moveTo(i0 < n ? p[2 * i0] : t.x, i0 < n ? p[2 * i0 + 1] : t.y);
-        for (let i = i0 + 1; i <= i1; i++) c.lineTo(i < n ? p[2 * i] : t.x, i < n ? p[2 * i + 1] : t.y);
+        for (let i = i0 + 1; i <= i1; i++)
+          c.lineTo(i < n ? p[2 * i] : t.x, i < n ? p[2 * i + 1] : t.y);
         c.lineWidth = t.lw * lerp(0.35, 1, (b + 0.5) / B);
         c.strokeStyle = `rgba(${rgb},${al.toFixed(3)})`;
         c.stroke();
@@ -269,30 +279,40 @@ export function HeroTrails({ control }: { control: MutableRefObject<TrailsContro
     const applyMask = (c: CanvasRenderingContext2D) => {
       const cx = box ? box.x + box.w / 2 : W / 2;
       const cy = box ? box.y + box.h / 2 : H / 2;
-      c.save();
-      c.globalCompositeOperation = "destination-in";
-      const g = narrow ? c.createLinearGradient(0, 0, 0, H) : c.createLinearGradient(0, 0, W, 0);
-      const mid = narrow ? cy / H : cx / W;
-      const hwBase = box ? (narrow ? box.h / 2 / H : box.w / 2 / W) : narrow ? 0.2 : 0.17;
-      const hw = lerp(hwBase, 0, K);
-      const soft = narrow ? 0.07 : 0.06;
-      const m = K.toFixed(3);
-      g.addColorStop(0, "rgba(0,0,0,1)");
-      g.addColorStop(clamp01(mid - hw - soft), "rgba(0,0,0,1)");
-      g.addColorStop(clamp01(mid - hw), `rgba(0,0,0,${m})`);
-      g.addColorStop(clamp01(mid + hw), `rgba(0,0,0,${m})`);
-      g.addColorStop(clamp01(mid + hw + soft), "rgba(0,0,0,1)");
-      g.addColorStop(1, "rgba(0,0,0,1)");
-      c.fillStyle = g;
-      c.fillRect(0, 0, W, H);
-      c.restore();
+      if (!box) {
+        c.save();
+        c.globalCompositeOperation = "destination-in";
+        const g = narrow
+          ? c.createLinearGradient(0, 0, 0, H)
+          : c.createLinearGradient(0, 0, W, 0);
+        const mid = narrow ? cy / H : cx / W;
+        const hwBase = box
+          ? narrow
+            ? box.h / 2 / H
+            : box.w / 2 / W
+          : narrow
+            ? 0.2
+            : 0.17;
+        const hw = lerp(hwBase, 0, K);
+        const soft = narrow ? 0.07 : 0.06;
+        const m = K.toFixed(3);
+        g.addColorStop(0, "rgba(0,0,0,1)");
+        g.addColorStop(clamp01(mid - hw - soft), "rgba(0,0,0,1)");
+        g.addColorStop(clamp01(mid - hw), `rgba(0,0,0,${m})`);
+        g.addColorStop(clamp01(mid + hw), `rgba(0,0,0,${m})`);
+        g.addColorStop(clamp01(mid + hw + soft), "rgba(0,0,0,1)");
+        g.addColorStop(1, "rgba(0,0,0,1)");
+        c.fillStyle = g;
+        c.fillRect(0, 0, W, H);
+        c.restore();
+      }
       // soft ellipse around the logo and headline; opens up as the headline fades
       const a = 1 - K;
       if (box && a > 0.01) {
         c.save();
         c.globalCompositeOperation = "destination-out";
         c.translate(cx, cy);
-        c.scale((box.w / 2) * 1.15, (box.h / 2) * 1.25);
+        c.scale((box.w / 2) * 1.02, (box.h / 2) * 1.1);
         const r = c.createRadialGradient(0, 0, 0, 0, 0, 1);
         r.addColorStop(0, `rgba(0,0,0,${a.toFixed(3)})`);
         r.addColorStop(0.7, `rgba(0,0,0,${a.toFixed(3)})`);
