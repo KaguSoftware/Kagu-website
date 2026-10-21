@@ -65,3 +65,37 @@
 .case-next small { display: block; color: var(--muted); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 12px; }
 .case-next span { display: block; font-family: var(--serif); font-weight: 300; font-size: clamp(40px, 8vw, 96px); line-height: 0.95; letter-spacing: -0.03em; overflow-wrap: anywhere; }
 .case-next:hover span { color: var(--accent-ink); }
+
+/* ---- group title button + "what's inside" popup ---- */
+.work-title { all: unset; cursor: pointer; display: inline-block; border-bottom: 1.5px solid transparent; transition: border-color 0.2s; }
+.work-title:focus-visible { outline: 2px solid var(--accent); outline-offset: 6px; }
+@media (hover: hover) { .work-title:hover { border-bottom-color: var(--ink); } }
+.work-more { all: unset; cursor: pointer; align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--accent-ink); font-size: 15px; }
+.work-more:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 4px; }
+@media (hover: hover) { .work-more:hover { text-decoration: underline; text-underline-offset: 4px; } }
+
+.gd { border: 0; padding: 0; margin: 0; max-width: none; max-height: none; width: 100%; height: 100%; background: transparent; color: var(--ink); overflow: hidden; }
+.gd[open] { display: grid; place-items: center; padding: 24px; }
+.gd::backdrop { background: rgba(27, 34, 43, 0.38); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.gd__card { position: relative; width: min(680px, 100%); max-height: min(86svh, 760px); overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; padding: clamp(28px, 5vw, 48px); background: var(--card); border: 1px solid var(--line); border-radius: 24px; box-shadow: 0 40px 90px -30px rgba(27, 34, 43, 0.4); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.gd[open] .gd__card { animation: gd-in 0.24s cubic-bezier(0.2, 0.8, 0.2, 1); }
+@keyframes gd-in { from { opacity: 0; transform: translateY(14px) scale(0.985); } }
+.gd__x { all: unset; cursor: pointer; position: absolute; top: 14px; right: 14px; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%; color: var(--muted); }
+.gd__x svg { width: 14px; height: 14px; }
+.gd__x:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (hover: hover) { .gd__x:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); color: var(--ink); } }
+.gd__ic { width: 72px; height: auto; display: block; margin-bottom: 18px; }
+.gd__title { margin: 0; font-size: clamp(38px, 6vw, 54px); line-height: 1; }
+.gd .gd__intro { margin: 10px 0 24px; font-family: var(--serif); font-weight: 300; font-size: clamp(21px, 3vw, 26px); color: var(--muted); }
+.gd__list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.gd__list li { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 4px 24px; align-items: baseline; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.gd__name { font-family: var(--serif); font-weight: 300; font-size: 22px; letter-spacing: -0.01em; }
+.gd__text { color: var(--muted); font-size: 15px; }
+.gd .gd__note { margin: 22px 0 24px; font-size: 15px; color: var(--ink); }
+@media (max-width: 640px) {
+  .gd[open] { padding: 0; align-items: end; }
+  .gd__card { width: 100%; max-height: 88svh; border-radius: 24px 24px 0 0; border-bottom: 0; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 28px); }
+  .gd[open] .gd__card { animation-name: gd-up; }
+  .gd__list li { grid-template-columns: 1fr; }
+}
+@keyframes gd-up { from { transform: translateY(40px); opacity: 0; } }

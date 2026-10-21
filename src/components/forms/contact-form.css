@@ -51,37 +51,102 @@
   font-size: 13px;
   color: var(--muted);
 }
-.cf__chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 8px 0 14px;
+/* custom dropdown (SiteSelect): underlined trigger like the inputs, soft card list */
+.cf-select {
+  position: relative;
+  padding-bottom: 12px;
 }
-.cf__chip {
-  min-height: 44px;
-  padding: 0 18px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
+.cf-select__btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  box-sizing: border-box;
+  padding: 10px 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
   background: transparent;
   color: var(--ink);
   font-family: var(--sans);
-  font-size: 15px;
+  font-size: 17px;
+  text-align: left;
   cursor: pointer;
-  transition: background-color 0.2s, color 0.2s, border-color 0.2s, transform 0.15s;
+  transition: border-color 0.2s;
   -webkit-tap-highlight-color: transparent;
 }
 @media (hover: hover) {
-  .cf__chip:hover {
-    border-color: var(--ink);
+  .cf-select__btn:hover {
+    border-bottom-color: var(--ink);
   }
 }
-.cf__chip:active {
-  transform: scale(0.97);
+.cf-select__btn[aria-expanded="true"],
+.cf-select__btn:focus-visible {
+  outline: none;
+  border-bottom-color: var(--ink);
 }
-.cf__chip[aria-pressed="true"] {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--bg);
+.cf-select__btn:focus-visible {
+  box-shadow: 0 1px 0 0 var(--ink);
+}
+.cf-select__val[data-empty="true"] {
+  color: var(--muted);
+}
+.cf-select__chev {
+  flex: none;
+  width: 12px;
+  height: 8px;
+  color: var(--muted);
+  transition: transform 0.2s;
+}
+.cf-select__btn[aria-expanded="true"] .cf-select__chev {
+  transform: rotate(180deg);
+}
+.cf-select__list {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  top: calc(100% - 8px);
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 24px 50px -22px rgba(27, 34, 43, 0.28), 0 6px 16px -8px rgba(27, 34, 43, 0.12);
+  animation: cf-select-in 0.16s ease-out;
+}
+@keyframes cf-select-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+.cf-select__opt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: 9px;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: 21px;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+}
+.cf-select__opt[data-active="true"] {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+.cf-select__tick {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  color: var(--accent);
 }
 .cf__input {
   width: 100%;

@@ -3,7 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getCases } from "@/lib/content";
 import { groups, caseGroup, oneLiner } from "@/lib/productGroups";
-import { GroupIcon } from "@/components/site/work/GroupIcon";
+import { GroupHead } from "@/components/site/work/GroupHead";
 import { pageMetadata } from "@/lib/seo";
 import "@/components/site/work/work.css";
 
@@ -31,16 +31,7 @@ export default async function WorkPage() {
           const items = cases.filter((c) => caseGroup[c.slug] === g.id);
           return (
             <section key={g.id} className="work-group" aria-labelledby={`g-${g.id}`}>
-              <div className="work-ghead">
-                <GroupIcon piece={g.piece} className="work-ic" />
-                <h2 id={`g-${g.id}`}>{g.title}</h2>
-                <p>{g.line}</p>
-                <ul className="work-tags">
-                  {g.tags.map((t) => (
-                    <li key={t}>{t}</li>
-                  ))}
-                </ul>
-              </div>
+              <GroupHead group={g} />
 
               {items.length > 0 ? (
                 <div className="work-projects">

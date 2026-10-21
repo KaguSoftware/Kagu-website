@@ -9,6 +9,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { RIBBON, FOLD, WING, KAGU_VIEWBOX } from "@/components/KaguMark";
+import { SiteSelect } from "./SiteSelect";
 import "./contact-form.css";
 
 type Stage = "default" | "submitting" | "success" | "error";
@@ -101,19 +102,7 @@ export function ContactForm({
           <span className="cf__label" id="cf-type-l">
             What is it?
           </span>
-          <div className="cf__chips" role="group" aria-labelledby="cf-type-l">
-            {TYPES.map((t) => (
-              <button
-                key={t}
-                type="button"
-                className="cf__chip"
-                aria-pressed={type === t}
-                onClick={() => setType(type === t ? null : t)}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
+          <SiteSelect options={TYPES} value={type} onChange={setType} labelledBy="cf-type-l" />
         </div>
         <Field id="cf-name" name="name" label="Name" autoComplete="name" error={errors.name} />
         <Field
