@@ -71,9 +71,7 @@ export default async function ToolsPage() {
           <ToolTile key={tool.href} tool={tool} index={i} />
         ))}
       </div>
-      <p className="font-mono text-xs uppercase tracking-[0.18em] text-slate-ink/60">
-        More tools land here as we build them.
-      </p>
+      <p className="text-xs text-[var(--muted)]">More tools land here as we build them.</p>
     </div>
   );
 }

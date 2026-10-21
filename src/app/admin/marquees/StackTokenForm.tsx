@@ -1,5 +1,5 @@
-import { Field, Select, ButtonLink } from "../_components/ui";
-import { SubmitButton } from "../_components/SubmitButton";
+import { Field, Select, NumberField } from "../_components/ui";
+import { FormShell } from "../_cms/cms";
 import type { Tables } from "@/lib/supabase/database.types";
 
 const PLACEMENTS = [
@@ -17,7 +17,11 @@ export function StackTokenForm({
   defaultPlacement?: string;
 }) {
   return (
-    <form action={action} className="max-w-xl space-y-6">
+    <FormShell
+      action={action}
+      cancelHref="/admin/marquees"
+      submitLabel={token ? "Save changes" : "Add item"}
+    >
       {token ? <input type="hidden" name="id" value={token.id} /> : null}
       <Field label="Label" name="label" defaultValue={token?.label} required />
       <Select
@@ -34,16 +38,7 @@ export function StackTokenForm({
         placeholder="https://…"
         hint="Hero marquee items may link out."
       />
-      <Field
-        label="Sort order"
-        name="sort_order"
-        type="number"
-        defaultValue={token?.sort_order ?? 0}
-      />
-      <div className="flex items-center gap-4 pt-2">
-        <SubmitButton>{token ? "Save changes" : "Add item"}</SubmitButton>
-        <ButtonLink href="/admin/marquees">Cancel</ButtonLink>
-      </div>
-    </form>
+      <NumberField label="Sort order" name="sort_order" defaultValue={token?.sort_order ?? 0} />
+    </FormShell>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CustomSelect } from "../_components/ui";
 
 type Feature = {
   image: string;
@@ -9,6 +10,12 @@ type Feature = {
   alt: string;
   device: "desktop" | "mobile" | null;
 };
+
+const DEVICE_OPTIONS = [
+  { value: "", label: "Device: inherit" },
+  { value: "desktop", label: "Desktop" },
+  { value: "mobile", label: "Mobile" },
+];
 
 export function FeatureEditor({
   defaultValue = [],
@@ -33,18 +40,17 @@ export function FeatureEditor({
       <input type="hidden" name="features" value={JSON.stringify(features)} />
       <span className="eyebrow mb-3 block">Case features</span>
 
-      <div className="space-y-5">
+      <div className="space-y-4">
         {features.map((f, i) => (
-          <div key={i} className="border border-neutral p-4">
+          <div
+            key={i}
+            className="kagu-field rounded-[var(--radius-ctl)] border border-[var(--line)] bg-[var(--card)] p-5"
+          >
             <div className="flex items-center justify-between">
-              <span className="font-mono text-xs text-neutral">
+              <span className="text-xs tabular-nums text-[var(--muted)]">
                 Feature {String(i + 1).padStart(2, "0")}
               </span>
-              <button
-                type="button"
-                onClick={() => remove(i)}
-                className="text-xs font-mono uppercase tracking-[0.18em] text-slate-ink hover:text-ink"
-              >
+              <button type="button" onClick={() => remove(i)} className="adm-btn adm-btn--text">
                 Remove
               </button>
             </div>
@@ -53,46 +59,43 @@ export function FeatureEditor({
                 value={f.title}
                 onChange={(e) => update(i, "title", e.target.value)}
                 placeholder="Title"
-                className="w-full border-0 border-b border-neutral bg-transparent py-1.5 text-base text-ink outline-none focus-visible:border-mint-deep"
+                aria-label="Feature title"
+                className="w-full"
               />
               <input
                 value={f.image}
                 onChange={(e) => update(i, "image", e.target.value)}
                 placeholder="Image URL (/cases/… or https://…)"
-                className="w-full border-0 border-b border-neutral bg-transparent py-1.5 text-sm text-ink outline-none focus-visible:border-mint-deep"
+                aria-label="Feature image URL"
+                className="w-full"
               />
               <textarea
                 value={f.description}
                 onChange={(e) => update(i, "description", e.target.value)}
                 placeholder="Description"
+                aria-label="Feature description"
                 rows={2}
-                className="w-full resize-y border border-neutral bg-transparent p-2 text-sm text-ink outline-none focus-visible:border-mint-deep"
+                className="w-full resize-y"
               />
               <input
                 value={f.alt}
                 onChange={(e) => update(i, "alt", e.target.value)}
                 placeholder="Alt text — what the screenshot shows (falls back to the title)"
-                className="w-full border-0 border-b border-neutral bg-transparent py-1.5 text-sm text-ink outline-none focus-visible:border-mint-deep"
+                aria-label="Feature alt text"
+                className="w-full"
               />
-              <select
+              <CustomSelect
                 value={f.device ?? ""}
-                onChange={(e) => update(i, "device", e.target.value)}
-                className="border border-neutral bg-paper px-2 py-1.5 text-sm text-ink outline-none focus-visible:border-mint-deep"
-              >
-                <option value="">Device: inherit</option>
-                <option value="desktop">Desktop</option>
-                <option value="mobile">Mobile</option>
-              </select>
+                onChange={(v) => update(i, "device", v)}
+                options={DEVICE_OPTIONS}
+                aria-label="Feature device"
+              />
             </div>
           </div>
         ))}
       </div>
 
-      <button
-        type="button"
-        onClick={add}
-        className="mt-4 text-xs font-mono uppercase tracking-[0.18em] text-slate-ink transition-colors hover:text-mint-deep"
-      >
+      <button type="button" onClick={add} className="adm-btn adm-btn--ghost mt-4">
         + Add feature
       </button>
     </div>

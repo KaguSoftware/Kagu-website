@@ -81,14 +81,14 @@ export const JOB_STATUS_LABELS: Record<JobStatus, string> = {
   cancelled: "Cancelled",
 };
 
-/* Badge classes per job status (dark theme: paper bg, ink text). */
+/* Pill tone modifiers (used with the base `ld-pill` class, see leads.css). */
 export const JOB_STATUS_CLASSES: Record<JobStatus, string> = {
-  pending: "border-neutral text-slate-ink",
-  running: "border-mint-deep text-mint-deep",
-  done: "border-[#3fb27f] text-[#3fb27f]",
-  failed: "border-[#e5594e] text-[#e5594e]",
-  cancel_requested: "border-[#d9a13b] text-[#d9a13b]",
-  cancelled: "border-neutral text-slate-ink",
+  pending: "ld-pill--neutral",
+  running: "ld-pill--info",
+  done: "ld-pill--ok",
+  failed: "ld-pill--bad",
+  cancel_requested: "ld-pill--warn",
+  cancelled: "ld-pill--neutral",
 };
 
 export const PIPELINE_STATUS_LABELS: Record<PipelineStatus, string> = {
@@ -103,14 +103,14 @@ export const PIPELINE_STATUS_LABELS: Record<PipelineStatus, string> = {
 };
 
 export const PIPELINE_STATUS_CLASSES: Record<PipelineStatus, string> = {
-  new: "border-neutral text-slate-ink",
-  queued: "border-mint-deep text-mint-deep",
-  contacted: "border-[#d9a13b] text-[#d9a13b]",
-  replied: "border-[#3fb27f] text-[#3fb27f]",
-  meeting: "border-[#3fb27f] text-[#3fb27f]",
-  won: "border-[#3fb27f] bg-[#3fb27f]/10 text-[#3fb27f]",
-  lost: "border-[#e5594e] text-[#e5594e]",
-  do_not_contact: "border-[#e5594e] text-[#e5594e]",
+  new: "ld-pill--neutral",
+  queued: "ld-pill--info",
+  contacted: "ld-pill--warn",
+  replied: "ld-pill--ok",
+  meeting: "ld-pill--ok",
+  won: "ld-pill--ok",
+  lost: "ld-pill--bad",
+  do_not_contact: "ld-pill--bad",
 };
 
 export const MESSAGE_STATUS_LABELS: Record<MessageStatus, string> = {
@@ -121,10 +121,10 @@ export const MESSAGE_STATUS_LABELS: Record<MessageStatus, string> = {
 };
 
 export const MESSAGE_STATUS_CLASSES: Record<MessageStatus, string> = {
-  draft: "border-neutral text-slate-ink",
-  approved: "border-[#3fb27f] text-[#3fb27f]",
-  rejected: "border-[#e5594e] text-[#e5594e]",
-  sent: "border-mint-deep text-mint-deep",
+  draft: "ld-pill--neutral",
+  approved: "ld-pill--ok",
+  rejected: "ld-pill--bad",
+  sent: "ld-pill--info",
 };
 
 export const AUDIT_FLAG_LABELS: Record<AuditFlag, string> = {
@@ -152,24 +152,31 @@ export const LEADS_PAGE_SIZE = 50;
 /* Search-intent badge styling (Groq labels keywords with these). Unknown /
    free-text intents fall back to the neutral style. */
 export const SEO_INTENT_CLASSES: Record<string, string> = {
-  informational: "border-neutral text-slate-ink",
-  commercial: "border-mint-deep text-mint-deep",
-  transactional: "border-[#3fb27f] text-[#3fb27f]",
-  navigational: "border-[#d9a13b] text-[#d9a13b]",
+  informational: "ld-pill--neutral",
+  commercial: "ld-pill--info",
+  transactional: "ld-pill--ok",
+  navigational: "ld-pill--warn",
 };
 
 /* Finding-severity badge styling for the embedded audit report. */
 export const SEO_AUDIT_SEVERITY_CLASSES: Record<string, string> = {
-  error: "border-[#e5594e] text-[#e5594e]",
-  warn: "border-[#d9a13b] text-[#d9a13b]",
-  info: "border-neutral text-slate-ink",
+  error: "ld-pill--bad",
+  warn: "ld-pill--warn",
+  info: "ld-pill--neutral",
 };
 
 /* Score → tone, shared by the jobs table and the report page. */
 export function seoAuditScoreClass(score: number): string {
-  if (score >= 90) return "text-[#3fb27f]";
-  if (score >= 70) return "text-[#d9a13b]";
-  return "text-[#e5594e]";
+  if (score >= 90) return "ld-t-ok";
+  if (score >= 70) return "ld-t-warn";
+  return "ld-t-bad";
+}
+
+/* Same thresholds as a tone name (ProgressBar / ld-meter fill). */
+export function seoAuditScoreTone(score: number): "ok" | "warn" | "bad" {
+  if (score >= 90) return "ok";
+  if (score >= 70) return "warn";
+  return "bad";
 }
 
 /* ------------------------------------------------------------------------ */
@@ -195,7 +202,7 @@ export const SEO_STRATEGY_AUDIT_OPTIONS: Array<{ value: number; label: string }>
 /* Winnability badge styling (graded against the current SERP, assuming a
    low-authority domain). */
 export const SEO_STRATEGY_WINNABILITY_CLASSES: Record<string, string> = {
-  easy: "border-[#3fb27f] text-[#3fb27f]",
-  medium: "border-[#d9a13b] text-[#d9a13b]",
-  hard: "border-[#e5594e] text-[#e5594e]",
+  easy: "ld-pill--ok",
+  medium: "ld-pill--warn",
+  hard: "ld-pill--bad",
 };

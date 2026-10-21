@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { Card, Eyebrow } from "../_components/ui";
+import { Eyebrow } from "../_components/ui";
 import { JobsLive } from "./_components/JobsLive";
 
 export const metadata = { title: "Leads overview" };
@@ -56,13 +56,11 @@ export default async function LeadsOverviewPage() {
 
   return (
     <div className="flex flex-col gap-10">
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+      <div className="ld-stats">
         {stats.map((stat) => (
-          <Link key={stat.label} href={stat.href}>
-            <Card className="transition-colors hover:border-mint-deep">
-              <Eyebrow>{stat.label}</Eyebrow>
-              <p className="display mt-2 text-3xl text-ink">{stat.value}</p>
-            </Card>
+          <Link key={stat.label} href={stat.href} className="ld-stat">
+            <Eyebrow>{stat.label}</Eyebrow>
+            <p className="ld-stat__v">{stat.value.toLocaleString("en-US")}</p>
           </Link>
         ))}
       </div>
@@ -72,7 +70,7 @@ export default async function LeadsOverviewPage() {
           <Eyebrow>Recent jobs</Eyebrow>
           <Link
             href="/admin/leads/jobs"
-            className="text-xs font-mono uppercase tracking-[0.18em] text-slate-ink underline-offset-4 hover:text-ink hover:underline"
+            className="ld-act"
           >
             All jobs →
           </Link>

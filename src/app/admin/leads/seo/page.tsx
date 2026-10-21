@@ -48,35 +48,35 @@ const rankLabel = (r: number | null) => (r === null ? "—" : `#${r}`);
 function Delta({ snaps }: { snaps: TrackedKeyword["seo_rank_snapshots"] }) {
   const [latest] = snaps;
   const previous = snaps.slice(1).find((s) => (s.source ?? "serp") === (latest?.source ?? "serp"));
-  if (!latest || !previous) return <span className="text-slate-ink">—</span>;
+  if (!latest || !previous) return <span className="ld-t-muted">—</span>;
   if (latest.rank === null && previous.rank === null)
-    return <span className="text-slate-ink">—</span>;
+    return <span className="ld-t-muted">—</span>;
   if (latest.rank !== null && previous.rank === null)
-    return <span className="font-mono text-[#3fb27f]">▲ entered</span>;
+    return <span className="ld-t-ok">▲ entered</span>;
   if (latest.rank === null && previous.rank !== null)
-    return <span className="font-mono text-[#e5594e]">▼ dropped out</span>;
+    return <span className="ld-t-bad">▼ dropped out</span>;
   const diff = (previous.rank as number) - (latest.rank as number);
-  if (diff > 0) return <span className="font-mono text-[#3fb27f]">▲ {diff}</span>;
-  if (diff < 0) return <span className="font-mono text-[#e5594e]">▼ {-diff}</span>;
-  return <span className="text-slate-ink">=</span>;
+  if (diff > 0) return <span className="ld-t-ok">▲ {diff}</span>;
+  if (diff < 0) return <span className="ld-t-bad">▼ {-diff}</span>;
+  return <span className="ld-t-muted">=</span>;
 }
 
 /* Movement between the two latest performance scores — higher = better,
    unlike ranks. */
 function ScoreDelta({ latest, previous }: { latest?: number | null; previous?: number | null }) {
   if (typeof latest !== "number" || typeof previous !== "number")
-    return <span className="text-slate-ink">—</span>;
+    return <span className="ld-t-muted">—</span>;
   const diff = latest - previous;
-  if (diff > 0) return <span className="font-mono text-[#3fb27f]">▲ {diff}</span>;
-  if (diff < 0) return <span className="font-mono text-[#e5594e]">▼ {-diff}</span>;
-  return <span className="text-slate-ink">=</span>;
+  if (diff > 0) return <span className="ld-t-ok">▲ {diff}</span>;
+  if (diff < 0) return <span className="ld-t-bad">▼ {-diff}</span>;
+  return <span className="ld-t-muted">=</span>;
 }
 
 /* Score trend, oldest → newest: line in the de-emphasis ink, latest point in
    the accent. The numbers beside it carry the values — the sparkline only
    carries the shape. */
 function Sparkline({ values }: { values: number[] }) {
-  if (values.length < 2) return <span className="text-xs text-slate-ink">—</span>;
+  if (values.length < 2) return <span className="ld-small">—</span>;
   const w = 110;
   const h = 26;
   const padY = 3;
@@ -111,16 +111,11 @@ function Sparkline({ values }: { values: number[] }) {
 /* Field p75 with Google's grading — value always printed, color is only the
    secondary channel. */
 function FieldValue({ ms, good, poor }: { ms: number | null; good: number; poor: number }) {
-  if (typeof ms !== "number") return <span className="text-slate-ink">—</span>;
-  const color = ms <= good ? "#3fb27f" : ms <= poor ? "#d9a13d" : "#e5594e";
+  if (typeof ms !== "number") return <span className="ld-t-muted">—</span>;
+  const tone = ms <= good ? "ld-pill--ok" : ms <= poor ? "ld-pill--warn" : "ld-pill--bad";
   const display = ms >= 1000 ? `${(ms / 1000).toFixed(2)}s` : `${Math.round(ms)}ms`;
   return (
-    <span className="font-mono text-ink">
-      <span aria-hidden style={{ color }}>
-        ●{" "}
-      </span>
-      {display}
-    </span>
+    <span className={`ld-pill ${tone}`}>{display}</span>
   );
 }
 
@@ -212,9 +207,9 @@ export default async function SeoPage() {
         <div className="flex flex-wrap items-center justify-between gap-4 pb-6">
           <div>
             <Eyebrow>SEO</Eyebrow>
-            <p className="mt-2 max-w-prose text-sm text-slate-ink">
+            <p className="ld-sub mt-2">
               The whole funnel in one job: the worker (see{" "}
-              <code className="text-ink">worker/</code>) reads the site,
+              <code>worker/</code>) reads the site,
               understands the business, checks real searches against the live
               SERP plus autocomplete demand (and Search Console when connected),
               maps the market, grades each keyword&apos;s winnability, runs the
@@ -232,15 +227,15 @@ export default async function SeoPage() {
       <div>
         <Eyebrow>Rank tracking ({tracked.length} keywords)</Eyebrow>
         {trackedError ? (
-          <p className="mt-3 max-w-prose text-xs leading-relaxed text-slate-ink">
+          <p className="ld-small mt-3 max-w-prose">
             Not set up yet — run{" "}
-            <code className="text-ink">supabase/seo_rank_module.sql</code> once
+            <code>supabase/seo_rank_module.sql</code> once
             in the Supabase SQL editor. After that, every finished strategy
             seeds its head and cluster keywords here and the worker re-checks
             them weekly, Search Console first with the live SERP as fallback.
           </p>
         ) : tracked.length === 0 ? (
-          <p className="mt-3 max-w-prose text-xs leading-relaxed text-slate-ink">
+          <p className="ld-small mt-3 max-w-prose">
             No tracked keywords yet — head and cluster keywords are seeded
             automatically when a strategy job finishes, then tracked weekly
             (Search Console first, live SERP as fallback).
@@ -248,22 +243,22 @@ export default async function SeoPage() {
         ) : (
           <>
           {rankLegacy ? (
-            <p className="mt-3 max-w-prose text-xs leading-relaxed text-slate-ink">
+            <p className="ld-small mt-3 max-w-prose">
               Re-run{" "}
-              <code className="text-ink">supabase/seo_rank_module.sql</code> to
+              <code>supabase/seo_rank_module.sql</code> to
               enable GSC-first tracking and cluster keywords.
             </p>
           ) : null}
-          <div className="mt-3 overflow-x-auto border border-neutral">
-            <table className="w-full text-left text-sm">
+          <div className="ld-wrap mt-3">
+            <table className="ld-table">
               <thead>
-                <tr className="border-b border-neutral">
-                  <th className="eyebrow px-4 py-3 font-normal">Keyword</th>
-                  <th className="eyebrow px-4 py-3 font-normal">Site</th>
-                  <th className="eyebrow px-4 py-3 font-normal">Position</th>
-                  <th className="eyebrow px-4 py-3 font-normal">Change</th>
-                  <th className="eyebrow px-4 py-3 font-normal">History</th>
-                  <th className="eyebrow px-4 py-3 font-normal">Checked</th>
+                <tr>
+                  <th>Keyword</th>
+                  <th>Site</th>
+                  <th>Position</th>
+                  <th>Change</th>
+                  <th>History</th>
+                  <th>Checked</th>
                 </tr>
               </thead>
               <tbody>
@@ -272,29 +267,27 @@ export default async function SeoPage() {
                   const isCluster = t.kind === "cluster";
                   const source = latest?.source ?? "serp";
                   return (
-                    <tr key={t.id} className="border-b border-neutral last:border-0">
-                      <td className={`py-3 pr-4 text-ink ${isCluster ? "pl-8" : "pl-4"}`}>
+                    <tr key={t.id}>
+                      <td style={isCluster ? { paddingLeft: 36 } : undefined}>
                         {t.keyword}
-                        <span className="ml-2 text-xs text-slate-ink">{t.language}</span>
+                        <span className="ld-small ml-2">{t.language}</span>
                         {isCluster ? (
-                          <span className="ml-2 text-[10px] font-mono uppercase tracking-[0.14em] text-slate-ink">
-                            cluster
-                          </span>
+                          <span className="ld-tag ld-tag--quiet ml-2">cluster</span>
                         ) : null}
                       </td>
-                      <td className="px-4 py-3 text-xs text-slate-ink">{t.host}</td>
-                      <td className="px-4 py-3">
+                      <td className="ld-small">{t.host}</td>
+                      <td>
                         {latest ? (
                           <span
-                            className={`font-mono ${latest.rank !== null ? "text-ink" : "text-slate-ink"}`}
+                            className={latest.rank !== null ? "font-medium text-ink" : "ld-t-muted"}
                           >
                             {rankLabel(latest.rank)}
                             {source === "gsc" && typeof latest.position === "number" ? (
-                              <span className="ml-1 text-xs text-slate-ink">
+                              <span className="ld-small ml-1">
                                 ({Number(latest.position).toFixed(1)})
                               </span>
                             ) : null}
-                            <span className="ml-2 text-[10px] uppercase tracking-[0.14em] text-slate-ink">
+                            <span className="ld-lbl ml-2">
                               {source === "gsc" ? "GSC" : "SERP"}
                               {source === "gsc" && typeof latest.impressions === "number"
                                 ? ` · ${latest.impressions} impr`
@@ -302,20 +295,20 @@ export default async function SeoPage() {
                             </span>
                           </span>
                         ) : (
-                          <span className="text-xs text-slate-ink">first check pending</span>
+                          <span className="ld-small">first check pending</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-xs">
+                      <td>
                         <Delta snaps={t.seo_rank_snapshots} />
                       </td>
-                      <td className="px-4 py-3 font-mono text-xs text-slate-ink">
+                      <td className="ld-small">
                         {t.seo_rank_snapshots
                           .slice()
                           .reverse()
                           .map((s) => rankLabel(s.rank))
                           .join(" → ") || "—"}
                       </td>
-                      <td className="px-4 py-3 text-xs text-slate-ink">
+                      <td className="ld-small ld-w">
                         {latest
                           ? new Date(latest.checked_at).toLocaleDateString("en-GB")
                           : "—"}
@@ -335,33 +328,33 @@ export default async function SeoPage() {
       <div>
         <Eyebrow>Speed history ({speedRows.length} tracked)</Eyebrow>
         {speedError ? (
-          <p className="mt-3 max-w-prose text-xs leading-relaxed text-slate-ink">
+          <p className="ld-small mt-3 max-w-prose">
             Not set up yet — run{" "}
-            <code className="text-ink">supabase/seo_speed_module.sql</code> once
+            <code>supabase/seo_speed_module.sql</code> once
             in the Supabase SQL editor. After that, every{" "}
-            <code className="text-ink">npm run seo:speed</code> run snapshots its
+            <code>npm run seo:speed</code> run snapshots its
             medians here and the worker re-checks tracked URLs weekly.
           </p>
         ) : speedRows.length === 0 ? (
-          <p className="mt-3 max-w-prose text-xs leading-relaxed text-slate-ink">
+          <p className="ld-small mt-3 max-w-prose">
             No speed snapshots yet — run{" "}
-            <code className="text-ink">npm run seo:speed -- kagusoftware.com</code>{" "}
-            once (or <code className="text-ink">--field-only</code> to backfill
+            <code>npm run seo:speed -- kagusoftware.com</code>{" "}
+            once (or <code>--field-only</code> to backfill
             ~40 weeks of real-user history) and the worker keeps it fresh weekly.
           </p>
         ) : (
-          <div className="mt-3 overflow-x-auto border border-neutral">
-            <table className="w-full text-left text-sm">
+          <div className="ld-wrap mt-3">
+            <table className="ld-table">
               <thead>
-                <tr className="border-b border-neutral">
-                  <th className="eyebrow px-4 py-3 font-normal">Page</th>
-                  <th className="eyebrow px-4 py-3 font-normal">Device</th>
-                  <th className="eyebrow px-4 py-3 font-normal">Perf</th>
-                  <th className="eyebrow px-4 py-3 font-normal">Change</th>
-                  <th className="eyebrow px-4 py-3 font-normal">Trend</th>
-                  <th className="eyebrow px-4 py-3 font-normal">Field LCP</th>
-                  <th className="eyebrow px-4 py-3 font-normal">Field INP</th>
-                  <th className="eyebrow px-4 py-3 font-normal">Checked</th>
+                <tr>
+                  <th>Page</th>
+                  <th>Device</th>
+                  <th>Perf</th>
+                  <th>Change</th>
+                  <th>Trend</th>
+                  <th>Field LCP</th>
+                  <th>Field INP</th>
+                  <th>Checked</th>
                 </tr>
               </thead>
               <tbody>
@@ -375,36 +368,36 @@ export default async function SeoPage() {
                     .reverse();
                   const checked = latest ?? r.field;
                   return (
-                    <tr key={r.key} className="border-b border-neutral last:border-0">
-                      <td className="px-4 py-3 text-xs text-slate-ink">
+                    <tr key={r.key}>
+                      <td className="ld-small">
                         {r.url.replace(/^https?:\/\/(www\.)?/, "")}
                       </td>
-                      <td className="px-4 py-3 text-xs text-slate-ink">{r.strategy}</td>
-                      <td className="px-4 py-3">
+                      <td className="ld-small">{r.strategy}</td>
+                      <td>
                         {latest ? (
-                          <span className="font-mono text-ink">
+                          <span className="font-medium text-ink">
                             {latest.score}
                             {latest.regression && (
-                              <span className="ml-2 text-xs text-[#e5594e]">▼ regression</span>
+                              <span className="ld-pill ld-pill--bad ml-2">regression</span>
                             )}
                           </span>
                         ) : (
-                          <span className="text-xs text-slate-ink">field only</span>
+                          <span className="ld-small">field only</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-xs">
+                      <td>
                         <ScoreDelta latest={latest?.score} previous={previous?.score} />
                       </td>
-                      <td className="px-4 py-3">
+                      <td>
                         <Sparkline values={series} />
                       </td>
-                      <td className="px-4 py-3 text-xs">
+                      <td>
                         <FieldValue ms={r.field?.lcp_ms ?? null} good={2500} poor={4000} />
                       </td>
-                      <td className="px-4 py-3 text-xs">
+                      <td>
                         <FieldValue ms={r.field?.inp_ms ?? null} good={200} poor={500} />
                       </td>
-                      <td className="px-4 py-3 text-xs text-slate-ink">
+                      <td className="ld-small ld-w">
                         {checked
                           ? new Date(checked.checked_at).toLocaleDateString("en-GB")
                           : "—"}

@@ -15,7 +15,7 @@ export function LeadsTabs() {
   const pathname = usePathname();
 
   return (
-    <nav className="mt-6 flex flex-wrap gap-1 border-b border-neutral">
+    <nav className="ld-tabs" aria-label="Leads sections">
       {TABS.map((tab) => {
         const active = tab.exact
           ? pathname === tab.href
@@ -25,11 +25,7 @@ export function LeadsTabs() {
             key={tab.href}
             href={tab.href}
             aria-current={active ? "page" : undefined}
-            className={`-mb-px border-b-2 px-4 py-2 text-xs font-mono uppercase tracking-[0.18em] transition-colors ${
-              active
-                ? "border-mint-deep text-ink"
-                : "border-transparent text-slate-ink hover:text-ink"
-            }`}
+            className="ld-tab"
           >
             {tab.label}
           </Link>

@@ -7,6 +7,7 @@ import { JobStatusBadge } from "../../_components/JobStatusBadge";
 import { AuditReportView } from "../../_components/AuditReportView";
 import { CopyPromptButton } from "../../_components/CopyPromptButton";
 import { RerunStrategyButton } from "../../_components/RerunStrategyButton";
+import { Disclosure } from "../../_components/Disclosure";
 import { VerifyPagesButton } from "../../_components/VerifyPagesButton";
 import {
   SEO_INTENT_CLASSES,
@@ -33,11 +34,7 @@ const displayUrl = (url: string) =>
 
 function Badge({ label, classes }: { label: string; classes: string }) {
   return (
-    <span
-      className={`inline-block border px-2 py-0.5 text-[10px] font-mono uppercase tracking-[0.14em] ${classes}`}
-    >
-      {label}
-    </span>
+    <span className={`ld-pill ${classes}`}>{label}</span>
   );
 }
 
@@ -45,17 +42,17 @@ function Badge({ label, classes }: { label: string; classes: string }) {
    prompt so the on-screen report and the pasted brief cross-reference. */
 function SectionHeading({ index, children }: { index: string; children: React.ReactNode }) {
   return (
-    <Eyebrow>
-      <span className="text-mint-deep">{index}</span>
-      <span className="ml-3">{children}</span>
-    </Eyebrow>
+    <h2 className="ld-sec">
+      <span className="ld-sec__n">{index}</span>
+      <span>{children}</span>
+    </h2>
   );
 }
 
 function Stat({
   label,
   value,
-  tone = "text-ink",
+  tone = "ld-t-ink",
 }: {
   label: string;
   value: string | number;
@@ -63,10 +60,8 @@ function Stat({
 }) {
   return (
     <div>
-      <dt className="text-[10px] font-mono uppercase tracking-[0.14em] text-slate-ink">
-        {label}
-      </dt>
-      <dd className={`mt-1 font-mono text-sm ${tone}`}>{value}</dd>
+      <dt>{label}</dt>
+      <dd className={tone}>{value}</dd>
     </div>
   );
 }
@@ -81,51 +76,51 @@ function PageCard({
   check?: { ok: boolean; status: number | null };
 }) {
   return (
-    <div className="border border-neutral p-5">
+    <div className="ld-card">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="font-mono text-xs text-slate-ink">4.{index + 1}</span>
+        <span className="ld-small ld-num">4.{index + 1}</span>
         <Badge
           label={page.action}
           classes={
             page.action === "create"
-              ? "border-mint-deep text-mint-deep"
-              : "border-[#d9a13b] text-[#d9a13b]"
+              ? "ld-pill--info"
+              : "ld-pill--warn"
           }
         />
-        <span className="font-mono text-sm text-ink">{page.slug}</span>
+        <span className="ld-code text-ink">{page.slug}</span>
         <Badge
           label={page.intent}
-          classes={SEO_INTENT_CLASSES[page.intent] ?? "border-neutral text-slate-ink"}
+          classes={SEO_INTENT_CLASSES[page.intent] ?? "ld-pill--neutral"}
         />
         {check ? (
           <Badge
             label={check.ok ? "live" : check.status ? `missing (${check.status})` : "unreachable"}
-            classes={check.ok ? "border-[#3fb27f] text-[#3fb27f]" : "border-[#e5594e] text-[#e5594e]"}
+            classes={check.ok ? "ld-pill--ok" : "ld-pill--bad"}
           />
         ) : null}
-        <span className="ml-auto text-xs text-slate-ink">
+        <span className="ld-small ml-auto">
           {page.pageType} · {page.language}
         </span>
       </div>
 
-      <h3 className="mt-4 text-base text-ink">{page.headKeyword}</h3>
+      <h3 className="mt-4 font-[family-name:var(--sans)] text-[17px] font-medium tracking-normal text-ink">{page.headKeyword}</h3>
 
       {(page.title || page.metaDescription) && (
         <dl className="mt-2 flex flex-col gap-1">
           {page.title ? (
-            <div className="flex gap-2 text-xs">
-              <dt className="shrink-0 font-mono uppercase tracking-[0.14em] text-slate-ink">
+            <div className="flex gap-3 text-[13px]">
+              <dt className="ld-lbl shrink-0">
                 Title
               </dt>
-              <dd className="text-slate-ink">{page.title}</dd>
+              <dd className="ld-t-muted">{page.title}</dd>
             </div>
           ) : null}
           {page.metaDescription ? (
-            <div className="flex gap-2 text-xs">
-              <dt className="shrink-0 font-mono uppercase tracking-[0.14em] text-slate-ink">
+            <div className="flex gap-3 text-[13px]">
+              <dt className="ld-lbl shrink-0">
                 Meta
               </dt>
-              <dd className="max-w-prose text-slate-ink">{page.metaDescription}</dd>
+              <dd className="ld-t-muted max-w-prose">{page.metaDescription}</dd>
             </div>
           ) : null}
         </dl>
@@ -133,15 +128,12 @@ function PageCard({
 
       {page.tailQueries.length > 0 && (
         <div className="mt-4">
-          <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-slate-ink">
+          <span className="ld-lbl">
             Cluster queries
           </span>
-          <ul className="mt-1.5 flex flex-wrap gap-1.5">
+          <ul className="ld-chips mt-2">
             {page.tailQueries.map((q) => (
-              <li
-                key={q}
-                className="border border-neutral px-2 py-0.5 text-xs text-ink"
-              >
+              <li key={q} className="ld-tag">
                 {q}
               </li>
             ))}
@@ -150,23 +142,23 @@ function PageCard({
       )}
 
       {page.entities.length > 0 && (
-        <p className="mt-3 max-w-prose text-xs leading-relaxed text-slate-ink">
-          <span className="font-mono uppercase tracking-[0.14em]">Cover · </span>
+        <p className="ld-small mt-3 max-w-prose">
+          <span className="ld-inline-lbl">Cover · </span>
           {page.entities.join("; ")}
         </p>
       )}
 
       {page.faq.length > 0 && (
-        <div className="mt-4 border-t border-neutral pt-3">
-          <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-slate-ink">
+        <div className="mt-5 border-t pt-4" style={{ borderColor: "var(--line)" }}>
+          <span className="ld-lbl">
             FAQ
           </span>
-          <ul className="mt-1.5 flex flex-col gap-1.5">
+          <ul className="mt-2 flex flex-col gap-2">
             {page.faq.map((f) => (
-              <li key={f.question} className="text-xs leading-relaxed">
+              <li key={f.question} className="text-[13px] leading-relaxed">
                 <span className="text-ink">{f.question}</span>
                 {f.answerGuidance ? (
-                  <span className="text-slate-ink"> — {f.answerGuidance}</span>
+                  <span className="ld-t-muted"> — {f.answerGuidance}</span>
                 ) : null}
               </li>
             ))}
@@ -177,9 +169,9 @@ function PageCard({
   );
 }
 
-const GOOD = "border-[#3fb27f] text-[#3fb27f]";
-const BAD = "border-[#e5594e] text-[#e5594e]";
-const NEUTRAL = "border-neutral text-slate-ink";
+const GOOD = "ld-pill--ok";
+const BAD = "ld-pill--bad";
+const NEUTRAL = "ld-pill--neutral";
 
 /* true = green, false = red, null = neutral "—". */
 function TriBadge({
@@ -205,15 +197,15 @@ function PositionCell({
   latest: number | null;
   previous: number | null;
 }) {
-  if (latest === null) return <span className="text-xs text-slate-ink">—</span>;
+  if (latest === null) return <span className="ld-small">—</span>;
   const diff = previous === null ? 0 : previous - latest;
   return (
-    <span className="font-mono text-xs text-ink">
+    <span className="ld-num text-xs font-medium text-ink">
       #{latest.toFixed(1)}
       {diff >= 0.05 ? (
-        <span className="ml-2 text-[#3fb27f]">▲ {diff.toFixed(1)}</span>
+        <span className="ml-2 ld-t-ok">▲ {diff.toFixed(1)}</span>
       ) : diff <= -0.05 ? (
-        <span className="ml-2 text-[#e5594e]">▼ {(-diff).toFixed(1)}</span>
+        <span className="ml-2 ld-t-bad">▼ {(-diff).toFixed(1)}</span>
       ) : null}
     </span>
   );
@@ -273,26 +265,26 @@ export default async function SeoJobDetailPage({
   const lastCheckedAt = checks[0]?.checked_at ?? null;
 
   return (
-    <div className="flex flex-col gap-12">
+    <div className="flex flex-col gap-14">
       <div>
         <Link
           href="/admin/leads/seo"
-          className="text-xs font-mono uppercase tracking-[0.18em] text-slate-ink underline-offset-4 hover:text-ink hover:underline"
+          className="ld-back"
         >
           ← All SEO runs
         </Link>
-        <div className="mt-3 flex flex-wrap items-center gap-3">
-          <h2 className="display text-2xl text-ink">{displayUrl(job.url)}</h2>
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-3">
+          <h2 className="ld-title">{displayUrl(job.url)}</h2>
           <JobStatusBadge status={job.status} />
           {job.status !== "pending" && job.status !== "running" ? (
             <RerunStrategyButton jobId={job.id} />
           ) : null}
         </div>
         {job.error ? (
-          <p className="mt-3 max-w-prose text-xs text-[#e5594e]">{job.error}</p>
+          <p className="ld-small ld-t-bad mt-3 max-w-prose">{job.error}</p>
         ) : null}
         {report ? (
-          <dl className="mt-5 flex flex-wrap gap-x-10 gap-y-3">
+          <dl className="ld-kv ld-kv--hero mt-6">
             <Stat label="Pages planned" value={job.pages_planned} />
             <Stat label="Verified demand" value={job.demand_queries} />
             <Stat
@@ -301,7 +293,7 @@ export default async function SeoJobDetailPage({
               tone={
                 job.audit_score !== null
                   ? seoAuditScoreClass(job.audit_score)
-                  : "text-slate-ink"
+                  : "ld-t-muted"
               }
             />
             <Stat
@@ -311,7 +303,7 @@ export default async function SeoJobDetailPage({
                   ? new Date(job.finished_at).toLocaleString("en-GB")
                   : "—"
               }
-              tone="text-slate-ink"
+              tone="ld-t-muted"
             />
           </dl>
         ) : null}
@@ -327,11 +319,11 @@ export default async function SeoJobDetailPage({
         <>
           {/* The deliverable first: the master prompt as one panel with its
               actions in the toolbar, the text itself tucked behind scroll. */}
-          <div className="border border-neutral">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral bg-mint-pale px-4 py-3">
+          <div className="ld-card ld-card--flush">
+            <div className="ld-prompt__bar">
               <div>
                 <Eyebrow>Master prompt</Eyebrow>
-                <p className="mt-0.5 text-xs text-slate-ink">
+                <p className="ld-small mt-1">
                   Paste into a coding agent ·{" "}
                   {report.prompt.length.toLocaleString("en-GB")} characters
                 </p>
@@ -341,13 +333,13 @@ export default async function SeoJobDetailPage({
                 <a
                   href={`data:text/markdown;charset=utf-8,${encodeURIComponent(report.prompt)}`}
                   download={`seo-strategy-${report.host}.md`}
-                  className="border border-neutral px-4 py-2 text-xs font-mono uppercase tracking-[0.18em] text-slate-ink transition-colors hover:text-ink"
+                  className="adm-btn adm-btn--ghost ld-sm"
                 >
                   Download .md
                 </a>
               </div>
             </div>
-            <pre className="max-h-80 overflow-auto whitespace-pre-wrap p-5 font-mono text-xs leading-relaxed text-slate-ink">
+            <pre className="ld-prompt__pre">
               {report.prompt}
             </pre>
           </div>
@@ -355,9 +347,9 @@ export default async function SeoJobDetailPage({
           {/* What the tool understood the business to be. */}
           <section>
             <SectionHeading index="01">Understanding</SectionHeading>
-            <div className="mt-4 border border-neutral p-5">
+            <div className="ld-card mt-4">
               {u.coreValueProposition ? (
-                <p className="max-w-prose text-base leading-relaxed text-ink">
+                <p className="max-w-prose text-[16px] leading-[1.7] text-ink">
                   {u.coreValueProposition}
                 </p>
               ) : null}
@@ -372,15 +364,12 @@ export default async function SeoJobDetailPage({
               </dl>
               {u.offerings.length > 0 && (
                 <div className="mt-5">
-                  <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-slate-ink">
+                  <span className="ld-lbl">
                     Offers
                   </span>
-                  <ul className="mt-1.5 flex flex-wrap gap-1.5">
+                  <ul className="ld-chips mt-2">
                     {u.offerings.map((o) => (
-                      <li
-                        key={o}
-                        className="border border-neutral px-2 py-0.5 text-xs text-ink"
-                      >
+                      <li key={o} className="ld-tag">
                         {o}
                       </li>
                     ))}
@@ -388,14 +377,14 @@ export default async function SeoJobDetailPage({
                 </div>
               )}
               {u.problemsSolved.length > 0 && (
-                <p className="mt-3 max-w-prose text-xs leading-relaxed text-slate-ink">
-                  <span className="font-mono uppercase tracking-[0.14em]">Solves · </span>
+                <p className="ld-small mt-3 max-w-prose">
+                  <span className="ld-inline-lbl">Solves · </span>
                   {u.problemsSolved.join("; ")}
                 </p>
               )}
               {job.context ? (
-                <p className="mt-3 max-w-prose text-xs leading-relaxed text-slate-ink">
-                  <span className="font-mono uppercase tracking-[0.14em]">
+                <p className="ld-small mt-3 max-w-prose">
+                  <span className="ld-inline-lbl">
                     Owner context ·{" "}
                   </span>
                   {job.context}
@@ -409,38 +398,38 @@ export default async function SeoJobDetailPage({
             <SectionHeading index="02">
               Search landscape ({report.searchesChecked.length} checked)
             </SectionHeading>
-            <div className="mt-4 overflow-x-auto border border-neutral">
-              <table className="w-full text-left text-sm">
+            <div className="ld-wrap mt-4">
+              <table className="ld-table">
                 <thead>
-                  <tr className="border-b border-neutral">
-                    <th className="eyebrow px-4 py-3 font-normal">Search</th>
-                    <th className="eyebrow px-4 py-3 font-normal">Intent</th>
-                    <th className="eyebrow px-4 py-3 font-normal">Our position</th>
-                    <th className="eyebrow px-4 py-3 font-normal">Typed variants</th>
+                  <tr>
+                    <th>Search</th>
+                    <th>Intent</th>
+                    <th>Our position</th>
+                    <th>Typed variants</th>
                   </tr>
                 </thead>
                 <tbody>
                   {report.searchesChecked.map((e) => (
-                    <tr key={e.query} className="border-b border-neutral last:border-0">
-                      <td className="px-4 py-3 text-ink">{e.query}</td>
-                      <td className="px-4 py-3">
+                    <tr key={e.query}>
+                      <td>{e.query}</td>
+                      <td>
                         <Badge
                           label={e.intent}
                           classes={
-                            SEO_INTENT_CLASSES[e.intent] ?? "border-neutral text-slate-ink"
+                            SEO_INTENT_CLASSES[e.intent] ?? "ld-pill--neutral"
                           }
                         />
                       </td>
-                      <td className="px-4 py-3">
+                      <td>
                         {e.error ? (
-                          <span className="text-xs text-[#d9a13b]">check failed</span>
+                          <span className="ld-small ld-t-warn">check failed</span>
                         ) : e.siteRank ? (
-                          <span className="font-mono text-[#3fb27f]">#{e.siteRank}</span>
+                          <span className="font-medium ld-t-ok">#{e.siteRank}</span>
                         ) : (
-                          <span className="text-xs text-slate-ink">absent</span>
+                          <span className="ld-small">absent</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 font-mono text-slate-ink">
+                      <td className="ld-t-muted">
                         {e.suggestions.length}
                       </td>
                     </tr>
@@ -448,7 +437,7 @@ export default async function SeoJobDetailPage({
                 </tbody>
               </table>
             </div>
-            <p className="mt-2 text-xs text-slate-ink">
+            <p className="ld-small mt-2">
               {report.gsc === null
                 ? "Search Console: not connected (worker/README.md shows the setup)."
                 : report.gsc.length === 0
@@ -464,23 +453,20 @@ export default async function SeoJobDetailPage({
               Market ({report.competitors?.length ?? 0} competitors crawled)
             </SectionHeading>
             {report.market ? (
-              <div className="mt-4 border border-neutral p-5">
+              <div className="ld-card mt-4">
                 {report.market.summary ? (
-                  <p className="max-w-prose text-base leading-relaxed text-ink">
+                  <p className="max-w-prose text-[16px] leading-[1.7] text-ink">
                     {report.market.summary}
                   </p>
                 ) : null}
                 {report.market.tableStakes.length > 0 && (
                   <div className="mt-4">
-                    <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-slate-ink">
+                    <span className="ld-lbl">
                       Table stakes
                     </span>
-                    <ul className="mt-1.5 flex flex-wrap gap-1.5">
+                    <ul className="ld-chips mt-2">
                       {report.market.tableStakes.map((t) => (
-                        <li
-                          key={t}
-                          className="border border-neutral px-2 py-0.5 text-xs text-ink"
-                        >
+                        <li key={t} className="ld-tag">
                           {t}
                         </li>
                       ))}
@@ -488,24 +474,24 @@ export default async function SeoJobDetailPage({
                   </div>
                 )}
                 {report.market.standardAngles.length > 0 && (
-                  <p className="mt-3 max-w-prose text-xs leading-relaxed text-slate-ink">
-                    <span className="font-mono uppercase tracking-[0.14em]">
+                  <p className="ld-small mt-3 max-w-prose">
+                    <span className="ld-inline-lbl">
                       Standard angles ·{" "}
                     </span>
                     {report.market.standardAngles.join("; ")}
                   </p>
                 )}
                 {report.market.openings.length > 0 && (
-                  <p className="mt-3 bg-mint-pale px-3 py-2 text-xs leading-relaxed text-ink">
-                    <span className="font-mono uppercase tracking-[0.14em] text-mint-deep">
+                  <p className="ld-note mt-3">
+                    <span className="ld-inline-lbl ld-t-info">
                       Openings ·{" "}
                     </span>
                     {report.market.openings.join("; ")}
                   </p>
                 )}
                 {report.market.scanQueries.length > 0 && (
-                  <p className="mt-3 text-xs text-slate-ink">
-                    <span className="font-mono uppercase tracking-[0.14em]">
+                  <p className="ld-small mt-3">
+                    <span className="ld-inline-lbl">
                       Scanned ·{" "}
                     </span>
                     {report.market.scanQueries.map((q) => `“${q}”`).join(", ")}
@@ -516,31 +502,31 @@ export default async function SeoJobDetailPage({
             {report.competitors?.length ? (
               <div className="mt-4 flex flex-col gap-4">
                 {report.competitors.map((c) => (
-                  <div key={c.domain} className="border border-neutral p-5">
+                  <div key={c.domain} className="ld-card">
                     <div className="flex flex-wrap items-center gap-3">
                       <a
                         href={`https://${c.domain}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-mono text-sm text-ink underline-offset-4 hover:underline"
+                        className="ld-link ld-code"
                       >
                         {c.domain}
                       </a>
-                      <span className="font-mono text-xs text-slate-ink">
+                      <span className="ld-small ld-num">
                         best rank #{c.bestRank}
                       </span>
-                      <span className="ml-auto text-xs text-slate-ink">
+                      <span className="ld-small ml-auto">
                         {c.pagesRead} page{c.pagesRead === 1 ? "" : "s"} read
                       </span>
                     </div>
                     {c.summary ? (
-                      <p className="mt-3 max-w-prose text-sm leading-relaxed text-ink">
+                      <p className="mt-3 max-w-prose text-[14.5px] leading-[1.7] text-ink">
                         {c.summary}
                       </p>
                     ) : null}
                     {c.appearsFor.length > 0 && (
-                      <p className="mt-2 text-xs text-slate-ink">
-                        <span className="font-mono uppercase tracking-[0.14em]">
+                      <p className="ld-small mt-2">
+                        <span className="ld-inline-lbl">
                           Found via ·{" "}
                         </span>
                         {c.appearsFor.map((q) => `“${q}”`).join(", ")}
@@ -548,15 +534,12 @@ export default async function SeoJobDetailPage({
                     )}
                     {c.keywordsTargeted.length > 0 && (
                       <div className="mt-3">
-                        <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-slate-ink">
+                        <span className="ld-lbl">
                           Targets
                         </span>
-                        <ul className="mt-1.5 flex flex-wrap gap-1.5">
+                        <ul className="ld-chips mt-2">
                           {c.keywordsTargeted.map((k) => (
-                            <li
-                              key={k}
-                              className="border border-neutral px-2 py-0.5 text-xs text-ink"
-                            >
+                            <li key={k} className="ld-tag">
                               {k}
                             </li>
                           ))}
@@ -564,16 +547,16 @@ export default async function SeoJobDetailPage({
                       </div>
                     )}
                     {c.angles.length > 0 && (
-                      <p className="mt-3 max-w-prose text-xs leading-relaxed text-slate-ink">
-                        <span className="font-mono uppercase tracking-[0.14em]">
+                      <p className="ld-small mt-3 max-w-prose">
+                        <span className="ld-inline-lbl">
                           Leads with ·{" "}
                         </span>
                         {c.angles.join("; ")}
                       </p>
                     )}
                     {c.gaps.length > 0 && (
-                      <p className="mt-3 bg-mint-pale px-3 py-2 text-xs leading-relaxed text-ink">
-                        <span className="font-mono uppercase tracking-[0.14em] text-mint-deep">
+                      <p className="ld-note mt-3">
+                        <span className="ld-inline-lbl ld-t-info">
                           Gaps ·{" "}
                         </span>
                         {c.gaps.join("; ")}
@@ -583,7 +566,7 @@ export default async function SeoJobDetailPage({
                 ))}
               </div>
             ) : (
-              <p className="mt-4 max-w-prose text-xs leading-relaxed text-slate-ink">
+              <p className="ld-small mt-4 max-w-prose">
                 {report.competitors
                   ? "No direct competitors surfaced across the money SERPs and market scans for this run."
                   : "This report predates the market deep-dive — re-run the job to get crawled competitor profiles and a market overview."}
@@ -596,38 +579,38 @@ export default async function SeoJobDetailPage({
             <SectionHeading index="04">
               Head keywords ({report.headKeywords.length})
             </SectionHeading>
-            <div className="mt-4 overflow-x-auto border border-neutral">
-              <table className="w-full text-left text-sm">
+            <div className="ld-wrap mt-4">
+              <table className="ld-table">
                 <thead>
-                  <tr className="border-b border-neutral">
-                    <th className="eyebrow px-4 py-3 font-normal">Keyword</th>
-                    <th className="eyebrow px-4 py-3 font-normal">Intent</th>
-                    <th className="eyebrow px-4 py-3 font-normal">Winnability</th>
-                    <th className="eyebrow px-4 py-3 font-normal">Why</th>
+                  <tr>
+                    <th>Keyword</th>
+                    <th>Intent</th>
+                    <th>Winnability</th>
+                    <th>Why</th>
                   </tr>
                 </thead>
                 <tbody>
                   {report.headKeywords.map((h) => (
-                    <tr key={h.keyword} className="border-b border-neutral last:border-0">
-                      <td className="px-4 py-3 text-ink">{h.keyword}</td>
-                      <td className="px-4 py-3">
+                    <tr key={h.keyword}>
+                      <td>{h.keyword}</td>
+                      <td>
                         <Badge
                           label={h.intent}
                           classes={
-                            SEO_INTENT_CLASSES[h.intent] ?? "border-neutral text-slate-ink"
+                            SEO_INTENT_CLASSES[h.intent] ?? "ld-pill--neutral"
                           }
                         />
                       </td>
-                      <td className="px-4 py-3">
+                      <td>
                         <Badge
                           label={h.winnability}
                           classes={
                             SEO_STRATEGY_WINNABILITY_CLASSES[h.winnability] ??
-                            "border-neutral text-slate-ink"
+                            "ld-pill--neutral"
                           }
                         />
                       </td>
-                      <td className="max-w-md px-4 py-3 text-xs leading-relaxed text-slate-ink">
+                      <td className="ld-small max-w-md">
                         {h.rationale}
                       </td>
                     </tr>
@@ -645,7 +628,7 @@ export default async function SeoJobDetailPage({
               </SectionHeading>
               <div className="flex items-center gap-3">
                 {report.pageCheck ? (
-                  <span className="text-xs text-slate-ink">
+                  <span className="ld-small">
                     {report.pageCheck.results.filter((r) => r.ok).length}/
                     {report.pageCheck.results.length} live ·{" "}
                     {new Date(report.pageCheck.checkedAt).toLocaleString("en-GB")}
@@ -671,7 +654,7 @@ export default async function SeoJobDetailPage({
           <section>
             <SectionHeading index="06">Plan status</SectionHeading>
             {checksError ? (
-              <p className="mt-4 max-w-prose text-xs leading-relaxed text-slate-ink">
+              <p className="ld-small mt-4 max-w-prose">
                 Not set up yet — run{" "}
                 <code className="text-ink">supabase/seo_plan_module.sql</code>{" "}
                 once in the Supabase SQL editor. After that, the worker checks
@@ -680,19 +663,19 @@ export default async function SeoJobDetailPage({
                 prompts when something needs fixing.
               </p>
             ) : checks.length === 0 ? (
-              <p className="mt-4 max-w-prose text-xs leading-relaxed text-slate-ink">
+              <p className="ld-small mt-4 max-w-prose">
                 No plan check yet — the worker checks the latest finished
                 strategy per site weekly while idle.
               </p>
             ) : (
               <>
-                <p className="mt-3 text-xs text-slate-ink">
-                  <span className="font-mono text-ink">
+                <p className="ld-small mt-3">
+                  <span className="ld-num font-medium text-ink">
                     {latestChecks.filter((c) => c.shipped).length}/
                     {report.pages.length}
                   </span>{" "}
                   shipped ·{" "}
-                  <span className="font-mono text-ink">
+                  <span className="ld-num font-medium text-ink">
                     {latestChecks.filter((c) => c.indexable === true).length}
                   </span>{" "}
                   indexable · last checked{" "}
@@ -700,35 +683,35 @@ export default async function SeoJobDetailPage({
                     ? new Date(lastCheckedAt).toLocaleDateString("en-GB")
                     : "—"}
                 </p>
-                <div className="mt-3 overflow-x-auto border border-neutral">
-                  <table className="w-full text-left text-sm">
+                <div className="ld-wrap mt-3">
+                  <table className="ld-table">
                     <thead>
-                      <tr className="border-b border-neutral">
-                        <th className="eyebrow px-4 py-3 font-normal">Page</th>
-                        <th className="eyebrow px-4 py-3 font-normal">Shipped</th>
-                        <th className="eyebrow px-4 py-3 font-normal">Indexable</th>
-                        <th className="eyebrow px-4 py-3 font-normal">Sitemap</th>
-                        <th className="eyebrow px-4 py-3 font-normal">Title</th>
-                        <th className="eyebrow px-4 py-3 font-normal">FAQ schema</th>
-                        <th className="eyebrow px-4 py-3 font-normal">Impressions 7d</th>
-                        <th className="eyebrow px-4 py-3 font-normal">Avg position</th>
-                        <th className="eyebrow px-4 py-3 font-normal">Issues</th>
-                        <th className="eyebrow px-4 py-3 font-normal">Checked</th>
+                      <tr>
+                        <th>Page</th>
+                        <th>Shipped</th>
+                        <th>Indexable</th>
+                        <th>Sitemap</th>
+                        <th>Title</th>
+                        <th>FAQ schema</th>
+                        <th>Impressions 7d</th>
+                        <th>Avg position</th>
+                        <th>Issues</th>
+                        <th>Checked</th>
                       </tr>
                     </thead>
                     <tbody>
                       {report.pages.map((page) => {
                         const [c, prev] = checksBySlug.get(page.slug) ?? [];
                         const pageCell = (
-                          <td className="px-4 py-3">
+                          <td>
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="font-mono text-xs text-ink">{page.slug}</span>
+                              <span className="ld-code text-ink">{page.slug}</span>
                               <Badge
                                 label={page.action}
                                 classes={
                                   page.action === "create"
-                                    ? "border-mint-deep text-mint-deep"
-                                    : "border-[#d9a13b] text-[#d9a13b]"
+                                    ? "ld-pill--info"
+                                    : "ld-pill--warn"
                                 }
                               />
                             </div>
@@ -736,9 +719,9 @@ export default async function SeoJobDetailPage({
                         );
                         if (!c) {
                           return (
-                            <tr key={page.slug} className="border-b border-neutral last:border-0">
+                            <tr key={page.slug}>
                               {pageCell}
-                              <td colSpan={9} className="px-4 py-3 text-xs text-slate-ink">
+                              <td colSpan={9} className="ld-small">
                                 not checked yet
                               </td>
                             </tr>
@@ -751,9 +734,9 @@ export default async function SeoJobDetailPage({
                             ? Math.round(((imp - base) / base) * 100)
                             : null;
                         return (
-                          <tr key={page.slug} className="border-b border-neutral last:border-0">
+                          <tr key={page.slug}>
                             {pageCell}
-                            <td className="px-4 py-3">
+                            <td>
                               <Badge
                                 label={
                                   c.shipped
@@ -765,25 +748,25 @@ export default async function SeoJobDetailPage({
                                 classes={c.shipped ? GOOD : BAD}
                               />
                             </td>
-                            <td className="px-4 py-3">
+                            <td>
                               <TriBadge value={c.indexable} yes="yes" no="no" />
                             </td>
-                            <td className="px-4 py-3">
+                            <td>
                               <TriBadge value={c.in_sitemap} yes="yes" no="no" none="n/a" />
                             </td>
-                            <td className="px-4 py-3">
+                            <td>
                               <TriBadge value={c.title_has_head} yes="ok" no="no head kw" />
                             </td>
-                            <td className="px-4 py-3">
+                            <td>
                               {c.has_faq_schema === null ? (
-                                <span className="text-xs text-slate-ink">—</span>
+                                <span className="ld-small">—</span>
                               ) : (
                                 <TriBadge value={c.has_faq_schema} yes="yes" no="missing" />
                               )}
                             </td>
-                            <td className="px-4 py-3 font-mono text-xs">
+                            <td className="ld-w">
                               {imp === null ? (
-                                <span className="font-sans text-slate-ink">no GSC</span>
+                                <span className="ld-small">no GSC</span>
                               ) : (
                                 <>
                                   <span className="text-ink">
@@ -791,7 +774,7 @@ export default async function SeoJobDetailPage({
                                   </span>
                                   {pct !== null && pct !== 0 ? (
                                     <span
-                                      className={`ml-2 ${pct > 0 ? "text-[#3fb27f]" : "text-[#e5594e]"}`}
+                                      className={`ml-2 ${pct > 0 ? "ld-t-ok" : "ld-t-bad"}`}
                                     >
                                       {pct > 0 ? `▲ +${pct}%` : `▼ ${pct}%`}
                                     </span>
@@ -799,16 +782,16 @@ export default async function SeoJobDetailPage({
                                 </>
                               )}
                             </td>
-                            <td className="px-4 py-3">
+                            <td>
                               <PositionCell
                                 latest={toNum(c.avg_position)}
                                 previous={toNum(prev?.avg_position)}
                               />
                             </td>
-                            <td className="px-4 py-3 font-mono text-xs text-slate-ink">
+                            <td className="ld-small">
                               {c.audit_issues ? c.audit_issues.length : "—"}
                             </td>
-                            <td className="px-4 py-3 text-xs text-slate-ink">
+                            <td className="ld-small ld-w">
                               {new Date(c.checked_at).toLocaleDateString("en-GB")}
                             </td>
                           </tr>
@@ -828,12 +811,12 @@ export default async function SeoJobDetailPage({
               Follow-up prompts{followupsError ? "" : ` (${followups.length})`}
             </SectionHeading>
             {followupsError ? (
-              <p className="mt-4 max-w-prose text-xs leading-relaxed text-slate-ink">
+              <p className="ld-small mt-4 max-w-prose">
                 Needs <code className="text-ink">supabase/seo_plan_module.sql</code>{" "}
                 (see Plan status above).
               </p>
             ) : followups.length === 0 ? (
-              <p className="mt-4 max-w-prose text-xs leading-relaxed text-slate-ink">
+              <p className="ld-small mt-4 max-w-prose">
                 No follow-ups yet — one is written after a plan check finds
                 something actionable (and only when the findings change).
               </p>
@@ -843,21 +826,19 @@ export default async function SeoJobDetailPage({
                   const s = f.summary;
                   const day = f.created_at.slice(0, 10);
                   const toolbar = (
-                    <div
-                      className={`flex flex-wrap items-center justify-between gap-3 bg-mint-pale px-4 py-3 ${i === 0 ? "border-b border-neutral" : ""}`}
-                    >
+                    <div className="ld-prompt__bar">
                       <div>
                         <Eyebrow>
                           Follow-up · {new Date(f.created_at).toLocaleDateString("en-GB")}
                           {i === 0 ? " · latest" : ""}
                         </Eyebrow>
-                        <p className="mt-0.5 text-xs text-slate-ink">
+                        <p className="ld-small mt-1">
                           {s.shipped}/{s.pagesPlanned} shipped · {s.indexable} indexable ·
                           impressions 7d: {s.impressions7d ?? "—"} (baseline{" "}
                           {s.baselineImpressions7d ?? "—"})
                         </p>
                         {s.sections?.length ? (
-                          <ul className="mt-2 flex flex-wrap gap-1.5">
+                          <ul className="ld-chips mt-3">
                             {s.sections.map((sec) => (
                               <li key={sec.id}>
                                 <Badge
@@ -874,7 +855,7 @@ export default async function SeoJobDetailPage({
                         <a
                           href={`data:text/markdown;charset=utf-8,${encodeURIComponent(f.prompt)}`}
                           download={`seo-followup-${s.host}-${day}.md`}
-                          className="border border-neutral px-4 py-2 text-xs font-mono uppercase tracking-[0.18em] text-slate-ink transition-colors hover:text-ink"
+                          className="adm-btn adm-btn--ghost ld-sm"
                         >
                           Download .md
                         </a>
@@ -882,23 +863,20 @@ export default async function SeoJobDetailPage({
                     </div>
                   );
                   const pre = (
-                    <pre className="max-h-80 overflow-auto whitespace-pre-wrap p-5 font-mono text-xs leading-relaxed text-slate-ink">
+                    <pre className="ld-prompt__pre">
                       {f.prompt}
                     </pre>
                   );
                   return (
-                    <div key={f.id} className="border border-neutral">
+                    <div key={f.id} className="ld-card ld-card--flush">
                       {toolbar}
                       {i === 0 ? (
                         pre
                       ) : (
-                        // Older follow-ups: prompt text behind a native <details>.
-                        <details className="border-t border-neutral">
-                          <summary className="cursor-pointer px-4 py-2 text-xs font-mono uppercase tracking-[0.18em] text-slate-ink hover:text-ink">
-                            Show prompt
-                          </summary>
+                        // Older follow-ups: prompt text behind a custom disclosure.
+                        <Disclosure label="Show prompt" openLabel="Hide prompt">
                           {pre}
-                        </details>
+                        </Disclosure>
                       )}
                     </div>
                   );
@@ -915,7 +893,7 @@ export default async function SeoJobDetailPage({
                 <AuditReportView report={report.audit} />
               </div>
             ) : (
-              <p className="mt-4 max-w-prose text-xs leading-relaxed text-slate-ink">
+              <p className="ld-small mt-4 max-w-prose">
                 The technical audit was skipped for this run — the prompt tells
                 the agent to run it itself (via the worker CLI) as part of the
                 brief.

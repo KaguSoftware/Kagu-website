@@ -18,9 +18,9 @@ export default async function JobsPage() {
       <div className="flex flex-wrap items-center justify-between gap-4 pb-6">
         <div>
           <Eyebrow>Scrape jobs</Eyebrow>
-          <p className="mt-2 max-w-prose text-sm text-slate-ink">
+          <p className="ld-sub mt-2">
             Jobs are queued here and processed by the crawler worker (see{" "}
-            <code className="text-ink">worker/</code>). If nothing moves, the
+            <code>worker/</code>). If nothing moves, the
             worker isn&apos;t running.
           </p>
         </div>

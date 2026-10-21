@@ -22,11 +22,11 @@ function Group({
           {items.map((t) => (
             <li
               key={t.id}
-              className="group flex items-center gap-3 border border-neutral px-3 py-2"
+              className="flex items-center gap-1 rounded-full border border-[var(--line)] bg-[var(--card)] py-0.5 pl-4 pr-1 transition-colors hover:border-[var(--line-strong)]"
             >
               <Link
                 href={`/admin/marquees/${t.id}/edit`}
-                className="text-sm text-ink transition-colors hover:text-mint-deep"
+                className="text-sm text-[var(--ink)] transition-colors hover:text-[var(--accent-ink)]"
               >
                 {t.label}
               </Link>
@@ -50,7 +50,7 @@ export default async function MarqueesPage() {
   const lineage = (rows ?? []).filter((r) => r.placement === "stack_lineage");
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <PageHeader
         title="Marquees"
         description="Scrolling text for the hero marquee and the stack-lineage strip."

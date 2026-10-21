@@ -20,7 +20,7 @@ export default async function MessagesPage() {
     <div>
       <div className="pb-6">
         <Eyebrow>Review queue</Eyebrow>
-        <p className="mt-2 max-w-prose text-sm text-slate-ink">
+        <p className="ld-sub mt-2">
           LLM-drafted outreach awaiting review. Approve, edit, copy, send it
           from your own email/WhatsApp, then mark it sent.
         </p>

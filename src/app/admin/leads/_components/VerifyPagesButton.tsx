@@ -21,7 +21,7 @@ export function VerifyPagesButton({ jobId }: { jobId: string }) {
       type="button"
       disabled={pending}
       onClick={run}
-      className="border border-neutral px-4 py-2 text-xs font-mono uppercase tracking-[0.18em] text-slate-ink transition-colors hover:text-ink disabled:opacity-50"
+      className="adm-btn adm-btn--ghost ld-sm"
     >
       {pending ? "Checking…" : "Verify pages"}
     </button>

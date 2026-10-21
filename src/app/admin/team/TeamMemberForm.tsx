@@ -1,5 +1,5 @@
-import { Field, TextArea, Select, ButtonLink } from "../_components/ui";
-import { SubmitButton } from "../_components/SubmitButton";
+import { Field, TextArea, Select, NumberField } from "../_components/ui";
+import { FormShell } from "../_cms/cms";
 import type { Tables } from "@/lib/supabase/database.types";
 
 export function TeamMemberForm({
@@ -10,7 +10,11 @@ export function TeamMemberForm({
   member?: Tables<"team_members">;
 }) {
   return (
-    <form action={action} className="max-w-xl space-y-6">
+    <FormShell
+      action={action}
+      cancelHref="/admin/team"
+      submitLabel={member ? "Save changes" : "Create"}
+    >
       {member ? <input type="hidden" name="id" value={member.id} /> : null}
       <Field label="Name" name="name" defaultValue={member?.name} required />
       <Field
@@ -27,26 +31,19 @@ export function TeamMemberForm({
         defaultValue={member?.image_url}
         hint="Square headshot. Add the file to /public/team and use a path like /team/name.jpg. Leave blank to show initials."
       />
-      <Select
-        label="Segment"
-        name="segment"
-        defaultValue={member?.segment ?? "associate"}
-        options={[
-          { value: "cofounder", label: "Cofounder" },
-          { value: "senior_associate", label: "Senior Associate" },
-          { value: "associate", label: "Associate" },
-        ]}
-      />
-      <Field
-        label="Sort order"
-        name="sort_order"
-        type="number"
-        defaultValue={member?.sort_order ?? 0}
-      />
-      <div className="flex items-center gap-4 pt-2">
-        <SubmitButton>{member ? "Save changes" : "Create"}</SubmitButton>
-        <ButtonLink href="/admin/team">Cancel</ButtonLink>
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <Select
+          label="Segment"
+          name="segment"
+          defaultValue={member?.segment ?? "associate"}
+          options={[
+            { value: "cofounder", label: "Cofounder" },
+            { value: "senior_associate", label: "Senior Associate" },
+            { value: "associate", label: "Associate" },
+          ]}
+        />
+        <NumberField label="Sort order" name="sort_order" defaultValue={member?.sort_order ?? 0} />
       </div>
-    </form>
+    </FormShell>
   );
 }

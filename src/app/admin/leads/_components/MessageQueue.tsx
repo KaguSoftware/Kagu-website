@@ -25,8 +25,6 @@ export type MessageWithLead = Message & {
   leads: { id: string; name: string; district: string | null; category: string | null } | null;
 };
 
-const buttonClass =
-  "text-xs font-mono uppercase tracking-[0.18em] underline-offset-4 transition-colors hover:underline disabled:opacity-50";
 
 export function MessageCard({
   message,
@@ -77,36 +75,36 @@ export function MessageCard({
   };
 
   return (
-    <div className="border border-neutral p-4">
+    <div className="ld-msg">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span
-            className={`inline-block border px-2 py-0.5 text-[10px] font-mono uppercase tracking-[0.14em] ${MESSAGE_STATUS_CLASSES[message.status]}`}
-          >
+          <span className={`ld-pill ${MESSAGE_STATUS_CLASSES[message.status]}`}>
             {MESSAGE_STATUS_LABELS[message.status]}
           </span>
-          <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-slate-ink">
+          <span className="ld-small">
             {message.variant_label ?? message.channel} · {message.language}
           </span>
         </div>
-        {leadName && <span className="text-xs text-slate-ink">{leadName}</span>}
+        {leadName && <span className="ld-small">{leadName}</span>}
       </div>
 
       {editing ? (
-        <div className="mt-3 flex flex-col gap-3">
+        <div className="kagu-field mt-3 flex flex-col gap-3">
           {message.channel === "email" && (
             <input
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="Subject"
-              className="w-full border-0 border-b border-neutral bg-transparent py-2 text-sm text-ink outline-none placeholder:text-neutral"
+              aria-label="Subject"
+              className="w-full"
             />
           )}
           <textarea
             value={body}
             onChange={(e) => setBody(e.target.value)}
             rows={6}
-            className="w-full resize-y border border-neutral bg-transparent p-3 text-sm text-ink outline-none focus-visible:border-mint-deep"
+            aria-label="Message body"
+            className="w-full resize-y"
           />
           <div className="flex items-center gap-3">
             <button
@@ -116,7 +114,7 @@ export function MessageCard({
                 save();
                 setEditing(false);
               }}
-              className={`${buttonClass} text-mint-deep`}
+              className="ld-act ld-act--accent"
             >
               Save
             </button>
@@ -127,7 +125,7 @@ export function MessageCard({
                 setBody(message.body);
                 setEditing(false);
               }}
-              className={`${buttonClass} text-slate-ink`}
+              className="ld-act"
             >
               Cancel
             </button>
@@ -136,20 +134,20 @@ export function MessageCard({
       ) : (
         <div className="mt-3">
           {message.subject && (
-            <p className="pb-1 text-sm font-medium text-ink">{message.subject}</p>
+            <p className="pb-1 text-[15px] font-medium text-ink">{message.subject}</p>
           )}
-          <p className="whitespace-pre-wrap text-sm text-slate-ink">{message.body}</p>
+          <p className="ld-msg__body">{message.body}</p>
         </div>
       )}
 
       {!editing && (
-        <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-neutral pt-3">
+        <div className="ld-msg__foot">
           {(message.status === "draft" || message.status === "rejected") && (
             <>
               <button
                 type="button"
                 onClick={() => setEditing(true)}
-                className={`${buttonClass} text-slate-ink hover:text-ink`}
+                className="ld-act"
               >
                 Edit
               </button>
@@ -157,7 +155,7 @@ export function MessageCard({
                 type="button"
                 disabled={pending}
                 onClick={() => act(() => approveMessage(message.id), "Message approved.")}
-                className={`${buttonClass} text-[#3fb27f]`}
+                className="ld-act ld-act--ok"
               >
                 Approve
               </button>
@@ -168,12 +166,12 @@ export function MessageCard({
               type="button"
               disabled={pending}
               onClick={() => act(() => rejectMessage(message.id), "Message rejected.")}
-              className={`${buttonClass} text-[#e5594e]`}
+              className="ld-act ld-act--bad"
             >
               Reject
             </button>
           )}
-          <button type="button" onClick={copy} className={`${buttonClass} text-slate-ink hover:text-ink`}>
+          <button type="button" onClick={copy} className="ld-act">
             Copy
           </button>
           {message.status === "approved" && (
@@ -183,7 +181,7 @@ export function MessageCard({
               onClick={() =>
                 act(() => markMessageSent(message.id), "Marked sent — lead moved to Contacted.")
               }
-              className={`${buttonClass} text-mint-deep`}
+              className="ld-act ld-act--accent"
             >
               Mark as sent
             </button>

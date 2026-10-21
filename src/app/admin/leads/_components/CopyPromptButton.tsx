@@ -22,7 +22,7 @@ export function CopyPromptButton({ prompt }: { prompt: string }) {
     <button
       type="button"
       onClick={copy}
-      className="inline-flex items-center gap-2 bg-ink px-4 py-2 text-xs font-mono uppercase tracking-[0.18em] text-paper transition-colors hover:bg-mint-deep"
+      className="adm-btn adm-btn--solid ld-sm"
     >
       {copied ? "Copied ✓" : "Copy prompt"}
     </button>

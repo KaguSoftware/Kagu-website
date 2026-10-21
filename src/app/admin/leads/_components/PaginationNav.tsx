@@ -22,29 +22,24 @@ export function PaginationNav({
 }) {
   if (totalPages <= 1) return null;
 
-  const linkClass =
-    "border border-neutral px-3 py-1.5 text-xs font-mono uppercase tracking-[0.18em] text-ink transition-colors hover:border-mint-deep";
-  const disabledClass =
-    "border border-neutral px-3 py-1.5 text-xs font-mono uppercase tracking-[0.18em] text-neutral";
-
   return (
-    <nav className="flex items-center justify-between" aria-label="Pagination">
+    <nav className="ld-pager" aria-label="Pagination">
       {page > 1 ? (
-        <Link href={pageHref(params, page - 1)} className={linkClass}>
+        <Link href={pageHref(params, page - 1)} className="adm-btn adm-btn--ghost ld-sm">
           ← Prev
         </Link>
       ) : (
-        <span className={disabledClass}>← Prev</span>
+        <span className="adm-btn adm-btn--ghost ld-sm" aria-disabled="true">← Prev</span>
       )}
-      <span className="text-xs text-slate-ink">
+      <span className="ld-small ld-num">
         Page {page} of {totalPages}
       </span>
       {page < totalPages ? (
-        <Link href={pageHref(params, page + 1)} className={linkClass}>
+        <Link href={pageHref(params, page + 1)} className="adm-btn adm-btn--ghost ld-sm">
           Next →
         </Link>
       ) : (
-        <span className={disabledClass}>Next →</span>
+        <span className="adm-btn adm-btn--ghost ld-sm" aria-disabled="true">Next →</span>
       )}
     </nav>
   );

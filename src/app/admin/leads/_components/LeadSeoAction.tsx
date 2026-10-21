@@ -30,10 +30,8 @@ export function LeadSeoAction({ lead }: { lead: Tables<"leads"> }) {
 
   useEffect(() => {
     let stale = false;
-    if (!lead.website_url) {
-      setJob(null);
-      return;
-    }
+    // No website → the component renders nothing below, so no state to set.
+    if (!lead.website_url) return;
     getLeadSeoStrategy(lead.website_url).then((result) => {
       if (!stale) setJob(result.ok ? ((result.data ?? null) as LeadSeoJob | null) : null);
     });
@@ -68,20 +66,20 @@ export function LeadSeoAction({ lead }: { lead: Tables<"leads"> }) {
     <div>
       <span className="eyebrow mb-2 block">SEO strategy</span>
       {job === undefined ? (
-        <p className="text-xs text-slate-ink">Checking…</p>
+        <p className="ld-small">Checking…</p>
       ) : job ? (
-        <div className="flex flex-wrap items-center gap-3 text-sm">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
           <JobStatusBadge status={job.status} />
           {job.status === "done" ? (
             <>
               {job.audit_score !== null ? (
-                <span className={`font-mono text-xs ${seoAuditScoreClass(job.audit_score)}`}>
+                <span className={`ld-small ld-num ${seoAuditScoreClass(job.audit_score)}`}>
                   audit {job.audit_score}/100
                 </span>
               ) : null}
               <Link
                 href={`/admin/leads/seo/${job.id}`}
-                className="text-xs font-mono uppercase tracking-[0.18em] text-mint-deep underline-offset-4 hover:underline"
+                className="ld-act ld-act--accent"
               >
                 View report →
               </Link>
@@ -92,7 +90,7 @@ export function LeadSeoAction({ lead }: { lead: Tables<"leads"> }) {
               type="button"
               disabled={pending}
               onClick={queue}
-              className="text-xs font-mono uppercase tracking-[0.18em] text-slate-ink underline-offset-4 transition-colors hover:text-ink hover:underline disabled:opacity-50"
+              className="ld-act"
             >
               {pending ? "…" : "Re-run"}
             </button>
@@ -103,7 +101,7 @@ export function LeadSeoAction({ lead }: { lead: Tables<"leads"> }) {
           type="button"
           disabled={pending}
           onClick={queue}
-          className="border border-neutral px-3 py-1.5 text-xs font-mono uppercase tracking-[0.18em] text-slate-ink transition-colors hover:text-ink disabled:opacity-50"
+          className="adm-btn adm-btn--ghost ld-sm"
         >
           {pending ? "Queuing…" : "Queue SEO strategy"}
         </button>

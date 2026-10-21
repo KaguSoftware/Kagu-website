@@ -12,10 +12,20 @@ import { useEffect, useState, useTransition } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { createSeoStrategyJob } from "../../_actions/seo-strategy-jobs";
 import { adminToast } from "../../_components/toast";
+import { CustomSelect } from "../../_components/ui";
 import {
   SEO_STRATEGY_AUDIT_OPTIONS,
   SEO_STRATEGY_SERP_OPTIONS,
 } from "../_lib/constants";
+
+const SERP_OPTIONS = SEO_STRATEGY_SERP_OPTIONS.map((o) => ({
+  value: String(o.value),
+  label: o.label,
+}));
+const AUDIT_OPTIONS = SEO_STRATEGY_AUDIT_OPTIONS.map((o) => ({
+  value: String(o.value),
+  label: o.label,
+}));
 
 export function NewStrategyModal() {
   const [open, setOpen] = useState(false);
@@ -52,7 +62,7 @@ export function NewStrategyModal() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 bg-ink px-4 py-2 text-xs font-mono uppercase tracking-[0.18em] text-paper transition-colors hover:bg-mint-deep"
+        className="adm-btn adm-btn--solid"
       >
         New strategy
       </button>
@@ -60,8 +70,7 @@ export function NewStrategyModal() {
       <AnimatePresence>
         {open && (
           <motion.div
-            className="fixed inset-0 z-[10002] flex items-center justify-center p-5 backdrop-blur-[3px]"
-            style={{ background: "color-mix(in oklab, var(--paper) 64%, transparent)" }}
+            className="adm-confirm"
             role="dialog"
             aria-modal="true"
             aria-label="Request an SEO strategy"
@@ -72,15 +81,16 @@ export function NewStrategyModal() {
             onClick={() => setOpen(false)}
           >
             <motion.div
-              className="w-[min(94vw,460px)] border border-neutral bg-mint-pale p-6 shadow-[0_28px_64px_-22px_rgba(0,0,0,0.65)]"
+              className="adm-confirm__card ld-modal"
+              style={{ width: "min(94vw, 520px)" }}
               onClick={(e) => e.stopPropagation()}
               initial={reduced ? { opacity: 0 } : { opacity: 0, y: 14, scale: 0.97 }}
               animate={reduced ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
               exit={reduced ? { opacity: 0 } : { opacity: 0, y: 14, scale: 0.97 }}
               transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
             >
-              <span className="eyebrow text-mint-deep">New strategy</span>
-              <form action={submit} className="mt-4 flex flex-col gap-5">
+              <h2 className="adm-confirm__title">New strategy</h2>
+              <form action={submit}>
                 <label className="kagu-field block">
                   <span className="eyebrow mb-2 block">
                     Website URL <span className="text-mint-deep">*</span>
@@ -90,7 +100,7 @@ export function NewStrategyModal() {
                     required
                     minLength={4}
                     placeholder="e.g. kagusoftware.com"
-                    className="w-full border-0 border-b border-neutral bg-transparent py-2 text-base text-ink outline-none placeholder:text-neutral"
+                    className="w-full"
                   />
                 </label>
 
@@ -101,44 +111,38 @@ export function NewStrategyModal() {
                     rows={3}
                     maxLength={1000}
                     placeholder="Ground truth the site under-communicates, e.g. 'we build fully custom systems per client request'"
-                    className="w-full resize-y border border-neutral bg-paper px-3 py-2 text-sm text-ink outline-none placeholder:text-neutral focus-visible:border-mint-deep"
+                    className="w-full resize-y"
                   />
                 </label>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <label className="kagu-field block">
-                    <span className="eyebrow mb-2 block">SERP checks</span>
-                    <select
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="kagu-field block">
+                    <span id="strategy-serp-label" className="eyebrow mb-2 block">
+                      SERP checks
+                    </span>
+                    <CustomSelect
                       name="serpQueries"
-                      value={serpQueries}
-                      onChange={(e) => setSerpQueries(Number(e.target.value))}
-                      className="w-full border border-neutral bg-paper px-3 py-2 text-sm text-ink outline-none focus-visible:border-mint-deep"
-                    >
-                      {SEO_STRATEGY_SERP_OPTIONS.map((o) => (
-                        <option key={o.value} value={o.value}>
-                          {o.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="kagu-field block">
-                    <span className="eyebrow mb-2 block">Embedded audit</span>
-                    <select
+                      value={String(serpQueries)}
+                      onChange={(v) => setSerpQueries(Number(v))}
+                      options={SERP_OPTIONS}
+                      aria-labelledby="strategy-serp-label"
+                    />
+                  </div>
+                  <div className="kagu-field block">
+                    <span id="strategy-audit-label" className="eyebrow mb-2 block">
+                      Embedded audit
+                    </span>
+                    <CustomSelect
                       name="auditPages"
-                      value={auditPages}
-                      onChange={(e) => setAuditPages(Number(e.target.value))}
-                      className="w-full border border-neutral bg-paper px-3 py-2 text-sm text-ink outline-none focus-visible:border-mint-deep"
-                    >
-                      {SEO_STRATEGY_AUDIT_OPTIONS.map((o) => (
-                        <option key={o.value} value={o.value}>
-                          {o.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                      value={String(auditPages)}
+                      onChange={(v) => setAuditPages(Number(v))}
+                      options={AUDIT_OPTIONS}
+                      aria-labelledby="strategy-audit-label"
+                    />
+                  </div>
                 </div>
 
-                <p className="text-xs text-slate-ink">
+                <p className="ld-small">
                   The worker reads the site, understands the business (LLM),
                   generates customer searches per intent, checks them against
                   the live SERP plus real autocomplete demand (and Search
@@ -147,18 +151,18 @@ export function NewStrategyModal() {
                   coding agent. Roughly 3–6 minutes.
                 </p>
 
-                <div className="flex items-center justify-end gap-2">
+                <div className="adm-confirm__actions">
                   <button
                     type="button"
                     onClick={() => setOpen(false)}
-                    className="px-4 py-2 text-xs font-mono uppercase tracking-[0.18em] text-slate-ink transition-colors hover:text-ink"
+                    className="adm-btn adm-btn--text"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={pending}
-                    className="inline-flex items-center gap-2 bg-mint-deep px-4 py-2 text-xs font-mono uppercase tracking-[0.18em] text-paper transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="adm-btn adm-btn--solid"
                   >
                     {pending ? "Queuing…" : "Queue strategy"}
                   </button>
