@@ -110,6 +110,7 @@
   cursor: default;
 }
 .member__frame {
+  display: block; /* it's a <span> inside the button: inline boxes ignore aspect-ratio */
   position: relative;
   aspect-ratio: 4 / 5;
   background: var(--soft);
