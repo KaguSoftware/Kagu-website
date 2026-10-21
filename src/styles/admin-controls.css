@@ -1,0 +1,411 @@
+/*
+  Admin custom-control layer (owner requirement: no native-looking controls).
+  Imported by src/app/admin/layout.tsx right after admin.css. Everything is
+  scoped under `.admin`.
+*/
+
+/* every scroll container (incl. textarea, lists, popups) uses the themed bar */
+.admin textarea {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+  scrollbar-gutter: stable;
+}
+.admin ::-webkit-scrollbar-corner {
+  background: transparent;
+}
+.admin textarea::-webkit-resizer {
+  background: none;
+}
+
+/* number spinners hidden everywhere */
+.admin input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.admin input[type="number"]::-webkit-outer-spin-button,
+.admin input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+/* native date/time inputs left in B/C files: quiet the native picker icon */
+.admin input[type="date"]::-webkit-calendar-picker-indicator,
+.admin input[type="time"]::-webkit-calendar-picker-indicator,
+.admin input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+.admin input[type="month"]::-webkit-calendar-picker-indicator {
+  opacity: 0.45;
+  cursor: pointer;
+}
+.admin input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  height: 14px;
+  width: 14px;
+  cursor: pointer;
+  background: no-repeat center / 14px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Cpath d='M3 3l8 8M11 3l-8 8' stroke='%23646c76' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+/* number stepper */
+.adm-num {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-ctl);
+  background: var(--card);
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.adm-num:hover {
+  border-color: var(--line-strong);
+}
+.adm-num:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.admin .adm-num input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  min-height: 40px;
+  padding: 0 4px;
+}
+.admin .adm-num input:focus,
+.admin .adm-num input:focus-visible {
+  border: 0;
+  box-shadow: none;
+}
+.adm-num__btn {
+  flex: 0 0 auto;
+  width: 42px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.adm-num__btn:hover:not(:disabled) {
+  background: var(--soft);
+  color: var(--ink);
+}
+.adm-num__btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* radio */
+.adm-radio {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+  cursor: pointer;
+  user-select: none;
+}
+.adm-radio input {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  margin: -10px 0 0;
+  width: 20px;
+  height: 20px;
+  opacity: 0;
+  cursor: pointer;
+}
+.adm-radio__dot {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  background: var(--card);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.adm-radio__dot::after {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ink);
+  transform: scale(0);
+  transition: transform 0.15s ease;
+}
+.adm-radio:hover .adm-radio__dot,
+.adm-radio input:checked + .adm-radio__dot {
+  border-color: var(--ink);
+}
+.adm-radio input:checked + .adm-radio__dot::after {
+  transform: scale(1);
+}
+.adm-radio input:focus-visible + .adm-radio__dot {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent);
+  border-color: var(--accent);
+}
+
+/* range slider (every input[type=range] in admin) */
+.admin input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 20px;
+  background: transparent;
+  cursor: pointer;
+}
+.admin input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 4px;
+  background: var(--line-strong);
+}
+.admin input[type="range"]::-moz-range-track {
+  height: 4px;
+  border-radius: 4px;
+  background: var(--line-strong);
+}
+.admin input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -7px;
+  border-radius: 50%;
+  border: 2px solid var(--card);
+  background: var(--ink);
+  box-shadow: 0 1px 4px rgba(27, 34, 43, 0.3);
+}
+.admin input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--card);
+  background: var(--ink);
+}
+.admin input[type="range"]:focus-visible {
+  outline: none;
+}
+.admin input[type="range"]:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+/* <details> disclosure */
+.admin summary {
+  list-style: none;
+  cursor: pointer;
+}
+.admin summary::-webkit-details-marker {
+  display: none;
+}
+.admin summary::marker {
+  content: "";
+}
+.admin details > summary::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 10px;
+  border-right: 1.5px solid var(--muted);
+  border-bottom: 1.5px solid var(--muted);
+  transform: translateY(-2px) rotate(-45deg);
+  transition: transform 0.18s ease;
+}
+.admin details[open] > summary::before {
+  transform: translateY(-3px) rotate(45deg);
+}
+
+/* tooltip: <Tip text="…">…</Tip> or any [data-tip] attribute */
+.admin [data-tip] {
+  position: relative;
+}
+.admin [data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  z-index: 10004;
+  transform: translate(-50%, 4px);
+  width: max-content;
+  max-width: 240px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--bg);
+  font-family: var(--sans);
+  font-size: 12.5px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  line-height: 1.4;
+  text-align: left;
+  white-space: normal;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.14s ease, transform 0.14s ease;
+}
+.admin [data-tip]:hover::after,
+.admin [data-tip]:focus-visible::after,
+.admin [data-tip]:focus-within::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* inline validation message (FormValidation) */
+.adm-inline-err {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--bad-ink);
+}
+.admin [aria-invalid="true"] {
+  border-color: var(--bad);
+}
+
+/* file drop zone */
+.adm-drop {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 22px 16px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 14px;
+  background: var(--card);
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.adm-drop:hover,
+.adm-drop[data-drag="true"] {
+  border-color: var(--accent);
+  background: var(--info-soft);
+}
+.adm-drop:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.admin .adm-drop input[type="file"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  font-size: 0;
+}
+.adm-drop__pick {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--ink);
+  background: var(--bg);
+  font-weight: 500;
+}
+.adm-drop__names {
+  color: var(--ink);
+  font-size: 13px;
+  word-break: break-all;
+}
+
+/* date picker */
+.adm-cal {
+  position: fixed;
+  z-index: 10003;
+  width: 288px;
+  padding: 12px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow-pop);
+  font-family: var(--sans);
+  color: var(--ink);
+  animation: adm-pop 0.14s ease-out;
+}
+.adm-cal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.adm-cal__title {
+  font-family: var(--serif);
+  font-size: 19px;
+  letter-spacing: -0.01em;
+}
+.adm-cal__nav {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--muted);
+  font-size: 16px;
+  cursor: pointer;
+}
+.adm-cal__nav:hover {
+  background: var(--soft);
+  color: var(--ink);
+}
+.adm-cal__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.adm-cal__dow {
+  padding: 4px 0;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.adm-cal__day {
+  height: 36px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--ink);
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+.adm-cal__day:hover:not(:disabled) {
+  background: var(--soft);
+}
+.adm-cal__day[data-out="true"] {
+  color: color-mix(in srgb, var(--muted) 60%, transparent);
+}
+.adm-cal__day[data-today="true"] {
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+.adm-cal__day[aria-selected="true"] {
+  background: var(--ink);
+  color: var(--bg);
+}
+.adm-cal__day:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.adm-cal__day:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.adm-cal__foot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}

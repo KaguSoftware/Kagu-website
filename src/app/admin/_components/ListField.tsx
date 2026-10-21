@@ -33,17 +33,17 @@ export function ListField({
       <input type="hidden" name={name} value={items.filter((x) => x.trim()).join("\n")} />
       <div className="space-y-2">
         {items.map((item, i) => (
-          <div key={i} className="flex items-center gap-2">
-            <span className="font-mono text-xs text-neutral">{String(i + 1).padStart(2, "0")}</span>
+          <div key={i} className="adm-listrow">
+            <span className="adm-listrow__n">{String(i + 1).padStart(2, "0")}</span>
             <input
               value={item}
               onChange={(e) => update(i, e.target.value)}
-              className="w-full border-0 border-b border-neutral bg-transparent py-1.5 text-base text-ink outline-none focus-visible:border-mint-deep"
+              className="w-full"
             />
             <button
               type="button"
               onClick={() => remove(i)}
-              className="px-2 font-mono text-sm text-slate-ink transition-colors hover:text-ink"
+              className="adm-listrow__x"
               aria-label="Remove item"
             >
               ×
@@ -54,7 +54,7 @@ export function ListField({
       <button
         type="button"
         onClick={add}
-        className="mt-3 text-xs font-mono uppercase tracking-[0.18em] text-slate-ink transition-colors hover:text-mint-deep"
+        className="adm-btn adm-btn--text mt-3"
       >
         + Add row
       </button>

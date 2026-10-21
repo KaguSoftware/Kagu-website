@@ -1,7 +1,7 @@
 "use client";
 
 /*
-  RouteProgress — a thin mint progress bar across the top of the admin panel
+  RouteProgress — a thin accent progress bar across the top of the admin panel
   (YouTube/Vercel style). ADMIN PANEL ONLY (mounted from admin/layout.tsx).
 
   Next.js App Router has no public navigation-start event, so we approximate:
@@ -56,7 +56,7 @@ export function RouteProgress() {
     <AnimatePresence>
       {active && (
         <motion.div
-          className="kagu-routeprogress"
+          className="adm-routeprogress"
           aria-hidden
           initial={{ scaleX: 0, opacity: 1 }}
           // Trickle toward ~90% while pending, then snap to 100% on exit.
@@ -70,25 +70,7 @@ export function RouteProgress() {
                   opacity: { duration: 0.25, delay: 0.1 },
                 }
           }
-        >
-          <style>{`
-            .kagu-routeprogress {
-              position: fixed;
-              top: 0;
-              left: 0;
-              right: 0;
-              height: 2px;
-              transform-origin: left;
-              z-index: 10001;
-              background: linear-gradient(
-                90deg,
-                color-mix(in oklab, var(--mint-deep) 60%, transparent),
-                var(--mint-deep)
-              );
-              box-shadow: 0 0 12px color-mix(in oklab, var(--mint-deep) 70%, transparent);
-            }
-          `}</style>
-        </motion.div>
+        />
       )}
     </AnimatePresence>
   );

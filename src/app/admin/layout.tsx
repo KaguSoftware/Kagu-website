@@ -1,9 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import "@/styles/admin.css";
+import "@/styles/admin-controls.css";
+import { cookies } from "next/headers";
+import { siteFontVars } from "@/lib/siteFonts";
+import { KaguMark } from "@/components/KaguMark";
 import { getAdminUser } from "@/lib/supabase/auth";
 import { createClient } from "@/lib/supabase/server";
 import { SidebarNav } from "./_components/SidebarNav";
 import { AdminLoader } from "./_components/AdminLoader";
+import { ThemeToggle, THEME_COOKIE, type AdminTheme } from "./_components/ThemeToggle";
+import { FormValidation } from "./_components/FormValidation";
 import { Toaster } from "./_components/toast";
 import { RouteProgress } from "./_components/RouteProgress";
 import { readFlash } from "./_actions/flash";
@@ -21,15 +28,19 @@ export default async function AdminLayout({
 }) {
   const user = await getAdminUser();
   const flash = await readFlash();
+  const themeCookie = (await cookies()).get(THEME_COOKIE)?.value;
+  const theme: AdminTheme = themeCookie === "light" || themeCookie === "dark" ? themeCookie : "system";
+  const themeAttr = theme === "system" ? undefined : theme;
 
   // Unauthenticated: render bare (only /admin/login is reachable — proxy.ts guards the rest).
   if (!user) {
     return (
-      <>
+      <div className={`admin ${siteFontVars}`} data-theme={themeAttr}>
         <RouteProgress />
+        <FormValidation />
         {children}
         <Toaster initialFlash={flash} />
-      </>
+      </div>
     );
   }
 
@@ -49,44 +60,66 @@ export default async function AdminLayout({
   ]);
   const newRequests = (contactCount.count ?? 0) + (inquiryCount.count ?? 0);
 
+  const brand = (
+    <Link href="/admin" className="adm-brand" aria-label="Kagu admin home">
+      <KaguMark variant="outline" height={20} />
+      <span className="adm-brand__word">kagu</span>
+      <span className="adm-brand__tag">Admin</span>
+    </Link>
+  );
+
   return (
-    <div className="min-h-screen bg-paper text-ink">
+    <div className={`admin ${siteFontVars}`} data-theme={themeAttr}>
       <AdminLoader />
+      <FormValidation />
       <RouteProgress />
-      <div className="mx-auto flex max-w-(--container-max) flex-col gap-8 px-(--container-x) py-8 lg:flex-row">
-        <aside className="lg:w-56 lg:shrink-0">
-          <div className="flex items-center justify-between border-b border-neutral pb-4 lg:block lg:border-0 lg:pb-0">
-            <Link href="/admin" className="display text-lg">
-              Kagu
-            </Link>
-            <span className="eyebrow ml-2 lg:mt-1 lg:block">Admin</span>
-          </div>
-          <div className="mt-6 hidden lg:block">
+      <div className="adm-shell">
+        {/* Desktop sidebar */}
+        <aside className="adm-side">
+          {brand}
+          <div className="adm-side__nav">
             <SidebarNav newRequests={newRequests} notify />
           </div>
-          <div className="mt-6 lg:hidden">
-            <SidebarNav newRequests={newRequests} />
-          </div>
-          <div className="mt-8 border-t border-neutral pt-4">
-            <p className="text-xs text-slate-ink">{user.email}</p>
-            <form action={logout} className="mt-2">
-              <button
-                type="submit"
-                className="text-xs font-mono uppercase tracking-[0.18em] text-slate-ink transition-colors hover:text-ink"
-              >
+          <div className="adm-side__foot">
+            <p className="adm-side__email" title={user.email ?? undefined}>
+              {user.email}
+            </p>
+            <ThemeToggle initial={theme} />
+            <Link href="/" className="adm-quiet">
+              View site ↗
+            </Link>
+            <form action={logout}>
+              <button type="submit" className="adm-quiet">
                 Sign out
               </button>
             </form>
-            <Link
-              href="/"
-              className="mt-2 block text-xs font-mono uppercase tracking-[0.18em] text-slate-ink transition-colors hover:text-ink"
-            >
-              ← View site
-            </Link>
           </div>
         </aside>
 
-        <main id="main" className="min-w-0 flex-1">{children}</main>
+        {/* Mobile top bar + scrollable pills */}
+        <header className="adm-top">
+          <div className="adm-top__row">
+            {brand}
+            <div className="adm-top__actions">
+              <ThemeToggle initial={theme} />
+              <Link href="/" className="adm-quiet">
+                Site ↗
+              </Link>
+              <form action={logout}>
+                <button type="submit" className="adm-quiet">
+                  Sign out
+                </button>
+              </form>
+            </div>
+          </div>
+          <div className="adm-pills">
+            <SidebarNav newRequests={newRequests} variant="pills" />
+          </div>
+        </header>
+
+        <main id="main" className="adm-main">
+          <div className="adm-main__inner">{children}</div>
+        </main>
       </div>
       <Toaster initialFlash={flash} />
     </div>
