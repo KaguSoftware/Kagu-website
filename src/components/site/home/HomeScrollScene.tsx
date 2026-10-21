@@ -46,11 +46,18 @@ export function HomeScrollScene() {
     let queued = false;
     let raf = 0;
 
+    // iOS toolbars change innerHeight while scrolling; only re-measure on a real resize.
+    let stableW = window.innerWidth;
+    let stableH = window.innerHeight;
     const paint = () => {
       queued = false;
       const reduce = mq.matches;
       const vw = window.innerWidth;
-      const vh = window.innerHeight;
+      if (vw !== stableW || Math.abs(window.innerHeight - stableH) > 160) {
+        stableW = vw;
+        stableH = window.innerHeight;
+      }
+      const vh = stableH;
       const r = hero.getBoundingClientRect();
       const span = r.height - vh;
       const p = reduce ? 1 : clamp(-r.top / (span || 1));
@@ -74,7 +81,10 @@ export function HomeScrollScene() {
       // Stays an outline: lines thicken as it grows and blurs, so the shape still reads.
       bg.style.filter = k > 0.001 ? `blur(${k * 9}px)` : "none";
       bg.style.setProperty("--bg-stroke", `${1.6 + k * 22}px`);
-      const o = String(1 - k * 0.8);
+      // On phones the big blurred logo clears away once the hero has scrolled past,
+      // so the work list and closing read on clean paper.
+      const gone = vw < 760 && !reduce ? clamp((vh - r.bottom) / (vh * 0.6)) : 0;
+      const o = String((1 - k * 0.8) * (1 - gone));
       outlines.forEach((el) => (el.style.opacity = o));
       if (cloud) cloud.style.opacity = "0";
       bg.style.visibility = "visible";
@@ -115,6 +125,8 @@ export function HomeScrollScene() {
         c.style.transform = `translate3d(0,${(1 - e) * vh * 0.55}px,0)`;
         c.style.opacity = String(e);
         c.style.filter = e < 0.999 ? `blur(${(1 - e) * 14}px)` : "none";
+        // invisible rows must not swallow taps meant for the hero buttons
+        c.style.pointerEvents = e > 0.6 ? "auto" : "none";
       });
     };
     const onScroll = () => {
@@ -154,7 +166,9 @@ export function HomeScrollScene() {
           <div className="hero__stage">
             <div className="hero__spot" ref={spotRef} />
             <div className="hero__text" ref={textRef}>
-              <h1>Software, done right.</h1>
+              <h1>
+                Software, done <span className="pop">right</span>.
+              </h1>
               <p className="hero__sub">Websites, apps and AI.</p>
               <div className="hero__acts">
                 <NavLink className="site-btn" href="/contact">

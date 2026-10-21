@@ -12,10 +12,24 @@
   }
 }
 .mk-hero h1 {
-  font-size: clamp(64px, 13vw, 128px);
+  font-size: clamp(42px, 13vw, 128px);
   line-height: 1.08;
   letter-spacing: -0.035em;
   margin: 0;
+}
+.mk-hero h1::after {
+  content: ".";
+  color: var(--pop);
+}
+.mk-svc__ic {
+  color: var(--pop);
+}
+.mk-svc__head h2::after {
+  content: ".";
+  color: var(--pop);
+}
+.mk-svc__name {
+  color: var(--pop-ink);
 }
 .mk-hero p {
   margin: 28px 0 32px;
@@ -67,7 +81,7 @@
   grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
   gap: clamp(28px, 6vw, 80px);
   padding-block: clamp(40px, 6vw, 72px);
-  border-top: 1px solid var(--line);
+  border-top: 2px solid var(--pop);
 }
 .mk-svc__head {
   display: flex;
@@ -151,12 +165,15 @@
   }
 }
 .mk-steps__n {
-  display: block;
-  font-family: var(--serif);
-  font-weight: 300;
-  font-size: 15px;
-  color: var(--accent-ink);
-  margin-bottom: 10px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--pop);
+  color: #fff;
+  font-size: 14px;
+  margin-bottom: 12px;
 }
 .mk-steps__list h3 {
   margin: 0 0 10px;
@@ -190,7 +207,7 @@
   align-items: center;
   gap: 8px;
   min-height: 44px;
-  color: var(--accent-ink);
+  color: var(--pop-ink);
   text-decoration: none;
 }
 .mk-with__link:hover {

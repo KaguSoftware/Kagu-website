@@ -1,10 +1,15 @@
 /*
-  Full-screen cream menu sheet (src/components/layout/MobileNav.tsx).
+  Full-screen menu (src/components/layout/MobileNav.tsx).
+  Opens as a deep-blue circle growing out of the menu button; the words rise out of
+  masks one by one, a hairline draws under each, and the logo draws itself behind.
   Sits below the sticky header (z 20) so the morphing button stays tappable.
   Hidden state uses visibility + inert so nothing inside is focusable.
 */
 
 .site-sheet {
+  /* centre of the menu button: the circle starts and ends here */
+  --ox: calc(100% - 31px);
+  --oy: calc(env(safe-area-inset-top, 0px) + 34px);
   position: fixed;
   inset: 0;
   z-index: 15;
@@ -12,62 +17,147 @@
   flex-direction: column;
   justify-content: space-between;
   padding:
-    calc(env(safe-area-inset-top, 0px) + var(--site-header-h) + 32px)
+    calc(env(safe-area-inset-top, 0px) + var(--site-header-h) + 24px)
     var(--site-gutr)
-    calc(env(safe-area-inset-bottom, 0px) + 36px)
+    calc(env(safe-area-inset-bottom, 0px) + 32px)
     var(--site-gut);
-  background: var(--bg);
+  background: var(--pop-ink);
+  color: var(--bg);
+  overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
-  opacity: 0;
+  clip-path: circle(0px at var(--ox) var(--oy));
   visibility: hidden;
-  transition: opacity 0.3s, visibility 0.3s;
+  transition:
+    clip-path 0.7s cubic-bezier(0.76, 0, 0.24, 1),
+    visibility 0s 0.7s;
 }
 .site-sheet.is-open {
-  opacity: 1;
+  clip-path: circle(150vmax at var(--ox) var(--oy));
   visibility: visible;
+  transition:
+    clip-path 0.85s cubic-bezier(0.76, 0, 0.24, 1),
+    visibility 0s;
 }
+
+/* the logo draws itself, cropped off the corner */
+.site-sheet__draw {
+  position: absolute;
+  right: -34%;
+  bottom: -4%;
+  width: 135%;
+  height: auto;
+  overflow: visible;
+  color: var(--bg);
+  opacity: 0.17;
+  pointer-events: none;
+}
+.site-sheet__draw-p {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+.site-sheet.is-open .site-sheet__draw-p {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 2.4s cubic-bezier(0.5, 0, 0.2, 1) 0.35s;
+}
+.site-sheet.is-open .site-sheet__draw-p--2 {
+  transition-delay: 0.65s;
+}
+.site-sheet.is-open .site-sheet__draw-p--3 {
+  transition-delay: 0.95s;
+}
+
+/* the words */
 .site-sheet__nav {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 4px;
 }
 .site-sheet__nav a {
+  position: relative;
   display: block;
-  padding-block: 2px;
+  overflow: hidden;
+  padding: 0.08em 0 0.2em;
   font-family: var(--serif);
   font-weight: 300;
-  font-size: clamp(40px, 12vw, 56px);
-  line-height: 1.15;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-  opacity: 0;
-  transform: translateY(12px);
-  transition: transform 0.5s var(--ease-out-quint, ease), opacity 0.5s;
+  font-size: clamp(52px, min(16vw, 10svh), 80px);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  color: var(--bg);
+  -webkit-tap-highlight-color: transparent;
 }
-.site-sheet__nav a[aria-current="page"] {
-  color: var(--accent-ink);
+.site-sheet__word {
+  display: inline-block;
+  transform: translateY(112%);
+  transition: transform 0.35s cubic-bezier(0.5, 0, 0.75, 0);
 }
-.site-sheet.is-open .site-sheet__nav a {
-  opacity: 1;
+.site-sheet.is-open .site-sheet__word {
   transform: none;
+  transition: transform 0.95s cubic-bezier(0.16, 1, 0.3, 1) calc(0.3s + var(--i, 0) * 0.075s);
 }
-.site-sheet.is-open .site-sheet__nav a:nth-child(2) { transition-delay: 0.05s; }
-.site-sheet.is-open .site-sheet__nav a:nth-child(3) { transition-delay: 0.1s; }
-.site-sheet.is-open .site-sheet__nav a:nth-child(4) { transition-delay: 0.15s; }
+.site-sheet__nav a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: color-mix(in srgb, var(--bg) 32%, transparent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s;
+}
+.site-sheet.is-open .site-sheet__nav a::after {
+  transform: scaleX(1);
+  transition: transform 1s cubic-bezier(0.16, 1, 0.3, 1) calc(0.4s + var(--i, 0) * 0.075s);
+}
+.site-sheet__nav a[aria-current="page"] .site-sheet__word::after {
+  content: "";
+  display: inline-block;
+  width: 0.14em;
+  height: 0.14em;
+  margin-left: 0.16em;
+  border-radius: 50%;
+  background: var(--bg);
+  vertical-align: 0.42em;
+}
+.site-sheet__nav a:active .site-sheet__word {
+  opacity: 0.65;
+}
+
+/* email + time arrive last */
 .site-sheet__foot {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 4px;
-  margin-top: 40px;
+  margin-top: 32px;
   font-size: 15px;
-  color: var(--muted);
+  color: color-mix(in srgb, var(--bg) 72%, transparent);
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.25s, transform 0.25s;
+}
+.site-sheet.is-open .site-sheet__foot {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.7s 0.85s, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.85s;
 }
 .site-sheet__foot a {
   display: inline-block;
   min-height: 32px;
-  color: var(--ink);
+  font-size: 17px;
+  color: var(--bg);
   overflow-wrap: anywhere;
+}
+
+/* the bar turns cream over the blue */
+.site-header.is-open {
+  --mark: var(--bg);
 }
 
 /* The sheet is mobile-only. */
@@ -79,11 +169,36 @@
 
 @media (prefers-reduced-motion: reduce) {
   .site-sheet,
-  .site-sheet__nav a,
+  .site-sheet.is-open {
+    clip-path: none;
+    opacity: 0;
+    transition: opacity 0.2s, visibility 0s 0.2s;
+  }
+  .site-sheet.is-open {
+    opacity: 1;
+    transition: opacity 0.2s;
+  }
+  .site-sheet__word,
+  .site-sheet.is-open .site-sheet__word,
+  .site-sheet__foot,
+  .site-sheet.is-open .site-sheet__foot {
+    transform: none;
+    transition: none;
+  }
+  .site-sheet__foot {
+    opacity: 1;
+  }
+  .site-sheet__nav a::after,
+  .site-sheet.is-open .site-sheet__nav a::after {
+    transform: scaleX(1);
+    transition: none;
+  }
+  .site-sheet__draw-p,
+  .site-sheet.is-open .site-sheet__draw-p {
+    stroke-dashoffset: 0;
+    transition: none;
+  }
   .site-menu-btn i {
     transition: none !important;
-  }
-  .site-sheet__nav a {
-    transform: none;
   }
 }

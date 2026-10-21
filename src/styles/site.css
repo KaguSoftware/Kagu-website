@@ -43,7 +43,7 @@ html:has(.site)::-webkit-scrollbar-thumb:hover,
   background: #a9a092;
 }
 .site ::selection {
-  background: color-mix(in srgb, #1f8fe0 22%, transparent);
+  background: color-mix(in srgb, #1d63c9 22%, transparent);
 }
 
 .site {
@@ -57,6 +57,10 @@ html:has(.site)::-webkit-scrollbar-thumb:hover,
   --accent-ink: #0f6dbd;
   --mark: var(--ink); /* the logo is always drawn in ink (black), never blue */
   --soft: #edf2f7;
+  /* the brand blue, used as the one accent (analogous with the cool ink, calm on warm cream) */
+  --pop: #1d63c9;
+  --pop-ink: #134fa8;
+  --pop-soft: #e4edfb;
   --serif: var(--font-maname), "Iowan Old Style", Georgia, serif;
   --sans: var(--font-geist), system-ui, -apple-system, "Segoe UI", sans-serif;
   --site-gut: max(20px, env(safe-area-inset-left, 0px));
@@ -193,8 +197,8 @@ html:has(.site)::-webkit-scrollbar-thumb:hover,
   padding: 0 20px;
   border-radius: 999px;
   border: 0;
-  background: var(--ink);
-  color: var(--bg) !important;
+  background: var(--pop-ink);
+  color: #fff !important;
   font-family: var(--sans);
   font-size: 15px;
   font-weight: 500;
@@ -208,7 +212,7 @@ html:has(.site)::-webkit-scrollbar-thumb:hover,
 .site-btn--ghost {
   background: none;
   color: var(--ink) !important;
-  border: 1px solid var(--line);
+  border: 1px solid var(--ink);
 }
 
 /* ---- footer ---- */

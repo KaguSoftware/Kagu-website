@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTeam, type TeamMember } from "@/lib/content";
 import { pageMetadata, webPageJsonLd } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { KAGU_VIEWBOX, RIBBON, FOLD, WING } from "@/components/KaguMark";
 import { TeamRoster, type RosterMember } from "./TeamRoster";
 import "@/components/site/about/about.css";
 
@@ -84,8 +85,28 @@ export default async function AboutPage({ searchParams }: AboutPageProps) {
       />
 
       <section className="site-wrap about-hero">
-        <h1>The team.</h1>
-        <p className="about-lead">We build software, then look after it.</p>
+        <div className="about-hero__text">
+          <h1>
+            The team<span className="pop">.</span>
+          </h1>
+          <p className="about-lead">We build software, then look after it.</p>
+        </div>
+        <svg
+          className="about-draw"
+          viewBox={KAGU_VIEWBOX}
+          aria-hidden="true"
+          focusable="false"
+          fill="none"
+        >
+          {[RIBBON, FOLD, WING].map((d, i) => (
+            <path
+              key={i}
+              d={d}
+              pathLength={1}
+              className={`about-draw__p about-draw__p--${i + 1}`}
+            />
+          ))}
+        </svg>
       </section>
 
       {members.length > 0 ? (

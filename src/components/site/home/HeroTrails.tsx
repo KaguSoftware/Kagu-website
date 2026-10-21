@@ -64,6 +64,13 @@ export function HeroTrails({
     const ctxf = cvf?.getContext("2d");
     if (!cv || !cvf || !ctx || !ctxf) return;
 
+    // the coloured trails follow the site accent (--pop), so they never drift from it
+    const hex = getComputedStyle(cv).getPropertyValue("--pop").trim().replace("#", "");
+    const popRgb =
+      hex.length === 6
+        ? [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(",")
+        : "29,99,201";
+
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     let W = 0;
     let H = 0;
@@ -260,7 +267,7 @@ export function HeroTrails({
         (t.blue ? 0.8 : 1) *
         smooth(fade) *
         smooth(clamp01(introT / 1.6));
-      const rgb = t.blue ? "31,143,224" : "27,34,43";
+      const rgb = t.blue ? popRgb : "27,34,43";
       for (let b = 0; b < B; b++) {
         const i0 = Math.floor((b * (m - 1)) / B);
         const i1 = Math.floor(((b + 1) * (m - 1)) / B);

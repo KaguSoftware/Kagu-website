@@ -1,7 +1,8 @@
 "use client";
 
-import { forwardRef, useEffect, useId, useRef, type RefObject } from "react";
+import { forwardRef, useEffect, useId, useRef, type CSSProperties, type RefObject } from "react";
 import { NavLink } from "@/components/site/NavLink";
+import { KAGU_VIEWBOX, RIBBON, FOLD, WING } from "@/components/KaguMark";
 import { usePathname } from "next/navigation";
 import { menuItems, FALLBACK_EMAIL } from "./navItems";
 
@@ -116,8 +117,19 @@ export function MobileNav({
       <span id={labelId} className="site-sr">
         Site menu
       </span>
+      <svg
+        className="site-sheet__draw"
+        viewBox={KAGU_VIEWBOX}
+        aria-hidden="true"
+        focusable="false"
+        fill="none"
+      >
+        {[RIBBON, FOLD, WING].map((d, i) => (
+          <path key={i} d={d} pathLength={1} className={`site-sheet__draw-p site-sheet__draw-p--${i + 1}`} />
+        ))}
+      </svg>
       <nav aria-label="Menu" className="site-sheet__nav">
-        {menuItems.map((item) => {
+        {menuItems.map((item, i) => {
           const active = !item.href.includes("#") && pathname === item.href;
           return (
             <NavLink
@@ -125,8 +137,9 @@ export function MobileNav({
               href={item.href}
               onClick={onClose}
               aria-current={active ? "page" : undefined}
+              style={{ "--i": i } as CSSProperties}
             >
-              {item.label}
+              <span className="site-sheet__word">{item.label}</span>
             </NavLink>
           );
         })}

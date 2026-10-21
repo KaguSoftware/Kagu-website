@@ -49,7 +49,15 @@ export default async function ContactPage({ searchParams }: ContactPageProps) {
               {WORDS.map((w, i) => (
                 <span key={w}>
                   <span className="cx-w">
-                    <span style={{ "--i": i } as CSSProperties}>{w}</span>
+                    <span style={{ "--i": i } as CSSProperties}>
+                      {w === "Let’s" ? (
+                        <>
+                          Let<span className="cx-pop">’</span>s
+                        </>
+                      ) : (
+                        w
+                      )}
+                    </span>
                   </span>{" "}
                 </span>
               ))}
