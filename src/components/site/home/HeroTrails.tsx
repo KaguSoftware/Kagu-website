@@ -286,13 +286,8 @@ export function HeroTrails({
           ? c.createLinearGradient(0, 0, 0, H)
           : c.createLinearGradient(0, 0, W, 0);
         const mid = narrow ? cy / H : cx / W;
-        const hwBase = box
-          ? narrow
-            ? box.h / 2 / H
-            : box.w / 2 / W
-          : narrow
-            ? 0.2
-            : 0.17;
+        // no measured box yet: keep a fixed clear band down the middle
+        const hwBase = narrow ? 0.2 : 0.17;
         const hw = lerp(hwBase, 0, K);
         const soft = narrow ? 0.07 : 0.06;
         const m = K.toFixed(3);
