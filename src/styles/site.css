@@ -57,7 +57,7 @@ html:has(.site)::-webkit-scrollbar-thumb:hover,
   --accent-ink: #0f6dbd;
   --mark: var(--ink); /* the logo is always drawn in ink (black), never blue */
   --soft: #edf2f7;
-  --serif: var(--font-newsreader), "Iowan Old Style", Georgia, serif;
+  --serif: var(--font-maname), "Iowan Old Style", Georgia, serif;
   --sans: var(--font-geist), system-ui, -apple-system, "Segoe UI", sans-serif;
   --site-gut: max(20px, env(safe-area-inset-left, 0px));
   --site-gutr: max(20px, env(safe-area-inset-right, 0px));
@@ -88,6 +88,8 @@ html:has(.site)::-webkit-scrollbar-thumb:hover,
   --font-mono: var(--sans);
 
   color-scheme: light;
+  /* Maname's fi / fl ligatures render with a gap */
+  font-variant-ligatures: no-common-ligatures;
   min-height: 100vh;
   min-height: 100svh;
   display: flex;
@@ -121,7 +123,7 @@ html:has(.site)::-webkit-scrollbar-thumb:hover,
   font-weight: 300;
   color: var(--ink);
   letter-spacing: -0.02em;
-  line-height: 1.05;
+  line-height: 1.12;
 }
 .site .eyebrow {
   font-family: var(--sans);
@@ -168,6 +170,9 @@ html:has(.site)::-webkit-scrollbar-thumb:hover,
 }
 .site-brand span {
   color: var(--ink);
+  /* Maname sits low in its line box; lift it to the logo's centre line */
+  position: relative;
+  top: -0.16em;
 }
 .site-brand svg {
   width: auto;

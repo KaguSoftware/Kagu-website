@@ -19,7 +19,7 @@
   }
 }
 .cf__title {
-  margin: 0 0 20px;
+  margin: 0 0 26px;
   font-size: clamp(28px, 3.2vw, 34px);
   transition: opacity 0.3s;
 }

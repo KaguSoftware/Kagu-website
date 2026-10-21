@@ -40,7 +40,7 @@
 .cx-h1 {
   margin: 0;
   font-size: clamp(56px, 8vw, 120px);
-  line-height: 0.98;
+  line-height: 1.1;
   letter-spacing: -0.03em;
 }
 .cx-w {
@@ -56,7 +56,7 @@
   animation-delay: calc(var(--i) * 60ms);
 }
 .cx-sub {
-  margin: 18px 0 0;
+  margin: 26px 0 0;
   color: var(--muted);
   font-size: 18px;
 }

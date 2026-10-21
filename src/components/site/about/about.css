@@ -5,7 +5,7 @@
 }
 .about-hero h1 {
   font-size: clamp(64px, 14vw, 140px);
-  line-height: 0.95;
+  line-height: 1.1;
   letter-spacing: -0.035em;
   margin: 0;
 }
@@ -149,7 +149,7 @@
 }
 .member__role {
   display: block;
-  margin-top: 2px;
+  margin-top: 6px;
   font-size: 14px;
   color: var(--muted);
 }
@@ -287,7 +287,7 @@
 }
 
 .about-lead {
-  margin: 20px 0 0;
+  margin: 28px 0 0;
   color: var(--muted);
   font-size: clamp(17px, 1.8vw, 20px);
 }
