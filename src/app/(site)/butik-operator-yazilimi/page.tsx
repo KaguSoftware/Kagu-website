@@ -148,7 +148,7 @@ export default function ButikOperatorYazilimiPage() {
           Üretim haftalar içinde canlıya alınır ve teslimle birlikte yönetim tamamen size geçer.
           Üretimdeki projeleri <A href="/work">işlerimiz</A> sayfasında, ekibi{" "}
           <A href="/about">hakkımızda</A> sayfasında görebilirsiniz. Süreci merak ediyorsanız{" "}
-          <A href="/about#contact">proje başlatma</A> sayfası adım adım anlatır.
+          <A href="/contact">proje başlatma</A> sayfası adım adım anlatır.
         </P>
       </SeoSection>
 
@@ -156,9 +156,9 @@ export default function ButikOperatorYazilimiPage() {
 
       <CtaBand
         title="İşinizi kolaylaştıracak yazılımı konuşalım."
-        href="/about#contact"
+        href="/contact"
         label="Proje başlat"
-        secondaryHref="/about#contact"
+        secondaryHref="/contact"
         secondaryLabel="Bize yazın"
       />
 

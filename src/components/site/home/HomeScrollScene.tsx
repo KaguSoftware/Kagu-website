@@ -142,7 +142,7 @@ export function HomeScrollScene() {
               <h1>Software, done right.</h1>
               <p className="hero__sub">Websites, apps and AI.</p>
               <div className="hero__acts">
-                <Link className="site-btn" href="/about#contact">
+                <Link className="site-btn" href="/contact">
                   Let&rsquo;s talk
                 </Link>
                 <Link className="site-btn site-btn--ghost" href="/work">

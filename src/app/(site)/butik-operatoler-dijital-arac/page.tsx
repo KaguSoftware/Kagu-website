@@ -146,7 +146,7 @@ export default function ButikOperatorlerDijitalAracPage() {
         <P>
           Yerinde çalışmanın bir avantajı daha var: işletmenizi yerinde görür, süreci birlikte
           yürürüz. Turizm ve vize danışmanlığı gibi İstanbul yoğun sektörlerde üretimde çalışan
-          sistemlerimiz var. Projenizi konuşmak için <A href="/about#contact">bize yazın</A> — 24 saat
+          sistemlerimiz var. Projenizi konuşmak için <A href="/contact">bize yazın</A> — 24 saat
           içinde yanıt veriyoruz.
         </P>
       </SeoSection>
@@ -162,7 +162,7 @@ export default function ButikOperatorlerDijitalAracPage() {
           Konaklama, Kagu&apos;nun odak sektörlerinden biridir: sistemin sınavı, ekibin onu cuma
           gecesi yoğunluğunda kullanıp kullanmadığıdır. Otel siteniz için başlangıç fiyatlarını{" "}
           <A href="/custom-website-fiyati">custom website fiyatı</A> sayfasında, süreci{" "}
-          <A href="/about#contact">proje başlatma</A> sayfasında bulabilirsiniz.
+          <A href="/contact">proje başlatma</A> sayfasında bulabilirsiniz.
         </P>
       </SeoSection>
 
@@ -170,9 +170,9 @@ export default function ButikOperatorlerDijitalAracPage() {
 
       <CtaBand
         title="İşinizi kolaylaştıracak aracı birlikte bulalım."
-        href="/about#contact"
+        href="/contact"
         label="Proje başlat"
-        secondaryHref="/about#contact"
+        secondaryHref="/contact"
         secondaryLabel="Bize yazın"
       />
 

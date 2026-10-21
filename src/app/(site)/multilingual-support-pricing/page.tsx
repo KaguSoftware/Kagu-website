@@ -139,7 +139,7 @@ export default function MultilingualSupportPricingPage() {
           ordered
           items={[
             <>
-              Open the <A href="/about#contact">project builder</A> and pick your site type.
+              Open the <A href="/contact">project builder</A> and pick your site type.
             </>,
             <>
               Tick <strong>Multi-language</strong> (and <strong>RTL</strong> if you need it); the
@@ -174,7 +174,7 @@ export default function MultilingualSupportPricingPage() {
           chain.
         </P>
         <P>
-          Not sure yet? <A href="/about#contact">Write to us</A> and we&apos;ll work out together which
+          Not sure yet? <A href="/contact">Write to us</A> and we&apos;ll work out together which
           languages and what scope you really need. You can write in Turkish, English, Arabic,
           Persian or Russian — we reply within 24 hours.
         </P>
@@ -184,9 +184,9 @@ export default function MultilingualSupportPricingPage() {
 
       <CtaBand
         title="See the price of your multilingual site now."
-        href="/about#contact"
+        href="/contact"
         label="Build a quote"
-        secondaryHref="/about#contact"
+        secondaryHref="/contact"
         secondaryLabel="Write to us"
       />
 

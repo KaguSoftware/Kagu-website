@@ -161,7 +161,7 @@ export default function AdminSystemsPage() {
         <P>
           Our production examples include application tracking for visa consultancy and
           voucher/tour-plan generation for tourism — both are on <A href="/work">our work page</A>.
-          To build your own, read how to <A href="/about#contact">start a project</A>.
+          To build your own, read how to <A href="/contact">start a project</A>.
         </P>
       </SeoSection>
 
@@ -169,9 +169,9 @@ export default function AdminSystemsPage() {
 
       <CtaBand
         title="Let's gather your operation into one panel."
-        href="/about#contact"
+        href="/contact"
         label="Start a project"
-        secondaryHref="/about#contact"
+        secondaryHref="/contact"
         secondaryLabel="Write to us"
       />
 

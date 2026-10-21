@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 
 /* Route-change side effect: scroll to top on navigation (hash links excluded
-   so /about#contact lands on its anchor). */
+   so /contact lands on its anchor). */
 export function NavigationEvents() {
   const pathname = usePathname();
 

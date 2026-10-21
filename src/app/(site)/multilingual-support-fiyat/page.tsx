@@ -140,7 +140,7 @@ export default function MultilingualSupportFiyatPage() {
           ordered
           items={[
             <>
-              <A href="/about#contact">Proje oluşturucuyu</A> açın ve site türünüzü seçin.
+              <A href="/contact">Proje oluşturucuyu</A> açın ve site türünüzü seçin.
             </>,
             <>
               <strong>Multi-language</strong> özelliğini (gerekiyorsa <strong>RTL</strong> ile
@@ -175,7 +175,7 @@ export default function MultilingualSupportFiyatPage() {
           veriyoruz. Bürokrasiyi sevmiyoruz: teklif süreci e-posta zincirine dönmez.
         </P>
         <P>
-          Kararsızsanız <A href="/about#contact">bize yazın</A> — hangi dillerin ve hangi kapsamın size
+          Kararsızsanız <A href="/contact">bize yazın</A> — hangi dillerin ve hangi kapsamın size
           gerçekten gerekli olduğunu birlikte netleştirelim. Türkçe, İngilizce, Arapça, Farsça
           veya Rusça yazabilirsiniz; 24 saat içinde yanıt veriyoruz.
         </P>
@@ -185,9 +185,9 @@ export default function MultilingualSupportFiyatPage() {
 
       <CtaBand
         title="Çok dilli sitenizin fiyatını şimdi görün."
-        href="/about#contact"
+        href="/contact"
         label="Teklif oluştur"
-        secondaryHref="/about#contact"
+        secondaryHref="/contact"
         secondaryLabel="Bize yazın"
       />
 

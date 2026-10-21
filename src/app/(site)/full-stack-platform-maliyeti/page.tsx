@@ -225,9 +225,9 @@ export default function FullStackPlatformMaliyetiPage() {
 
       <CtaBand
         title="Platformunuzu kalem kalem fiyatlandırın."
-        href="/about#contact"
+        href="/contact"
         label="Fiyat hesapla"
-        secondaryHref="/about#contact"
+        secondaryHref="/contact"
         secondaryLabel="Süreci okuyun"
       />
 

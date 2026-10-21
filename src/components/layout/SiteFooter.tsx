@@ -38,6 +38,7 @@ export function SiteFooter({ studio }: { studio?: FooterStudio }) {
           <nav className="site-footer__links" aria-label="Footer">
             <Link href="/work">Work</Link>
             <Link href="/marketing">Marketing</Link>
+            <Link href="/about">About</Link>
             <Link href={contactHref}>Contact</Link>
             <a href={`mailto:${email}`}>{email}</a>
           </nav>

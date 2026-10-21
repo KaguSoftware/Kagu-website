@@ -117,8 +117,8 @@ export default function CustomWebsitePricingPage() {
         />
         <P>
           For an exact figure,{" "}
-          <A href="/about#contact">assemble your package in the project builder</A> and watch the
-          total update live, or <A href="/about#contact">write to us</A> for a tailored quote. We reply
+          <A href="/contact">assemble your package in the project builder</A> and watch the
+          total update live, or <A href="/contact">write to us</A> for a tailored quote. We reply
           within 24 hours.
         </P>
       </SeoSection>
@@ -215,9 +215,9 @@ export default function CustomWebsitePricingPage() {
 
       <CtaBand
         title="Assemble your package, see the price instantly."
-        href="/about#contact"
+        href="/contact"
         label="Get an estimate"
-        secondaryHref="/about#contact"
+        secondaryHref="/contact"
         secondaryLabel="Ask us directly"
       />
 

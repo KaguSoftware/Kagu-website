@@ -163,7 +163,7 @@ export default function AdminSistemleriPage() {
           Üretimde çalışan örneklerimiz arasında vize danışmanlığı için başvuru takibi ve turizm
           için voucher/tur planı üretimi var — ikisini de <A href="/work">işlerimiz</A> sayfasında
           inceleyebilirsiniz. Kendi sisteminizi kurmak için{" "}
-          <A href="/about#contact">proje başlatma sürecini</A> okuyun.
+          <A href="/contact">proje başlatma sürecini</A> okuyun.
         </P>
       </SeoSection>
 
@@ -171,9 +171,9 @@ export default function AdminSistemleriPage() {
 
       <CtaBand
         title="Operasyonunuzu tek panelde toplayalım."
-        href="/about#contact"
+        href="/contact"
         label="Proje başlat"
-        secondaryHref="/about#contact"
+        secondaryHref="/contact"
         secondaryLabel="Bize yazın"
       />
 

@@ -74,7 +74,7 @@ export default async function WorkPage() {
 
         <section className="work-cta">
           <h2>Got an idea?</h2>
-          <Link href="/about#contact" className="site-btn">
+          <Link href="/contact" className="site-btn">
             Let&apos;s talk
           </Link>
         </section>

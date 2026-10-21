@@ -16,4 +16,4 @@
 - [Admin Systems](https://kagusoftware.com/admin-systems): guide to admin systems for boutique operators
 - [Work](https://kagusoftware.com/work): shipped projects — production case studies from hospitality and service businesses
 - [About](https://kagusoftware.com/about): the team and how Kagu works
-- [Contact](https://kagusoftware.com/about#contact): start a conversation — response within 24 hours in Turkish, English, Arabic, Persian or Russian
+- [Contact](https://kagusoftware.com/contact): start a conversation — response within 24 hours in Turkish, English, Arabic, Persian or Russian

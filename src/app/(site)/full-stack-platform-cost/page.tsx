@@ -224,9 +224,9 @@ export default function FullStackPlatformCostPage() {
 
       <CtaBand
         title="Price your platform, line by line."
-        href="/about#contact"
+        href="/contact"
         label="Get an estimate"
-        secondaryHref="/about#contact"
+        secondaryHref="/contact"
         secondaryLabel="Ask us directly"
       />
 

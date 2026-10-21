@@ -7,7 +7,7 @@ export function HomeClosing({ email }: { email: string }) {
       <div className="cta-band">
         <h2 id="home-idea">Got an idea?</h2>
         <span className="mail">{email}</span>
-        <Link className="site-btn" href="/about#contact">
+        <Link className="site-btn" href="/contact">
           Let&rsquo;s talk
         </Link>
       </div>

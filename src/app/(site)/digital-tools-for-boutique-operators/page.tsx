@@ -146,7 +146,7 @@ export default function DigitalToolsForBoutiqueOperatorsPage() {
         <P>
           Working locally has one more advantage: we see your operation in person and walk the
           process with you. We have production systems in Istanbul-heavy sectors like tourism and
-          visa consultancy. <A href="/about#contact">Write to us</A> about your project — we reply
+          visa consultancy. <A href="/contact">Write to us</A> about your project — we reply
           within 24 hours.
         </P>
       </SeoSection>
@@ -162,7 +162,7 @@ export default function DigitalToolsForBoutiqueOperatorsPage() {
           Hospitality is one of Kagu&apos;s focus verticals: the test of a system is whether the
           team uses it on a busy Friday night. Starting prices for a hotel site are on the{" "}
           <A href="/custom-website-pricing">custom website pricing</A> page, and the process is
-          described under <A href="/about#contact">start a project</A>.
+          described under <A href="/contact">start a project</A>.
         </P>
       </SeoSection>
 
@@ -170,9 +170,9 @@ export default function DigitalToolsForBoutiqueOperatorsPage() {
 
       <CtaBand
         title="Let's find the tool that makes your work easier."
-        href="/about#contact"
+        href="/contact"
         label="Start a project"
-        secondaryHref="/about#contact"
+        secondaryHref="/contact"
         secondaryLabel="Write to us"
       />
 

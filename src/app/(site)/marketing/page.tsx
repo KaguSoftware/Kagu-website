@@ -52,7 +52,7 @@ export default function MarketingPage() {
 
       <section className="site-wrap mk-close">
         <h2>Got an idea?</h2>
-        <Link href="/about?topic=marketing#contact" className="site-btn">
+        <Link href="/contact?topic=marketing" className="site-btn">
           Let&apos;s talk
         </Link>
       </section>

@@ -1,16 +1,13 @@
 import type { Metadata } from "next";
-import { getStudio, getTeam, type TeamMember } from "@/lib/content";
+import { getTeam, type TeamMember } from "@/lib/content";
 import { pageMetadata, webPageJsonLd } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { whatsappHref } from "@/lib/marketing.config";
-import { ContactForm } from "@/components/forms/ContactForm";
-import { ContactHero } from "@/components/site/about/ContactHero";
 import { TeamRoster, type RosterMember } from "./TeamRoster";
 import "@/components/site/about/about.css";
 
 const TITLE = "About — Kagu";
 const DESCRIPTION =
-  "Say hello to Kagu, a small Istanbul studio. Email us, write here, or meet the team.";
+  "Meet the Kagu team. We build software, then look after it.";
 
 const BASE_META = pageMetadata({
   title: TITLE,
@@ -51,7 +48,7 @@ function withSlugs(team: TeamMember[]): RosterMember[] {
 }
 
 type AboutPageProps = {
-  searchParams: Promise<{ member?: string; topic?: string }>;
+  searchParams: Promise<{ member?: string }>;
 };
 
 // Per-person metadata so a shared/QR deep link previews that member by name.
@@ -70,17 +67,10 @@ export async function generateMetadata({
 }
 
 export default async function AboutPage({ searchParams }: AboutPageProps) {
-  const [{ member, topic }, studio, team] = await Promise.all([
-    searchParams,
-    getStudio(),
-    getTeam(),
-  ]);
+  const [{ member }, team] = await Promise.all([searchParams, getTeam()]);
   const members = withSlugs(team);
   const initialOpen =
     member && members.some((m) => m.slug === member) ? member : null;
-  const email = studio.email || "contact@kagusoftware.com";
-  const whatsapp = whatsappHref();
-  const closing = `Small studio. ${studio.location || "Istanbul"}. Since ${studio.founded || "2025"}.`;
 
   return (
     <>
@@ -94,27 +84,16 @@ export default async function AboutPage({ searchParams }: AboutPageProps) {
       />
 
       <section className="site-wrap about-hero">
-        <h1>Say hello.</h1>
-        <ContactHero email={email} whatsapp={whatsapp} />
-      </section>
-
-      <section id="contact" className="site-wrap about-contact">
-        <div className="about-contact__grid">
-          <h2 className="about-h2">Or write here.</h2>
-          <ContactForm email={email} whatsapp={whatsapp} topic={topic} />
-        </div>
+        <h1>The team.</h1>
+        <p className="about-lead">We build software, then look after it.</p>
       </section>
 
       {members.length > 0 ? (
         <section className="site-wrap about-team">
-          <h2 className="about-h2">The team.</h2>
           <TeamRoster members={members} initialOpen={initialOpen} />
         </section>
       ) : null}
 
-      <div className="site-wrap">
-        <p className="about-closing">{closing}</p>
-      </div>
     </>
   );
 }

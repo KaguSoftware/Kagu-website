@@ -119,8 +119,8 @@ export default function CustomWebsiteFiyatiPage() {
         />
         <P>
           Kesin rakam için{" "}
-          <A href="/about#contact">proje oluşturucuda paketinizi kurup anlık fiyat</A> görebilir
-          veya <A href="/about#contact">bize yazarak</A> özel teklif isteyebilirsiniz. 24 saat içinde
+          <A href="/contact">proje oluşturucuda paketinizi kurup anlık fiyat</A> görebilir
+          veya <A href="/contact">bize yazarak</A> özel teklif isteyebilirsiniz. 24 saat içinde
           yanıt veriyoruz.
         </P>
       </SeoSection>
@@ -216,9 +216,9 @@ export default function CustomWebsiteFiyatiPage() {
 
       <CtaBand
         title="Paketinizi kurun, fiyatı anında görün."
-        href="/about#contact"
+        href="/contact"
         label="Fiyat hesapla"
-        secondaryHref="/about#contact"
+        secondaryHref="/contact"
         secondaryLabel="Süreci okuyun"
       />
 

@@ -283,3 +283,9 @@
     transition: none;
   }
 }
+
+.about-lead {
+  margin: 20px 0 0;
+  color: var(--muted);
+  font-size: clamp(17px, 1.8vw, 20px);
+}
