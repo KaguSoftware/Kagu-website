@@ -9,6 +9,7 @@
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { KaguMark } from "@/components/KaguMark";
+import { HeroTrails, type TrailsControl } from "./HeroTrails";
 import "./home.css";
 
 const GROUPS = [
@@ -29,6 +30,7 @@ export function HomeScrollScene() {
   const cueRef = useRef<HTMLSpanElement>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
   const bgRef = useRef<HTMLDivElement>(null);
+  const trailsCtl = useRef<TrailsControl>({ k: 0, box: null });
 
   useEffect(() => {
     const hero = heroRef.current;
@@ -76,6 +78,18 @@ export function HomeScrollScene() {
       outlines.forEach((el) => (el.style.opacity = o));
       if (cloud) cloud.style.opacity = "0";
       bg.style.visibility = "visible";
+
+      // keep-out box for the trails: logo spot + headline block, padded
+      const tb = text?.getBoundingClientRect() ?? s;
+      const bx = Math.min(s.left, tb.left) - 32;
+      const by = Math.min(s.top, tb.top) - 32;
+      trailsCtl.current.k = k;
+      trailsCtl.current.box = {
+        x: bx,
+        y: by,
+        w: Math.max(s.right, tb.right) + 32 - bx,
+        h: Math.max(s.bottom, tb.bottom) + 32 - by,
+      };
 
       if (reduce) {
         if (text) {
@@ -125,6 +139,7 @@ export function HomeScrollScene() {
 
   return (
     <>
+      <HeroTrails control={trailsCtl} />
       <div className="bglogo" ref={bgRef} aria-hidden="true">
         <div className="bgin">
           <KaguMark variant="outline" piece="ribbon" className="ol L1" />

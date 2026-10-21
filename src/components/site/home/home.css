@@ -4,6 +4,22 @@
   z-index: 1;
 }
 
+/* ---- ink trails: fixed layer behind the logo and the whole page ---- */
+.trails {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.trails canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  will-change: filter, opacity;
+}
+
 /* ---- fixed logo behind the whole page ---- */
 .bglogo {
   position: fixed;
