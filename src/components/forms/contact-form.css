@@ -1,0 +1,167 @@
+/* Contact form — quiet underlined fields, fixed-height success swap. */
+.cf {
+  display: grid;
+  min-height: 440px;
+  align-content: start;
+}
+.cf > * {
+  grid-area: 1 / 1;
+}
+.cf__form {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  transition: opacity 0.3s;
+}
+.cf--done .cf__form {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.cf__field {
+  display: grid;
+  gap: 2px;
+  padding-bottom: 4px;
+}
+.cf__label {
+  font-size: 13px;
+  color: var(--muted);
+}
+.cf__input {
+  width: 100%;
+  box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 17px; /* >=16px: no iOS zoom */
+  line-height: 1.4;
+  padding: 10px 0;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+textarea.cf__input {
+  resize: none;
+  min-height: 96px;
+}
+.cf__input:hover {
+  border-bottom-color: var(--muted);
+}
+.cf__input:focus {
+  border-bottom-color: var(--accent);
+  box-shadow: 0 1px 0 0 var(--accent);
+}
+.cf__input[aria-invalid="true"] {
+  border-bottom-color: #b4432f;
+}
+/* autofill: keep the page look */
+.cf__input:-webkit-autofill,
+.cf__input:-webkit-autofill:hover,
+.cf__input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--ink);
+  caret-color: var(--ink);
+  -webkit-box-shadow: 0 0 0 1000px var(--bg) inset;
+  transition: background-color 9999s ease-out 0s;
+}
+.cf__err {
+  min-height: 20px; /* reserved: no shift when text appears */
+  font-size: 13px;
+  line-height: 20px;
+  color: #b4432f;
+}
+.cf__hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+.cf__actions {
+  margin-top: 12px;
+}
+.cf__send {
+  width: 132px;
+  height: 48px;
+}
+.cf__send:disabled {
+  opacity: 0.7;
+  cursor: default;
+  transform: none;
+}
+.cf__fail {
+  min-height: 44px; /* reserved */
+  margin: 12px 0 0;
+  font-size: 15px;
+  color: #b4432f;
+}
+.cf__fail a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.cf__done {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: 8px;
+  opacity: 0;
+  visibility: hidden;
+  padding-top: 8px;
+}
+.cf--done .cf__done {
+  opacity: 1;
+  visibility: visible;
+}
+.cf__mark {
+  width: 140px;
+  height: auto;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+.cf__mark path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+.cf--done .cf__mark path {
+  animation: cf-draw 1.4s cubic-bezier(0.5, 0, 0.2, 1) forwards;
+}
+.cf--done .cf__mark path:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.cf--done .cf__mark path:nth-child(3) {
+  animation-delay: 0.4s;
+}
+.cf__thanks {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(36px, 6vw, 52px);
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  margin: 0;
+}
+.cf__soon {
+  margin: 0;
+  color: var(--muted);
+  font-size: 18px;
+}
+@keyframes cf-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cf__form {
+    transition: none;
+  }
+  .cf__mark path {
+    stroke-dashoffset: 0;
+  }
+  .cf--done .cf__mark path {
+    animation: none;
+  }
+}

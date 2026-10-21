@@ -1,240 +1,94 @@
 /*
-  SiteHeader "Glass Navbar" — floating frosted pill (after hover.dev), Kagu-toned.
-  Paired with src/components/layout/SiteHeader.tsx. Kept in a global stylesheet
-  (imported via globals.css) so structural rules are in the CSSOM before paint.
-  Tokens come from tokens.css.
+  Public-site header (src/components/layout/SiteHeader.tsx).
+  Sticky translucent cream + blur; hairline fades in once scrolled.
+  Tokens come from .site in site.css.
 */
 
-/* --- the floating glass pill --- */
-.kagu-glassnav {
-  display: none; /* desktop only; the mobile Corner Nav covers < md */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding-top: env(safe-area-inset-top, 0px);
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.3s;
 }
-
-@media (min-width: 768px) {
-  .kagu-glassnav {
-    display: grid;
-    pointer-events: auto; /* header is pointer-events:none; the pill itself is clickable */
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    gap: clamp(1rem, 3vw, 2rem);
-    width: min(100%, 64rem);
-    min-height: 56px;
-    padding: 0.5rem clamp(1rem, 3vw, 1.75rem);
-    border-radius: 9999px;
-    background: color-mix(in oklab, var(--mint-pale) 60%, transparent);
-    backdrop-filter: blur(14px) saturate(140%);
-    -webkit-backdrop-filter: blur(14px) saturate(140%);
-    border: 1px solid color-mix(in oklab, var(--ink) 12%, transparent);
-    box-shadow:
-      0 16px 40px -18px rgba(0, 0, 0, 0.55),
-      inset 0 1px 0 color-mix(in oklab, var(--ink) 10%, transparent); /* top sheen */
-  }
+.site-header.is-scrolled {
+  border-bottom-color: var(--line);
 }
-
-/* No blur support → bump opacity so the pill stays legible over content. */
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .kagu-glassnav {
-    background: color-mix(in oklab, var(--mint-pale) 94%, var(--paper));
-  }
+.site-header.is-open {
+  background: var(--bg);
+  border-bottom-color: transparent;
 }
-
-/* --- clusters --- */
-.kagu-glassnav__left {
-  justify-self: start;
-}
-.kagu-glassnav__left ul {
+.site-header__bar {
   display: flex;
   align-items: center;
-  gap: clamp(1rem, 2.4vw, 1.75rem);
-  list-style: none;
-  margin: 0;
-  padding: 0;
+  justify-content: space-between;
+  height: var(--site-header-h);
+  gap: 20px;
 }
-.kagu-glassnav__logo {
-  justify-self: center;
+.site-header__links {
+  display: flex;
+  align-items: center;
+  gap: 34px;
+  font-size: 15px;
+}
+.site-header__links a:not(.site-btn) {
   display: inline-flex;
   align-items: center;
-  font-size: var(--type-lg);
+  min-height: 44px;
+  color: var(--muted);
+  transition: color 0.2s;
 }
-.kagu-glassnav__right {
-  justify-self: end;
-}
-
-/* --- nav links (mono underline sweep) --- */
-.kagu-nav-link {
-  position: relative;
-  display: inline-block;
-  padding: 8px 0;
-  font-family: var(--font-display);
-  font-size: var(--type-xs);
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
+.site-header__links a:not(.site-btn):hover,
+.site-header__links a[aria-current="page"] {
   color: var(--ink);
-  text-decoration: none;
-  transition: color 220ms cubic-bezier(0.6, 0.01, 0.05, 0.95);
-}
-.kagu-nav-link::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 100%;
-  bottom: 4px;
-  height: 1px;
-  background: var(--mint-deep);
-  transition: right 220ms cubic-bezier(0.6, 0.01, 0.05, 0.95);
-}
-.kagu-nav-link:hover::after,
-.kagu-nav-link:focus-visible::after,
-.kagu-nav-link.is-active::after {
-  right: 0;
-}
-/* Underlined means clickable, so the label goes blue with the rule. */
-.kagu-nav-link:hover,
-.kagu-nav-link:focus-visible,
-.kagu-nav-link.is-active {
-  color: var(--mint-text);
-}
-@media (prefers-reduced-motion: reduce) {
-  .kagu-nav-link::after { transition: none; }
-  .kagu-nav-link { transition: none; }
 }
 
-/* --- CTA pill — the single, unmistakable call-to-action ---
-   A glowing deep-sky pill that genuinely pops off the glass bar: a vivid
-   gradient fill, a pulsing accent halo that breathes to pull the eye, a
-   gradient-conic ring that lights up on hover, a continuously traveling sheen,
-   the brand bird tucked inside, and a trailing arrow that springs on hover.
-   Loud through light + motion, but still pure Kagu deep-sky — no new hue. --- */
-.kagu-glassnav__cta {
-  position: relative; /* anchor the sheen, halo + glow */
-  isolation: isolate; /* keep the halo's blend local to the pill */
-  overflow: hidden; /* clip the sheen + bird to the rounded pill */
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5ch;
-  padding: 0.6rem 1.25rem;
-  border-radius: 9999px;
-  background:
-    linear-gradient(
-      135deg,
-      color-mix(in oklab, var(--mint-deep) 78%, white) 0%,
-      var(--mint-deep) 48%,
-      color-mix(in oklab, var(--mint-deep) 82%, black) 100%
-    );
-  color: #fff;
-  font-family: var(--font-display);
-  font-size: var(--type-xs);
-  font-weight: 600;
-  letter-spacing: var(--tracking-eyebrow);
-  text-transform: uppercase;
-  text-decoration: none;
-  white-space: nowrap;
-  box-shadow:
-    0 6px 18px -6px color-mix(in oklab, var(--mint-deep) 70%, transparent),
-    0 0 0 1px color-mix(in oklab, var(--mint-deep) 60%, transparent),
-    inset 0 1px 0 color-mix(in oklab, white 45%, transparent); /* top rim light */
-  transition:
-    filter 220ms var(--ease-arc, ease),
-    transform 220ms var(--ease-out-expo, ease),
-    box-shadow 220ms var(--ease-arc, ease);
-}
-
-/* Pulsing halo — a soft accent glow that breathes underneath the pill so the
-   CTA never sits still; the single strongest "look here" signal. */
-.kagu-glassnav__cta::after {
-  content: "";
-  position: absolute;
-  inset: -4px;
-  z-index: -1;
-  border-radius: 9999px;
-  background: radial-gradient(
-    60% 120% at 50% 50%,
-    color-mix(in oklab, var(--mint-deep) 85%, transparent),
-    transparent 70%
-  );
-  filter: blur(10px);
-  opacity: 0.55;
-  animation: kagu-cta-pulse 2.6s var(--ease-arc, ease) infinite;
-}
-@keyframes kagu-cta-pulse {
-  0%, 100% { opacity: 0.4; transform: scale(0.96); }
-  50%      { opacity: 0.85; transform: scale(1.06); }
-}
-
-/* Traveling sheen — a diagonal light streak that sweeps across on a slow loop.
-   Clipped to the pill by overflow:hidden on .kagu-glassnav__cta. */
-.kagu-glassnav__cta::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    115deg,
-    transparent 38%,
-    color-mix(in oklab, white 70%, transparent) 50%,
-    transparent 62%
-  );
-  transform: translateX(-130%);
-  animation: kagu-cta-sheen 3.4s var(--ease-arc, ease) infinite;
-}
-@keyframes kagu-cta-sheen {
-  0%, 18% { transform: translateX(-130%); }
-  to { transform: translateX(130%); }
-}
-
-/* Glass-bird watermark — ghosted KaguMark drifting behind the label, bled off
-   the right edge so the wing reads like the hero bird tucked into the pill.
-   Sits above the solid fill but below the sheen + text. */
-.kagu-glassnav__cta-bird {
-  position: absolute;
-  top: 50%;
-  right: 4%;
-  width: 42%;
-  height: 100%;
-  transform: translateY(-66%);
-  pointer-events: none;
-  z-index: 1;
-  opacity: 0.55;
-  transition: opacity 240ms var(--ease-arc, ease), right 240ms var(--ease-arc, ease);
-}
-.kagu-glassnav__cta:hover .kagu-glassnav__cta-bird {
-  opacity: 0.75;
-  right: 2%; /* the bird leans in on hover */
-}
-
-/* Label + arrow ride above the bird, ring + sheen. */
-.kagu-glassnav__cta-label,
-.kagu-glassnav__cta-arrow {
+/* 2-line menu button that morphs to an X */
+.site-menu-btn {
+  display: none;
   position: relative;
-  z-index: 2;
-  text-shadow: 0 1px 6px color-mix(in oklab, var(--mint-deep) 80%, black);
+  width: 44px;
+  height: 44px;
+  margin-right: -11px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
-.kagu-glassnav__cta-arrow {
-  transition: transform 220ms var(--ease-out-expo, ease);
+.site-menu-btn i {
+  position: absolute;
+  left: 11px;
+  right: 11px;
+  height: 1.5px;
+  background: currentColor;
+  transition: transform 0.3s var(--ease-out-quint, ease), top 0.3s var(--ease-out-quint, ease);
 }
-.kagu-glassnav__cta:hover .kagu-glassnav__cta-arrow {
-  transform: translateX(4px);
+.site-menu-btn i:first-child {
+  top: 17px;
+}
+.site-menu-btn i:last-child {
+  top: 26px;
+}
+.site-header.is-open .site-menu-btn i:first-child {
+  top: 21.5px;
+  transform: rotate(45deg);
+}
+.site-header.is-open .site-menu-btn i:last-child {
+  top: 21.5px;
+  transform: rotate(-45deg);
 }
 
-.kagu-glassnav__cta:hover {
-  filter: brightness(1.1) saturate(1.1);
-  transform: translateY(-2px) scale(1.03);
-  box-shadow:
-    0 14px 34px -8px color-mix(in oklab, var(--mint-deep) 80%, transparent),
-    0 0 0 1px color-mix(in oklab, white 40%, transparent),
-    inset 0 1px 0 color-mix(in oklab, white 55%, transparent);
-}
-.kagu-glassnav__cta:active {
-  transform: translateY(-1px) scale(0.99);
-}
-.kagu-glassnav__cta:focus-visible {
-  outline: 2px solid var(--mint-deep);
-  outline-offset: 3px;
-}
-@media (prefers-reduced-motion: reduce) {
-  .kagu-glassnav__cta { transition: none; }
-  .kagu-glassnav__cta::before,
-  .kagu-glassnav__cta::after { animation: none; }
-  .kagu-glassnav__cta-arrow { transition: none; }
+@media (max-width: 760px) {
+  .site-header__links {
+    display: none;
+  }
+  .site-menu-btn {
+    display: block;
+  }
 }

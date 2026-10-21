@@ -4,10 +4,7 @@ import { Public_Sans, Space_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
-import { SmoothScrollProvider } from "@/components/providers/SmoothScrollProvider";
 import { NavigationEvents } from "@/components/providers/NavigationEvents";
-import { SiteHeaderGate } from "@/components/layout/SiteHeaderGate";
-import { PageTransition } from "@/components/motion/PageTransition";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { organizationJsonLd, SITE_URL } from "@/lib/seo";
 
@@ -50,17 +47,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${spaceMono.variable} ${publicSans.variable}`}>
+    <html lang="en" style={{ scrollbarGutter: "stable" }} className={`${spaceMono.variable} ${publicSans.variable}`}>
       <body className="min-h-svh antialiased">
         <JsonLd data={organizationJsonLd()} />
         <a href="#main" className="skip-link">
           Skip to content
         </a>
-        <SmoothScrollProvider>
-          <PageTransition />
-          <SiteHeaderGate />
-          <main id="main">{children}</main>
-        </SmoothScrollProvider>
+        {children}
         <Suspense fallback={null}>
           <NavigationEvents />
         </Suspense>

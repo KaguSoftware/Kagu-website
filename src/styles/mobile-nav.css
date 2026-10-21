@@ -1,333 +1,89 @@
 /*
-  MobileNav "Ink-blot" styles — paired with src/components/layout/MobileNav.tsx.
-  Kept in a global stylesheet (imported via globals.css) so structural rules are
-  in the CSSOM before the panel mounts. Tokens come from tokens.css.
-
-  The flood field is full-screen; the clip-path circle (animated in JS) reveals
-  it from the burger corner. The burger sits above the field and crosses to an ✕.
+  Full-screen cream menu sheet (src/components/layout/MobileNav.tsx).
+  Sits below the sticky header (z 20) so the morphing button stays tappable.
+  Hidden state uses visibility + inert so nothing inside is focusable.
 */
 
-/* --- persistent logo blob (top-left corner) --- */
-.kagu-blot__home {
-  position: fixed;
-  top: 14px;
-  left: 14px;
-  min-height: 44px;
-  padding: 0 16px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  /* Same frosted chip as the burger so the brand reads over any section. */
-  background: color-mix(in oklab, var(--mint-pale) 60%, transparent);
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  border: 1px solid color-mix(in oklab, var(--ink) 12%, transparent);
-  border-radius: 9999px;
-  box-shadow: 0 16px 40px -18px rgba(0, 0, 0, 0.55);
-  color: var(--slate-ink);
-  text-decoration: none;
-  pointer-events: auto;
-  z-index: calc(var(--z-curtain) + 1);
-  transition: opacity 240ms var(--ease-arc, ease), transform 240ms var(--ease-arc, ease);
-}
-.kagu-blot__home .kagu-mark,
-.kagu-blot__home svg { display: block; }
-/* Hide while the menu is open — the flooded panel shows its own brand. */
-.kagu-blot__home.is-hidden {
-  opacity: 0;
-  transform: scale(0.8);
-  pointer-events: none;
-}
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .kagu-blot__home {
-    background: color-mix(in oklab, var(--mint-pale) 94%, var(--paper));
-  }
-}
-/* Mobile only — the desktop glass pill has its own centered logo. */
-@media (min-width: 768px) {
-  .kagu-blot__home { display: none; }
-}
-
-/* --- trigger (top-right corner) --- */
-.kagu-blot__burger {
-  position: fixed;
-  top: 14px;
-  right: 14px;
-  width: 44px;
-  height: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  /* Frosted chip (mirrors the desktop glass pill) so the white rules stay
-     legible over ANY section — including the light slate-ink / mint-deep
-     bands where a bare white burger would otherwise vanish. */
-  background: color-mix(in oklab, var(--mint-pale) 60%, transparent);
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  border: 1px solid color-mix(in oklab, var(--ink) 12%, transparent);
-  border-radius: 9999px;
-  box-shadow: 0 16px 40px -18px rgba(0, 0, 0, 0.55);
-  cursor: pointer;
-  color: var(--ink);
-  pointer-events: auto; /* header is pointer-events:none; the burger stays clickable */
-  z-index: calc(var(--z-curtain) + 1); /* above the flood field */
-}
-/* No blur support → bump opacity so the chip stays legible over content. */
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .kagu-blot__burger {
-    background: color-mix(in oklab, var(--mint-pale) 94%, var(--paper));
-  }
-}
-/* Mobile only — the desktop inline nav takes over at md. */
-@media (min-width: 768px) {
-  .kagu-blot__burger { display: none; }
-}
-.kagu-blot__rule {
-  position: absolute;
-  left: 11px;
-  width: 22px;
-  height: 1.5px;
-  background: currentColor;
-  transition: transform 360ms cubic-bezier(0.76, 0, 0.24, 1),
-              width 360ms cubic-bezier(0.76, 0, 0.24, 1),
-              background 360ms ease;
-}
-.kagu-blot__rule--top { transform: translateY(-4px); }
-.kagu-blot__rule--bottom { transform: translateY(4px); width: 14px; }
-.kagu-blot__rule--top.is-open { transform: translateY(0) rotate(45deg); }
-.kagu-blot__rule--bottom.is-open { transform: translateY(0) rotate(-45deg); width: 22px; }
-@media (prefers-reduced-motion: reduce) {
-  .kagu-blot__rule { transition: none; }
-}
-
-/* --- flood field --- */
-.kagu-blot {
+.site-sheet {
   position: fixed;
   inset: 0;
-  z-index: var(--z-curtain);
-  pointer-events: auto;
-  /* Mint-deep wash bleeding into the dark page base — reads as "Kagu ink". */
-  background:
-    radial-gradient(circle at calc(100% - 32px) 36px,
-      color-mix(in oklab, var(--mint-deep) 34%, var(--paper)) 0%,
-      var(--paper) 62%);
+  z-index: 15;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  padding: max(96px, 16vh) clamp(1.5rem, 8vw, 3rem) clamp(1.75rem, 6vh, 3rem);
-  overflow: hidden;
-}
-.kagu-blot__grid {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.5;
-  background-image: radial-gradient(
-    color-mix(in oklab, var(--ink) 14%, transparent) 1px,
-    transparent 1.5px
-  );
-  background-size: 26px 26px;
-  mask-image: radial-gradient(circle at calc(100% - 32px) 36px, #000 30%, transparent 80%);
-  -webkit-mask-image: radial-gradient(circle at calc(100% - 32px) 36px, #000 30%, transparent 80%);
-}
-
-/* --- brand (home link) --- */
-.kagu-blot__brand {
-  position: relative;
-  z-index: 1;
-  display: flex;
-}
-.kagu-blot__logo {
-  display: inline-flex;
-  align-items: center;
-  font-size: var(--type-lg);
-  text-decoration: none;
-}
-
-/* --- nav words --- */
-.kagu-blot__nav { position: relative; z-index: 1; flex: 1; display: flex; align-items: center; }
-.kagu-blot__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: clamp(0.25rem, 1.5vh, 0.85rem);
-}
-.kagu-blot__mask {
-  display: block;
-  overflow: hidden; /* the word rises out of this mask */
-  padding-bottom: 0.06em; /* room for descenders so they aren't clipped */
-}
-.kagu-blot__word { display: block; transform-origin: left bottom; }
-.kagu-blot__link {
-  display: flex;
-  align-items: baseline;
-  gap: 0.85rem;
-  padding: 4px 0;
-  min-height: 48px;
-  font-family: var(--font-display, ui-monospace, monospace);
-  font-weight: 500;
-  letter-spacing: -0.02em;
-  line-height: 1;
-  color: var(--ink);
-  text-decoration: none;
-}
-.kagu-blot__index {
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: var(--type-xs);
-  letter-spacing: 0.12em;
-  color: var(--mint-deep);
-  transform: translateY(-0.7em);
-}
-.kagu-blot__label {
-  font-size: clamp(2.75rem, 15vw, 4.5rem);
-  position: relative;
-}
-/* Active route: a drawn-in underline, with the label tinted to match — an
-   underlined word on this site reads blue. */
-.kagu-blot__link.is-active .kagu-blot__label {
-  color: var(--mint-deep);
-}
-.kagu-blot__link.is-active .kagu-blot__label::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0.08em;
-  height: 3px;
-  background: var(--mint-deep);
-  transform: scaleX(1);
-  transform-origin: left;
-}
-
-/* --- footer --- */
-.kagu-blot__footer {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
   justify-content: space-between;
-  /* Let the "Est." line drop below the pill on narrow phones instead of
-     squeezing it — the pill clips its own content (overflow: hidden for the
-     sheen), so any shrink eats the arrow. */
-  flex-wrap: wrap;
-  gap: 0.85rem 1rem;
-  border-top: 1px solid color-mix(in oklab, var(--ink) 18%, transparent);
-  padding-top: clamp(0.85rem, 2.5vh, 1.25rem);
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: var(--type-xs);
+  padding:
+    calc(env(safe-area-inset-top, 0px) + var(--site-header-h) + 32px)
+    var(--site-gutr)
+    calc(env(safe-area-inset-bottom, 0px) + 36px)
+    var(--site-gut);
+  background: var(--bg);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s, visibility 0.3s;
+}
+.site-sheet.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+.site-sheet__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.site-sheet__nav a {
+  display: block;
+  padding-block: 2px;
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(40px, 12vw, 56px);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  opacity: 0;
+  transform: translateY(12px);
+  transition: transform 0.5s var(--ease-out-quint, ease), opacity 0.5s;
+}
+.site-sheet__nav a[aria-current="page"] {
+  color: var(--accent-ink);
+}
+.site-sheet.is-open .site-sheet__nav a {
+  opacity: 1;
+  transform: none;
+}
+.site-sheet.is-open .site-sheet__nav a:nth-child(2) { transition-delay: 0.05s; }
+.site-sheet.is-open .site-sheet__nav a:nth-child(3) { transition-delay: 0.1s; }
+.site-sheet.is-open .site-sheet__nav a:nth-child(4) { transition-delay: 0.15s; }
+.site-sheet__foot {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 40px;
+  font-size: 15px;
+  color: var(--muted);
+}
+.site-sheet__foot a {
+  display: inline-block;
+  min-height: 32px;
+  color: var(--ink);
+  overflow-wrap: anywhere;
 }
 
-/* CTA pill — the same glowing deep-sky treatment as the desktop header CTA:
-   gradient fill, breathing halo, traveling sheen, springing arrow. */
-.kagu-blot__contact {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden; /* clip the sheen to the rounded pill */
-  display: inline-flex;
-  align-items: center;
-  /* Never shrink: the pill clips overflow, so a squeezed pill loses its arrow
-     and its right padding rather than just getting narrower. */
-  flex: 0 0 auto;
-  max-width: 100%;
-  gap: 0.6ch;
-  padding: 0.7rem 1.6rem;
-  border-radius: 9999px;
-  background:
-    linear-gradient(
-      135deg,
-      color-mix(in oklab, var(--mint-deep) 78%, white) 0%,
-      var(--mint-deep) 48%,
-      color-mix(in oklab, var(--mint-deep) 82%, black) 100%
-    );
-  color: #fff;
-  font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  text-decoration: none;
-  white-space: nowrap;
-  box-shadow:
-    0 6px 18px -6px color-mix(in oklab, var(--mint-deep) 70%, transparent),
-    0 0 0 1px color-mix(in oklab, var(--mint-deep) 60%, transparent),
-    inset 0 1px 0 color-mix(in oklab, white 45%, transparent);
-  transition:
-    filter 220ms var(--ease-arc, ease),
-    transform 220ms var(--ease-out-expo, ease),
-    box-shadow 220ms var(--ease-arc, ease);
+/* The sheet is mobile-only. */
+@media (min-width: 761px) {
+  .site-sheet {
+    display: none;
+  }
 }
 
-/* Breathing halo behind the pill — the "look here" pulse. */
-.kagu-blot__contact::after {
-  content: "";
-  position: absolute;
-  inset: -4px;
-  z-index: -1;
-  border-radius: 9999px;
-  background: radial-gradient(
-    60% 120% at 50% 50%,
-    color-mix(in oklab, var(--mint-deep) 85%, transparent),
-    transparent 70%
-  );
-  filter: blur(10px);
-  opacity: 0.55;
-  animation: kagu-cta-pulse 2.6s var(--ease-arc, ease) infinite;
-}
-
-/* Traveling sheen — diagonal light streak, clipped by the pill's overflow. */
-.kagu-blot__contact::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    115deg,
-    transparent 38%,
-    color-mix(in oklab, white 70%, transparent) 50%,
-    transparent 62%
-  );
-  transform: translateX(-130%);
-  animation: kagu-cta-sheen 3.4s var(--ease-arc, ease) infinite;
-}
-
-.kagu-blot__contact-label,
-.kagu-blot__contact-arrow {
-  position: relative;
-  z-index: 2;
-  text-shadow: 0 1px 6px color-mix(in oklab, var(--mint-deep) 80%, black);
-}
-.kagu-blot__contact-arrow {
-  padding-right: 4px; /* room so the hover nudge isn't clipped by overflow:hidden */
-  transition: transform 220ms var(--ease-out-expo, ease);
-}
-.kagu-blot__contact:hover,
-.kagu-blot__contact:focus-visible {
-  filter: brightness(1.1) saturate(1.1);
-  transform: translateY(-2px) scale(1.03);
-  box-shadow:
-    0 14px 34px -8px color-mix(in oklab, var(--mint-deep) 80%, transparent),
-    0 0 0 1px color-mix(in oklab, white 40%, transparent),
-    inset 0 1px 0 color-mix(in oklab, white 55%, transparent);
-}
-.kagu-blot__contact:hover .kagu-blot__contact-arrow,
-.kagu-blot__contact:focus-visible .kagu-blot__contact-arrow {
-  transform: translateX(4px);
-}
-.kagu-blot__contact:active {
-  transform: translateY(-1px) scale(0.99);
-}
 @media (prefers-reduced-motion: reduce) {
-  .kagu-blot__contact { transition: none; }
-  .kagu-blot__contact::before,
-  .kagu-blot__contact::after { animation: none; }
-  .kagu-blot__contact-arrow { transition: none; }
-}
-.kagu-blot__est {
-  flex: 1 1 auto;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: color-mix(in oklab, var(--ink) 55%, transparent);
+  .site-sheet,
+  .site-sheet__nav a,
+  .site-menu-btn i {
+    transition: none !important;
+  }
+  .site-sheet__nav a {
+    transform: none;
+  }
 }

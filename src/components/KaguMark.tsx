@@ -19,16 +19,16 @@ import type { CSSProperties } from "react";
 
 /* Geometry measured pixel-exact from the 2026 brand PNG
    (Kagu logo enhanced.png, 1254px) and normalized to a 1079-wide box. */
-const VIEWBOX = "0 0 1079 486";
+export const KAGU_VIEWBOX = "0 0 1079 486";
 /** Ribbon band + wing union, with the head-fold triangle cut out so the
     fold's darker tone never stacks on the ribbon's (stacked translucent
     layers would brighten, not darken). */
-const RIBBON =
+export const RIBBON =
   "M 1078 0 L 778 0 Q 741 0 719 19 L 459 262 L 340 146 L 104 146 L 218 256 L 345 368 L 564 369 L 663 463 L 911 486 L 733 317 Z";
 /** Head-fold triangle (darkest tone, fills the cut-out above). */
-const FOLD = "M 104 146 L 0 256 L 218 256 Z";
+export const FOLD = "M 104 146 L 0 256 L 218 256 Z";
 /** Top wing with the rounded shoulder (brightest tone, drawn last). */
-const WING = "M 1078 0 L 778 0 Q 741 0 719 19 L 345 368 L 677 368 Z";
+export const WING = "M 1078 0 L 778 0 Q 741 0 719 19 L 345 368 L 677 368 Z";
 
 interface KaguMarkProps {
   /** Fixed pixel height; width is derived from the mark's aspect ratio. */
@@ -44,6 +44,10 @@ interface KaguMarkProps {
   foldOpacity?: number;
   /** Opacity of the solid top wing (brightest tone). Default 1. */
   bodyOpacity?: number;
+  /** "fill" (default, tonal) or "outline" (stroke only, currentColor, 1.5px non-scaling). */
+  variant?: "fill" | "outline";
+  /** Render just one piece (same viewBox, so pieces stack exactly). */
+  piece?: "ribbon" | "fold" | "wing";
 }
 
 export function KaguMark({
@@ -55,23 +59,43 @@ export function KaguMark({
   wingOpacity = 0.6,
   foldOpacity,
   bodyOpacity = 1,
+  variant = "fill",
+  piece,
 }: KaguMarkProps) {
+  const outline = variant === "outline";
+  const showRibbon = !piece || piece === "ribbon";
+  const showFold = !piece || piece === "fold";
+  const showWing = !piece || piece === "wing";
+  const strokeProps = outline
+    ? ({
+        fill: "none",
+        stroke: "currentColor",
+        strokeWidth: 1.5,
+        strokeLinejoin: "round",
+        vectorEffect: "non-scaling-stroke",
+        opacity: 1,
+      } as const)
+    : null;
   return (
     <svg
-      viewBox={VIEWBOX}
+      viewBox={KAGU_VIEWBOX}
       height={height}
       className={className}
       preserveAspectRatio={preserveAspectRatio}
-      fill="currentColor"
+      fill={outline ? "none" : "currentColor"}
       role={title ? "img" : undefined}
       aria-label={title}
       aria-hidden={title ? undefined : true}
-      style={style}
+      style={outline ? { overflow: "visible", ...style } : style}
     >
       {title ? <title>{title}</title> : null}
-      <path d={RIBBON} opacity={wingOpacity} />
-      <path d={FOLD} opacity={foldOpacity ?? wingOpacity * 0.83} />
-      <path d={WING} opacity={bodyOpacity} />
+      {showRibbon && (
+        <path d={RIBBON} opacity={wingOpacity} {...strokeProps} />
+      )}
+      {showFold && (
+        <path d={FOLD} opacity={foldOpacity ?? wingOpacity * 0.83} {...strokeProps} />
+      )}
+      {showWing && <path d={WING} opacity={bodyOpacity} {...strokeProps} />}
     </svg>
   );
 }

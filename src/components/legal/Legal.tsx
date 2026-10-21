@@ -8,7 +8,6 @@
   rendered once from the shared `seller` config in src/lib/legal.ts.
 */
 
-import { SiteFooterServer } from "@/components/layout/SiteFooterServer";
 import {
   seller,
   orPlaceholder,
@@ -241,7 +240,6 @@ export function LegalShell({
         </div>
       </section>
 
-      <SiteFooterServer />
     </>
   );
 }

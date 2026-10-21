@@ -1,0 +1,313 @@
+/*
+  Public-site theme — premium, minimal, LIGHT.
+  Everything is scoped to `.site` (the wrapper rendered by src/app/(site)/layout.tsx
+  and the root not-found), so the admin panel keeps the dark tokens.css theme.
+
+  Legacy token names (--paper, --ink, --mint-*, --color-*) are REMAPPED here so
+  existing components render light: background = cream, text = ink.
+  New clean tokens: --bg --card --ink --muted --line --accent --accent-ink
+  --soft --serif --sans.
+*/
+
+html {
+  scrollbar-gutter: stable;
+}
+/* Cream behind overscroll / short pages on public routes. */
+html:has(.site),
+html:has(.site) body {
+  background: #faf7f2;
+}
+
+.site {
+  /* ---- new clean tokens ---- */
+  --bg: #faf7f2;
+  --card: #fffdf9;
+  --ink: #1b222b;
+  --muted: #646c76;
+  --line: #e6e0d5;
+  --accent: #1f8fe0;
+  --accent-ink: #0f6dbd;
+  --mark: var(--ink); /* the logo is always drawn in ink (black), never blue */
+  --soft: #edf2f7;
+  --serif: var(--font-newsreader), "Iowan Old Style", Georgia, serif;
+  --sans: var(--font-geist), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --site-gut: max(20px, env(safe-area-inset-left, 0px));
+  --site-gutr: max(20px, env(safe-area-inset-right, 0px));
+  --site-header-h: 68px;
+
+  /* ---- legacy names remapped (see tokens.css; inverted on purpose in dark) ---- */
+  --paper: var(--bg);
+  --slate-ink: var(--muted);
+  --mint-deep: var(--accent);
+  --mint-text: var(--accent-ink);
+  --mint-soft: var(--soft);
+  --mint-pale: #f4f0e8;
+  --neutral: var(--line);
+
+  --color-bg: var(--bg);
+  --color-text: var(--ink);
+  --color-display: var(--ink);
+  --color-accent: var(--accent);
+  --color-surface-1: #f4f0e8;
+  --color-surface-2: var(--soft);
+  --color-surface-3: var(--accent);
+  --color-hairline: var(--line);
+
+  /* ---- fonts ---- */
+  --font-display: var(--serif);
+  --font-body: var(--sans);
+  --font-sans: var(--sans);
+  --font-mono: var(--sans);
+
+  color-scheme: light;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.6;
+}
+.site > main {
+  flex: 1 0 auto;
+  min-width: 0;
+}
+
+.site h1,
+.site h2,
+.site h3,
+.site h4,
+.site .display {
+  font-family: var(--serif);
+  font-weight: 300;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+.site .eyebrow {
+  font-family: var(--sans);
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+.site ::selection {
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
+  color: var(--ink);
+}
+.site :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.site-wrap {
+  width: 100%;
+  max-width: 1160px;
+  margin: 0 auto;
+  padding-left: var(--site-gut);
+  padding-right: var(--site-gutr);
+}
+.site-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---- brand lockup (header, footer, menu) ---- */
+.site-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--mark);
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 25px;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.site-brand span {
+  color: var(--ink);
+}
+.site-brand svg {
+  width: auto;
+  display: block;
+}
+.site-brand--sm {
+  font-size: 21px;
+  gap: 8px;
+}
+
+/* ---- pill button ---- */
+.site-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--ink);
+  color: var(--bg) !important;
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.site-btn:hover {
+  transform: translateY(-1px);
+}
+.site-btn--ghost {
+  background: none;
+  color: var(--ink) !important;
+  border: 1px solid var(--line);
+}
+
+/* ---- footer ---- */
+.site-footer {
+  border-top: 1px solid var(--line);
+  padding-block: 44px calc(env(safe-area-inset-bottom, 0px) + 36px);
+  font-size: 14px;
+  color: var(--muted);
+}
+.site-footer a {
+  transition: color 0.2s;
+}
+.site-footer a:hover {
+  color: var(--ink);
+}
+.site-footer__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px 24px;
+  flex-wrap: wrap;
+}
+.site-footer__links {
+  display: flex;
+  align-items: center;
+  gap: 8px 24px;
+  flex-wrap: wrap;
+}
+.site-footer__links a,
+.site-footer__legal a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+}
+.site-footer {
+  padding-bottom: 0;
+}
+.site-footer__guides {
+  margin-top: 28px;
+  padding-bottom: 36px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 18px;
+  font-size: 12.5px;
+  color: color-mix(in srgb, var(--muted) 80%, transparent);
+}
+.site-footer__guides a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+}
+
+/* legal strip (iyzico-required): every element must stay; styling is ours */
+.site-legal {
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  padding-block: 24px calc(env(safe-area-inset-bottom, 0px) + 28px);
+  font-size: 12.5px;
+}
+.site-legal__inner {
+  display: grid;
+  gap: 18px;
+}
+.site-legal__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 24px;
+  letter-spacing: 0.04em;
+}
+.site-legal__links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  transition: color 0.2s;
+}
+.site-legal__links a:hover {
+  color: var(--ink);
+}
+.site-legal__pay {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px 24px;
+  flex-wrap: wrap;
+}
+.site-legal__marks {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px 22px;
+}
+/* white PNG artwork drawn in ink on cream */
+.site-legal__band,
+.site-legal__iyzico {
+  width: auto;
+  max-width: 100%;
+  filter: brightness(0);
+  opacity: 0.62;
+}
+.site-legal__band {
+  height: 20px;
+}
+.site-legal__iyzico {
+  height: 24px;
+}
+.site-legal__ssl {
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+.site-legal__copy {
+  font-size: 12px;
+  color: color-mix(in srgb, var(--muted) 75%, transparent);
+}
+
+/* ---- 404 ---- */
+.site-notfound {
+  min-height: 62svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  text-align: center;
+  padding: 80px var(--site-gutr) 80px var(--site-gut);
+}
+.site-notfound svg {
+  width: min(220px, 56vw);
+  height: auto;
+  color: var(--mark);
+}
+.site-notfound h1 {
+  margin: 0;
+  font-size: clamp(36px, 6vw, 56px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site *,
+  .site *::before,
+  .site *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
