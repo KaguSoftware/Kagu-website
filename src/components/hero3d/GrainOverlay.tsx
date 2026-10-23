@@ -9,22 +9,22 @@
 
 // fractalNoise tile, URL-encoded so it lives entirely in CSS (no asset request).
 const NOISE =
-  "data:image/svg+xml;charset=utf-8," +
-  encodeURIComponent(
-    `<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'>
+	"data:image/svg+xml;charset=utf-8," +
+	encodeURIComponent(
+		`<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'>
        <filter id='n'>
          <feTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/>
          <feColorMatrix type='saturate' values='0'/>
        </filter>
        <rect width='100%' height='100%' filter='url(#n)'/>
      </svg>`,
-  );
+	);
 
 export function GrainOverlay({ opacity = 0.14 }: { opacity?: number }) {
-  return (
-    <>
-      <div aria-hidden className="kagu-grain" style={{ opacity }} />
-      <style>{`
+	return (
+		<>
+			<div aria-hidden className="kagu-grain" style={{ opacity }} />
+			<style>{`
         .kagu-grain {
           position: absolute;
           inset: -50%;
@@ -47,6 +47,6 @@ export function GrainOverlay({ opacity = 0.14 }: { opacity?: number }) {
           .kagu-grain { animation: none; }
         }
       `}</style>
-    </>
-  );
+		</>
+	);
 }
