@@ -25,7 +25,7 @@ function StudioLights({ reducedMotion }: { reducedMotion: boolean }) {
 
   // LTC lookup tables for the area light — must be initialized once before use.
   useMemo(() => RectAreaLightUniformsLib.init(), []);
-
+ 
   useEffect(() => {
     keyArea.current?.lookAt(0, 0, 0);
   }, []);

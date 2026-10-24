@@ -20,7 +20,7 @@ import { useIsClient, useMediaQuery, useReducedMotion } from "./useReducedMotion
 const Hero3DCanvas = dynamic(() => import("./Hero3DCanvas"), { ssr: false });
 
 /* ------------------------------ static poster ------------------------------ */
-
+ 
 // Flat 2D mark — same paths as BootLoader/KaguMark. Styled as dark glass on
 // the blue field so the poster reads as the 3D scene's resting frame.
 const MARK_VIEWBOX = "0 0 1079 486";
@@ -57,7 +57,7 @@ function canAfford3D(): boolean {
   const nav = navigator as Navigator & {
     deviceMemory?: number;
     connection?: { saveData?: boolean };
-  };
+  }; 
   if (nav.connection?.saveData) return false;
   if (nav.deviceMemory !== undefined && nav.deviceMemory < 4) return false;
   return true;
