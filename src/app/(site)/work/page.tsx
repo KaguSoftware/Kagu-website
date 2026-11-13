@@ -4,7 +4,7 @@ import { getCases } from "@/lib/content";
 import { groups, caseGroup, oneLiner } from "@/lib/productGroups";
 import { GroupHead } from "@/components/site/work/GroupHead";
 import { AsciiBanner, AsciiBlock } from "@/components/ascii/AsciiBlock";
-import { AsciiReveal } from "@/components/ascii/AsciiReveal";
+import Image from "next/image";
 import { frame, rule } from "@/components/ascii/asciiArt";
 import { pageMetadata } from "@/lib/seo";
 import "@/components/site/work/work.css";
@@ -55,15 +55,9 @@ export default async function WorkPage() {
             {sheet.map(({ c, src }) => (
               <li key={c.slug}>
                 <NavLink href={`/work/${c.slug}`} className="work-sheet__tile">
-                  <AsciiReveal
-                    src={src}
-                    alt=""
-                    sizes="(max-width: 700px) 50vw, 220px"
-                    reveal="hover"
-                    fit={c.device === "mobile" ? "contain" : "cover"}
-                    fontSize={4}
-                    className="work-sheet__img"
-                  />
+                  <span className="work-sheet__img">
+                    <Image src={src} alt="" fill sizes="(max-width: 700px) 50vw, 220px" style={{ objectFit: c.device === "mobile" ? "contain" : "cover" }} />
+                  </span>
                   <span className="work-sheet__cap">{c.client}</span>
                 </NavLink>
               </li>
@@ -85,14 +79,13 @@ export default async function WorkPage() {
                     <NavLink key={c.slug} href={`/work/${c.slug}`} className="work-proj glass">
                       <div className={`work-thumb${c.device === "mobile" ? " work-thumb--phone" : ""}`}>
                         {c.thumbnail && (
-                          <AsciiReveal
+                          <Image
                             src={c.thumbnail}
                             alt={c.thumbnailAlt ?? `${c.client} preview`}
+                            fill
                             sizes="(max-width: 860px) 100vw, 400px"
-                            reveal="hover"
-                            fit={c.device === "mobile" ? "contain" : "cover"}
-                            fontSize={5}
                             className="work-thumb__ascii"
+                            style={{ objectFit: c.device === "mobile" ? "contain" : "cover" }}
                           />
                         )}
                       </div>

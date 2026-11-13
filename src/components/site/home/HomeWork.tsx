@@ -1,4 +1,4 @@
-import { AsciiReveal } from "@/components/ascii/AsciiReveal";
+import Image from "next/image";
 import { NavLink } from "@/components/site/NavLink";
 import { AsciiBlock } from "@/components/ascii/AsciiBlock";
 import { frame, rule } from "@/components/ascii/asciiArt";
@@ -75,15 +75,7 @@ export function HomeWork({ cases }: { cases: readonly Case[] }) {
               </span>
               <span className="row__thumb">
                 {c.thumbnail && (
-                  <AsciiReveal
-                    src={c.thumbnail}
-                    alt=""
-                    sizes="(max-width: 760px) 120px, 300px"
-                    reveal="hover"
-                    fit={c.device === "mobile" ? "contain" : "cover"}
-                    fontSize={4}
-                    className="row__ascii"
-                  />
+                  <Image src={c.thumbnail} alt="" fill sizes="(max-width: 760px) 120px, 300px" className="row__ascii" style={{ objectFit: c.device === "mobile" ? "contain" : "cover" }} />
                 )}
               </span>
               <span className="row__arr" aria-hidden="true">

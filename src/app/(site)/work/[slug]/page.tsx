@@ -1,5 +1,5 @@
 import { NavLink } from "@/components/site/NavLink";
-import { AsciiReveal } from "@/components/ascii/AsciiReveal";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getCases } from "@/lib/content";
 import { oneLiner } from "@/lib/productGroups";
@@ -78,15 +78,7 @@ export default async function CasePage({ params }: PageProps) {
 
       {coverSrc && (
         <div className={`case-cover${c.device === "mobile" ? " case-cover--phone" : ""}`}>
-          <AsciiReveal
-            src={coverSrc}
-            alt={coverAlt}
-            sizes="(max-width: 1160px) 100vw, 1120px"
-            reveal="hover"
-            fit={c.device === "mobile" ? "contain" : "cover"}
-            fontSize={6}
-            className="case-cover__ascii"
-          />
+          <Image src={coverSrc} alt={coverAlt} fill sizes="(max-width: 1160px) 100vw, 1120px" className="case-cover__ascii" style={{ objectFit: c.device === "mobile" ? "contain" : "cover" }} priority />
         </div>
       )}
 
@@ -117,15 +109,7 @@ export default async function CasePage({ params }: PageProps) {
           {features.map((f, i) => (
             <li key={f.image} className="case-fig">
               <div className={`case-shot${(f.device ?? c.device) === "mobile" ? " case-shot--phone" : ""}`}>
-                <AsciiReveal
-                  src={f.image}
-                  alt={f.alt ?? f.title}
-                  sizes="(max-width: 640px) 100vw, 560px"
-                  reveal="view"
-                  fit={(f.device ?? c.device) === "mobile" ? "contain" : "cover"}
-                  fontSize={5}
-                  className="case-shot__ascii"
-                />
+                <Image src={f.image} alt={f.alt ?? f.title} fill sizes="(max-width: 640px) 100vw, 560px" className="case-shot__ascii" style={{ objectFit: (f.device ?? c.device) === "mobile" ? "contain" : "cover" }} />
               </div>
               <span className="case-cap">
                 <small>{String(i + 1).padStart(2, "0")}</small>

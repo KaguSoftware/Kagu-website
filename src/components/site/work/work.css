@@ -11,7 +11,7 @@
 .work-sheet { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
 @media (min-width: 700px) { .work-sheet { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; } }
 .work-sheet__tile { display: grid; gap: 8px; min-width: 0; color: inherit; text-decoration: none; }
-.work-sheet__img { aspect-ratio: 4 / 5; border: 1px solid var(--line-strong); border-radius: 6px; }
+.work-sheet__img { position: relative; display: block; overflow: hidden; background: #050505; aspect-ratio: 4 / 5; border: 1px solid var(--line-strong); border-radius: 6px; }
 .work-sheet__cap { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
 .work-sheet__tile:hover .work-sheet__cap, .work-sheet__tile:focus-visible .work-sheet__cap { color: var(--ink); }
 .work-sheet__tile:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; }
