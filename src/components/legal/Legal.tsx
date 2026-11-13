@@ -14,12 +14,11 @@ import {
   LEGAL_UPDATED,
   formatLegalDate,
 } from "@/lib/legal";
+import "./legal.css";
 
 export type LegalBlock = string | { list: string[] };
 export type LegalSection = { heading: string; blocks: LegalBlock[] };
 export type LegalDocument = { sections: LegalSection[] };
-
-const MUTED = "var(--slate-ink)";
 
 function SellerCard() {
   const rows: Array<{ label: string; value: string }> = [
@@ -44,44 +43,13 @@ function SellerCard() {
   ];
 
   return (
-    <dl
-      style={{
-        border: "1px solid var(--neutral)",
-        borderRadius: "var(--radius-sm)",
-        padding: "var(--space-6)",
-        display: "grid",
-        gap: "var(--space-4)",
-        maxWidth: "64ch",
-      }}
-    >
-      <dt
-        className="font-mono"
-        style={{
-          fontSize: "var(--type-xs)",
-          letterSpacing: "var(--tracking-eyebrow)",
-          textTransform: "uppercase",
-          color: "var(--mint-deep)",
-        }}
-      >
-        Satıcı / Sağlayıcı · Seller / Provider
-      </dt>
-      <div style={{ display: "grid", gap: "var(--space-3)" }}>
+    <dl className="lg-seller glass">
+      <dt className="lg-label">Satıcı / Sağlayıcı · Seller / Provider</dt>
+      <div className="lg-seller__rows">
         {rows.map((r) => (
-          <div key={r.label} className="grid grid-cols-1 sm:grid-cols-[14rem_1fr] gap-1 sm:gap-4">
-            <dt
-              className="font-mono"
-              style={{
-                fontSize: "var(--type-xs)",
-                letterSpacing: "var(--tracking-eyebrow)",
-                textTransform: "uppercase",
-                color: MUTED,
-              }}
-            >
-              {r.label}
-            </dt>
-            <dd style={{ fontSize: "var(--type-md)", color: "var(--ink)", wordBreak: "break-word" }}>
-              {r.value}
-            </dd>
+          <div key={r.label} className="lg-seller__row">
+            <dt className="lg-label">{r.label}</dt>
+            <dd>{r.value}</dd>
           </div>
         ))}
       </div>
@@ -92,68 +60,19 @@ function SellerCard() {
 /** Renders one language version of a legal document. */
 export function LegalRender({ doc }: { doc: LegalDocument }) {
   return (
-    <div style={{ display: "grid", gap: "var(--space-16)" }}>
+    <div className="lg-doc">
       {doc.sections.map((section, i) => (
-        <section key={section.heading}>
-          <span
-            className="font-mono block"
-            style={{
-              fontSize: "var(--type-xs)",
-              color: "var(--mint-deep)",
-              letterSpacing: "var(--tracking-eyebrow)",
-              textTransform: "uppercase",
-              marginBottom: "var(--space-3)",
-            }}
-          >
-            {String(i + 1).padStart(2, "0")}
-          </span>
-          <h2
-            className="display"
-            style={{
-              fontSize: "var(--type-2xl)",
-              lineHeight: 1.1,
-              marginBottom: "var(--space-5)",
-              maxWidth: "32ch",
-            }}
-          >
-            {section.heading}
-          </h2>
-          <div style={{ display: "grid", gap: "var(--space-4)" }}>
+        <section key={section.heading} className="lg-sec">
+          <span className="lg-label">§ {String(i + 1).padStart(2, "0")}</span>
+          <h2 className="lg-h2">{section.heading}</h2>
+          <div className="lg-text">
             {section.blocks.map((block, j) =>
               typeof block === "string" ? (
-                <p
-                  key={j}
-                  style={{
-                    fontSize: "var(--type-md)",
-                    lineHeight: 1.7,
-                    color: "var(--ink)",
-                    maxWidth: "70ch",
-                  }}
-                >
-                  {block}
-                </p>
+                <p key={j}>{block}</p>
               ) : (
-                <ul
-                  key={j}
-                  style={{
-                    display: "grid",
-                    gap: "var(--space-2)",
-                    maxWidth: "70ch",
-                    paddingLeft: "var(--space-5)",
-                    listStyle: "disc",
-                  }}
-                >
+                <ul key={j}>
                   {block.list.map((item, k) => (
-                    <li
-                      key={k}
-                      style={{
-                        fontSize: "var(--type-md)",
-                        lineHeight: 1.6,
-                        color: "var(--ink)",
-                      }}
-                    >
-                      {item}
-                    </li>
+                    <li key={k}>{item}</li>
                   ))}
                 </ul>
               ),
@@ -177,91 +96,36 @@ export function LegalShell({
   en: LegalDocument;
 }) {
   return (
-    <>
-      {/* Hero */}
-      <section
-        style={{ background: "var(--paper)" }}
-        className="px-(--container-x) pt-(--space-32) pb-(--space-16)"
-      >
-        <div className="w-full max-w-(--container-max) mx-auto">
-          <span className="eyebrow block" style={{ marginBottom: "var(--space-6)" }}>
-            Yasal · Legal · Güncelleme{" "}
-            {/* machine-readable date for the "content is dateable" audit */}
-            <time dateTime={LEGAL_UPDATED}>{formatLegalDate(LEGAL_UPDATED, "tr-TR")}</time>
-          </span>
-          <h1
-            className="display"
-            style={{ fontSize: "var(--type-6xl)", lineHeight: 0.95, maxWidth: "18ch" }}
-          >
-            {titleTr}
-          </h1>
-          <p
-            style={{
-              marginTop: "var(--space-5)",
-              fontSize: "var(--type-lg)",
-              color: MUTED,
-              maxWidth: "48ch",
-            }}
-          >
-            {titleEn}
-          </p>
-        </div>
+    <div className="lg">
+      <section className="site-wrap lg-hero">
+        <span className="lg-label">
+          Yasal · Legal · Güncelleme{" "}
+          {/* machine-readable date for the "content is dateable" audit */}
+          <time dateTime={LEGAL_UPDATED}>{formatLegalDate(LEGAL_UPDATED, "tr-TR")}</time>
+        </span>
+        <h1 className="lg-h1">{titleTr}</h1>
+        <p className="lg-sub">{titleEn}</p>
+        <SellerCard />
       </section>
 
-      {/* Seller identity */}
-      <section
-        style={{ background: "var(--paper)" }}
-        className="px-(--container-x) pb-(--space-16)"
-      >
-        <div className="w-full max-w-(--container-max) mx-auto">
-          <SellerCard />
-        </div>
+      <section className="site-wrap lg-lang">
+        <LangDivider label="Türkçe" />
+        <LegalRender doc={tr} />
       </section>
 
-      {/* Turkish document */}
-      <section
-        style={{ background: "var(--paper)" }}
-        className="px-(--container-x) pb-(--section-y)"
-      >
-        <div className="w-full max-w-(--container-max) mx-auto">
-          <LangDivider label="Türkçe" />
-          <LegalRender doc={tr} />
-        </div>
+      <section className="site-wrap lg-lang">
+        <LangDivider label="English" />
+        <LegalRender doc={en} />
       </section>
-
-      {/* English document */}
-      <section
-        style={{ background: "var(--mint-pale)" }}
-        className="px-(--container-x) py-(--section-y)"
-      >
-        <div className="w-full max-w-(--container-max) mx-auto">
-          <LangDivider label="English" />
-          <LegalRender doc={en} />
-        </div>
-      </section>
-
-    </>
+    </div>
   );
 }
 
 function LangDivider({ label }: { label: string }) {
   return (
-    <div
-      className="flex items-center gap-4"
-      style={{ marginBottom: "var(--space-12)" }}
-    >
-      <span
-        className="font-mono"
-        style={{
-          fontSize: "var(--type-xs)",
-          letterSpacing: "var(--tracking-eyebrow)",
-          textTransform: "uppercase",
-          color: "var(--mint-deep)",
-        }}
-      >
-        {label}
-      </span>
-      <span style={{ flex: 1, height: 1, background: "var(--neutral)" }} aria-hidden />
+    <div className="lg-div">
+      <span className="lg-label">{label}</span>
+      <span className="lg-div__line" aria-hidden="true" />
     </div>
   );
 }

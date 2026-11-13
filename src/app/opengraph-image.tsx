@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { ogTexture } from "@/components/ascii/ogTexture";
 import { RIBBON, FOLD, WING, KAGU_VIEWBOX } from "@/components/KaguMark";
 
 export const runtime = "edge";
@@ -18,8 +19,9 @@ export default function OpengraphImage() {
         style={{
           width: "100%",
           height: "100%",
-          background: "#faf7f2",
-          color: "#1b222b",
+          background: "#0a0a0a",
+          position: "relative",
+          color: "#f2f2f2",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -27,13 +29,35 @@ export default function OpengraphImage() {
           gap: 56,
         }}
       >
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+            color: "#262626",
+            fontSize: 17,
+            lineHeight: "17px",
+            opacity: 0.9,
+          }}
+        >
+          {ogTexture(110, 38, 2).map((l, i) => (
+            <div key={i} style={{ whiteSpace: "pre" }}>
+              {l}
+            </div>
+          ))}
+        </div>
         <svg width={520} height={234} viewBox={KAGU_VIEWBOX}>
           {[RIBBON, FOLD, WING].map((d) => (
             <path
               key={d}
               d={d}
               fill="none"
-              stroke="#1b222b"
+              stroke="#f2f2f2"
               strokeWidth={7}
               strokeLinejoin="round"
             />
@@ -42,7 +66,7 @@ export default function OpengraphImage() {
         <div style={{ fontSize: 76, letterSpacing: -2, lineHeight: 1 }}>
           Software, done right.
         </div>
-        <div style={{ fontSize: 26, color: "#646c76", letterSpacing: 1 }}>
+        <div style={{ fontSize: 26, color: "#9a9a9a", letterSpacing: 1 }}>
           kagusoftware.com
         </div>
       </div>

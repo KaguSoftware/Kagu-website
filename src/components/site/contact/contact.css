@@ -1,9 +1,9 @@
-/* Contact page — big headline, tappable rows, form card, blurred logo behind. */
+/* Contact page — big serif headline, quiet rows, glass form card, static ASCII field behind. */
 .cx {
   position: relative;
   isolation: isolate;
   overflow-x: clip;
-  padding-block: 40px calc(env(safe-area-inset-bottom, 0px) + 72px);
+  padding-block: 56px calc(env(safe-area-inset-bottom, 0px) + 88px);
 }
 .cx-bg {
   position: fixed;
@@ -11,44 +11,42 @@
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
+  /* faint: it must never compete with the form */
+  opacity: 0.07;
+  display: grid;
+  place-items: center;
 }
 .cx-bg__logo {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: min(1100px, 120vw);
-  color: var(--mark);
-  opacity: 0.14;
-  filter: blur(10px);
-  transform: translate3d(calc(-50% + var(--dx, 0px)), calc(-48% + var(--dy, 0px)), 0);
-  will-change: transform;
-}
-.cx-bg__logo svg {
-  display: block;
-  width: 100%;
-  height: auto;
+  width: min(120vw, 1500px);
+  aspect-ratio: 2.4 / 1;
 }
 .cx-grid {
   position: relative;
   z-index: 1;
   display: grid;
-  gap: 40px;
+  gap: 48px;
 }
 .cx-left {
   min-width: 0;
 }
 .cx-h1 {
   margin: 0;
-  font-size: clamp(56px, 8vw, 120px);
-  line-height: 1.1;
-  letter-spacing: -0.03em;
+  font-weight: 400;
+  font-size: clamp(56px, 8vw, 116px);
+  /* the word masks below add their own padding for Maname's tall glyphs */
+  line-height: 0.94;
+  letter-spacing: -0.02em;
+  padding-top: 0.12em;
+  padding-bottom: 0.14em;
 }
 .cx-w {
   display: inline-block;
   overflow: hidden;
   vertical-align: top;
-  padding-bottom: 0.12em;
-  margin-bottom: -0.12em;
+  padding-top: 0.12em;
+  padding-bottom: 0.14em;
+  margin-top: -0.12em;
+  margin-bottom: -0.14em;
 }
 .cx-w > span {
   display: inline-block;
@@ -56,16 +54,16 @@
   animation-delay: calc(var(--i) * 60ms);
 }
 .cx-pop {
-  color: var(--pop);
+  color: var(--muted);
 }
 .cx-sub {
-  margin: 26px 0 0;
+  margin: 20px 0 0;
   color: var(--muted);
   font-size: 18px;
 }
 .cx-rows {
   list-style: none;
-  margin: 36px 0 0;
+  margin: 44px 0 0;
   padding: 0;
   border-top: 1px solid var(--line);
 }
@@ -79,14 +77,17 @@
   grid-template-areas: "label arrow" "value arrow";
   align-items: center;
   column-gap: 16px;
-  row-gap: 2px;
+  row-gap: 6px;
   min-height: 48px;
-  padding: 18px 0;
+  padding: 22px 0;
   color: var(--ink);
 }
 .cx-row__label {
   grid-area: label;
-  font-size: 13px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: var(--muted);
 }
 .cx-row__value {
@@ -94,10 +95,11 @@
   min-width: 0;
   overflow-wrap: anywhere;
   font-family: var(--serif);
-  font-weight: 300;
+  font-weight: 400;
   font-size: clamp(24px, 6.4vw, 32px);
-  letter-spacing: -0.01em;
-  line-height: 1.15;
+  letter-spacing: -0.005em;
+  line-height: 1.2;
+  padding-block: 0.08em 0.1em;
 }
 .cx-row__arrow {
   grid-area: arrow;
@@ -112,9 +114,12 @@
 .cx-time {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 22px 0 0;
-  font-size: 13px;
+  gap: 10px;
+  margin: 26px 0 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
@@ -122,7 +127,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--ink);
 }
 .cx-time__t {
   display: inline-block;
@@ -143,11 +148,11 @@
 
 @media (min-width: 960px) {
   .cx {
-    padding-block: 72px 110px;
+    padding-block: 88px 120px;
   }
   .cx-grid {
     grid-template-columns: minmax(0, 1fr) minmax(0, 520px);
-    gap: 72px;
+    gap: 88px;
     align-items: start;
   }
   .cx-left {
@@ -181,10 +186,6 @@
   .cx-w > span,
   .cx-fade {
     animation: none;
-  }
-  .cx-bg__logo {
-    transform: translate3d(-50%, -48%, 0);
-    will-change: auto;
   }
 }
 

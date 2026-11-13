@@ -1,7 +1,7 @@
 import { KAGU_VIEWBOX, RIBBON, FOLD, WING } from "@/components/KaguMark";
 import type { GroupPiece } from "@/lib/productGroups";
 
-/* Faint outline of the whole mark; the group's piece(s) filled in accent. */
+/* Faint outline of the whole mark; the group's piece(s) filled in white. */
 export function GroupIcon({ piece, className }: { piece: GroupPiece; className?: string }) {
   const on = (p: Exclude<GroupPiece, "all">) => piece === "all" || piece === p;
   const paths = [
@@ -15,9 +15,9 @@ export function GroupIcon({ piece, className }: { piece: GroupPiece; className?:
         <path
           key={k}
           d={d}
-          fill={on(k) ? "var(--mark)" : "none"}
-          fillOpacity={on(k) ? 0.9 : 0}
-          stroke={on(k) ? "var(--mark)" : "var(--muted)"}
+          fill={on(k) ? "#f2f2f2" : "none"}
+          fillOpacity={on(k) ? 0.92 : 0}
+          stroke={on(k) ? "#f2f2f2" : "#9a9a9a"}
           strokeOpacity={on(k) ? 1 : 0.35}
           strokeWidth={1.5}
           strokeLinejoin="round"

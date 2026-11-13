@@ -65,20 +65,20 @@
   from {
     transform: translateY(100%);
     border-radius: 28px 28px 0 0;
-    box-shadow: 0 -24px 60px rgba(27, 34, 43, 0.2);
+    box-shadow: 0 -24px 60px rgba(0, 0, 0, 0.6);
   }
   to {
     transform: none;
     border-radius: 0;
-    box-shadow: 0 -24px 60px rgba(27, 34, 43, 0);
+    box-shadow: 0 -24px 60px rgba(0, 0, 0, 0);
   }
 }
 @keyframes page-backdrop {
   from {
-    background: #faf7f2;
+    background: #0a0a0a;
   }
   to {
-    background: #e6e0d4;
+    background: #000;
   }
 }
 

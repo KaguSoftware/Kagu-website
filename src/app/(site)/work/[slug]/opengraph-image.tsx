@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { ogTexture } from "@/components/ascii/ogTexture";
 import { RIBBON, FOLD, WING, KAGU_VIEWBOX } from "@/components/KaguMark";
 import { getCases } from "@/lib/content";
 
@@ -12,10 +13,10 @@ export const contentType = "image/png";
   reads the case through the server-only content layer.
 */
 
-const PAPER = "#faf7f2";
-const INK = "#1b222b";
-const MUTED = "#646c76";
-const ACCENT = "#1f8fe0";
+const PAPER = "#0a0a0a";
+const INK = "#f2f2f2";
+const MUTED = "#9a9a9a";
+const ACCENT = "#f2f2f2";
 
 export async function generateStaticParams() {
   const cases = await getCases();
@@ -42,6 +43,7 @@ export default async function CaseOgImage({
           width: "100%",
           height: "100%",
           background: PAPER,
+          position: "relative",
           color: INK,
           display: "flex",
           flexDirection: "column",
@@ -49,6 +51,28 @@ export default async function CaseOgImage({
           padding: 80,
         }}
       >
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+            color: "#262626",
+            fontSize: 17,
+            lineHeight: "17px",
+            opacity: 0.9,
+          }}
+        >
+          {ogTexture(110, 38, 7).map((l, i) => (
+            <div key={i} style={{ whiteSpace: "pre" }}>
+              {l}
+            </div>
+          ))}
+        </div>
         <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 28, color: MUTED }}>
           <svg
             width="80"

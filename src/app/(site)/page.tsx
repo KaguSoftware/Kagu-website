@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { HomeScrollScene } from "@/components/site/home/HomeScrollScene";
+import { AsciiHero } from "@/components/site/home/AsciiHero";
 import { HomeWork } from "@/components/site/home/HomeWork";
 import { HomeClosing } from "@/components/site/home/HomeClosing";
 import { getCases, getFeaturedCases, getStudio } from "@/lib/content";
@@ -33,7 +33,7 @@ export default async function Home() {
       <JsonLd
         data={webPageJsonLd({ title: TITLE, description: DESCRIPTION, path: "/", lang: "en" })}
       />
-      <HomeScrollScene />
+      <AsciiHero />
       <HomeWork cases={cases} />
       <HomeClosing email={email} />
     </div>

@@ -2,12 +2,13 @@
 
 import { forwardRef, useEffect, useId, useRef, type CSSProperties, type RefObject } from "react";
 import { NavLink } from "@/components/site/NavLink";
-import { KAGU_VIEWBOX, RIBBON, FOLD, WING } from "@/components/KaguMark";
+import { AsciiBanner, AsciiBlock } from "@/components/ascii/AsciiBlock";
+import { rule } from "@/components/ascii/asciiArt";
 import { usePathname } from "next/navigation";
 import { menuItems, FALLBACK_EMAIL } from "./navItems";
 
 /*
-  Full-screen cream menu sheet + the 2-line button that morphs to an X.
+  Full-screen black menu sheet + the 2-line button that morphs to an X.
   Scroll lock = html{overflow:hidden}; `scrollbar-gutter: stable` (site.css)
   keeps the layout from shifting. Escape closes, Tab is trapped between the
   button and the sheet links, focus returns to the button on Escape.
@@ -117,17 +118,6 @@ export function MobileNav({
       <span id={labelId} className="site-sr">
         Site menu
       </span>
-      <svg
-        className="site-sheet__draw"
-        viewBox={KAGU_VIEWBOX}
-        aria-hidden="true"
-        focusable="false"
-        fill="none"
-      >
-        {[RIBBON, FOLD, WING].map((d, i) => (
-          <path key={i} d={d} pathLength={1} className={`site-sheet__draw-p site-sheet__draw-p--${i + 1}`} />
-        ))}
-      </svg>
       <nav aria-label="Menu" className="site-sheet__nav">
         {menuItems.map((item, i) => {
           const active = !item.href.includes("#") && pathname === item.href;
@@ -139,11 +129,18 @@ export function MobileNav({
               aria-current={active ? "page" : undefined}
               style={{ "--i": i } as CSSProperties}
             >
+              <span className="site-sheet__idx" aria-hidden="true">
+                {String(i + 1).padStart(2, "0")}
+              </span>
               <span className="site-sheet__word">{item.label}</span>
             </NavLink>
           );
         })}
       </nav>
+      <div className="site-sheet__art">
+        <AsciiBlock art={rule(120, "- ")} tone="line" size="9px" />
+        <AsciiBanner word="KAGU" tone="shimmer" animate={false} className="site-sheet__banner" />
+      </div>
       <div className="site-sheet__foot">
         <a href={`mailto:${email}`}>{email}</a>
         <span>Istanbul</span>

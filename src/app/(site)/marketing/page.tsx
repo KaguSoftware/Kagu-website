@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { NavLink } from "@/components/site/NavLink";
-import { KAGU_VIEWBOX, RIBBON, FOLD, WING } from "@/components/KaguMark";
+import { AsciiBlock } from "@/components/ascii/AsciiBlock";
+import { AsciiVideo } from "@/components/ascii/AsciiVideo";
+import { frame, rule, spark } from "@/components/ascii/asciiArt";
 import { GroupIcon } from "@/components/site/work/GroupIcon";
 import { pageMetadata, webPageJsonLd } from "@/lib/seo";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -83,6 +85,46 @@ const SERVICES = [
   },
 ] as const;
 
+/* ASCII charts, plain characters only */
+const bar = (n: number, w = 30) => "#".repeat(n) + ".".repeat(w - n);
+const CHARTS: Record<string, string> = {
+  google: frame(
+    [
+      "visibility, first 6 months",
+      "",
+      "month 1  " + bar(4) + "  04",
+      "month 2  " + bar(8) + "  08",
+      "month 3  " + bar(13) + "  13",
+      "month 4  " + bar(19) + "  19",
+      "month 5  " + bar(24) + "  24",
+      "month 6  " + bar(29) + "  29",
+    ],
+    { title: "search", pad: 2 },
+  ),
+  social: frame(
+    [
+      "weekly reach",
+      "",
+      spark([0.1, 0.18, 0.15, 0.3, 0.28, 0.42, 0.4, 0.55, 0.52, 0.7, 0.68, 0.85, 0.9, 1]),
+      spark([0.05, 0.1, 0.12, 0.2, 0.18, 0.3, 0.35, 0.4, 0.44, 0.5, 0.6, 0.62, 0.7, 0.78]),
+      rule(14, "-"),
+      "w1            w14",
+    ],
+    { title: "social", pad: 2 },
+  ),
+  ads: frame(
+    [
+      "from view to message",
+      "",
+      "views     " + "#".repeat(30),
+      "clicks    " + "#".repeat(18),
+      "visits    " + "#".repeat(11),
+      "messages  " + "#".repeat(5),
+    ],
+    { title: "ads", pad: 2 },
+  ),
+};
+
 const STEPS = [
   { title: "Talk", text: "Tell us what you sell and who buys it." },
   { title: "Plan", text: "We pick what is worth doing and what is not." },
@@ -109,22 +151,15 @@ export default function MarketingPage() {
             Let&apos;s talk
           </NavLink>
         </div>
-        <svg
-          className="mk-draw"
-          viewBox={KAGU_VIEWBOX}
-          aria-hidden="true"
-          focusable="false"
-          fill="none"
-        >
-          {[RIBBON, FOLD, WING].map((d, i) => (
-            <path
-              key={i}
-              d={d}
-              pathLength={1}
-              className={`mk-draw__p mk-draw__p--${i + 1}`}
-            />
-          ))}
-        </svg>
+        <figure className="mk-reel">
+          <AsciiVideo
+            src="/marketing/vision-reel.mp4"
+            label="Kagu brand reel"
+            fontSize={6}
+            className="mk-reel__video"
+          />
+          <figcaption>Hover to watch (tap on mobile)</figcaption>
+        </figure>
       </section>
 
       <div className="site-wrap">
@@ -134,6 +169,7 @@ export default function MarketingPage() {
               <GroupIcon piece={s.piece} className="mk-svc__ic" />
               <h2 id={`mk-${s.id}`}>{s.title}</h2>
               <p>{s.line}</p>
+              <AsciiBlock art={CHARTS[s.id]} tone="muted" size="clamp(8px, 1.9vw, 12px)" className="mk-chart" />
             </div>
             <ul className="mk-svc__list">
               {s.items.map((it) => (
@@ -150,7 +186,7 @@ export default function MarketingPage() {
           <h2 id="mk-steps-h">How it goes</h2>
           <ol className="mk-steps__list">
             {STEPS.map((s, i) => (
-              <li key={s.title}>
+              <li key={s.title} className="glass">
                 <span className="mk-steps__n" aria-hidden="true">
                   {i + 1}
                 </span>

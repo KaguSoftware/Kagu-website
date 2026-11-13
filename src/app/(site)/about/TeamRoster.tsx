@@ -10,6 +10,7 @@
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { TeamMember } from "@/lib/content";
+import { AsciiReveal } from "@/components/ascii/AsciiReveal";
 import "@/components/site/about/about.css";
 
 export type RosterMember = TeamMember & { slug: string };
@@ -30,6 +31,23 @@ function Photo({ member, sizes }: { member: TeamMember; sizes: string }) {
     <span className="member__init" aria-hidden>
       {initials(member.name)}
     </span>
+  );
+}
+
+/*
+  Card portrait: the photo as ASCII; the real photo is only requested on the
+  first hover and fades in over it (AsciiReveal).
+*/
+function Portrait({ member }: { member: TeamMember }) {
+  if (!member.image) return <Photo member={member} sizes="280px" />;
+  return (
+    <AsciiReveal
+      src={member.image}
+      alt=""
+      sizes="(max-width: 760px) 50vw, 280px"
+      vignette
+      className="member__portrait"
+    />
   );
 }
 
@@ -163,10 +181,7 @@ export function TeamRoster({
               }}
             >
               <span className="member__frame">
-                <Photo
-                  member={m}
-                  sizes="(max-width: 760px) 50vw, 280px"
-                />
+                <Portrait member={m} />
               </span>
               <span className="member__name">{m.name}</span>
               <span className="member__role">{m.role}</span>

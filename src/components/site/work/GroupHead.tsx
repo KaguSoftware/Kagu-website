@@ -10,7 +10,7 @@ import { useRef } from "react";
 import type { ProductGroup } from "@/lib/productGroups";
 import { GroupIcon } from "./GroupIcon";
 
-export function GroupHead({ group: g }: { group: ProductGroup }) {
+export function GroupHead({ group: g, index }: { group: ProductGroup; index: number }) {
   const ref = useRef<HTMLDialogElement>(null);
 
   const open = () => {
@@ -21,7 +21,10 @@ export function GroupHead({ group: g }: { group: ProductGroup }) {
 
   return (
     <div className="work-ghead">
-      <GroupIcon piece={g.piece} className="work-ic" />
+      <span className="work-idx">
+        <GroupIcon piece={g.piece} className="work-ic" />
+        {String(index + 1).padStart(2, "0")} / GROUP
+      </span>
       <h2 id={`g-${g.id}`}>
         <button type="button" className="work-title" onClick={open} aria-haspopup="dialog">
           {g.title}
@@ -48,7 +51,7 @@ export function GroupHead({ group: g }: { group: ProductGroup }) {
           document.documentElement.style.overflow = "";
         }}
       >
-        <div className="gd__card">
+        <div className="gd__card glass">
           <button type="button" className="gd__x" onClick={close} aria-label="Close">
             <svg viewBox="0 0 14 14" fill="none" aria-hidden="true">
               <path d="M2 2l10 10M12 2 2 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />

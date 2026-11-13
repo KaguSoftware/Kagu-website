@@ -8,24 +8,18 @@
 }
 @media (min-width: 900px) {
   .mk-hero {
-    grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
   }
 }
 .mk-hero h1 {
-  font-size: clamp(42px, 13vw, 128px);
-  line-height: 1.08;
-  letter-spacing: -0.035em;
+  /* fits the 5fr column next to the reel without breaking the word */
+  font-size: clamp(42px, 6.6vw, 104px);
+  line-height: 1.06;
+  letter-spacing: -0.02em;
   margin: 0;
-}
-.mk-hero h1::after {
-  content: ".";
-  color: var(--pop);
+  padding-block: 0.12em 0.14em;
 }
 .mk-svc__ic {
-  color: var(--pop);
-}
-.mk-svc__head h2::after {
-  content: ".";
   color: var(--pop);
 }
 .mk-svc__name {
@@ -34,45 +28,36 @@
 .mk-hero p {
   margin: 28px 0 32px;
   font-family: var(--serif);
-  font-weight: 300;
+  font-weight: 400;
   font-size: clamp(24px, 4vw, 36px);
   color: var(--muted);
   letter-spacing: -0.01em;
 }
 
-/* the mark draws itself once, one piece after another */
-.mk-draw {
+/* hero ascii art + banner */
+.mk-reel {
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+.mk-reel__video {
   width: 100%;
-  max-width: 520px;
-  height: auto;
-  justify-self: center;
-  overflow: visible;
-  color: var(--mark);
+  aspect-ratio: 16 / 9;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: #050505;
 }
-.mk-draw__p {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2.4;
-  stroke-linejoin: round;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 0;
+.mk-reel figcaption {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
-@media (prefers-reduced-motion: no-preference) {
-  .mk-draw__p {
-    stroke-dashoffset: 1;
-    animation: mk-draw 2.2s cubic-bezier(0.5, 0, 0.2, 1) forwards;
-  }
-  .mk-draw__p--2 {
-    animation-delay: 0.35s;
-  }
-  .mk-draw__p--3 {
-    animation-delay: 0.7s;
-  }
-}
-@keyframes mk-draw {
-  to {
-    stroke-dashoffset: 0;
-  }
+.mk-chart {
+  margin-top: 18px;
+  opacity: 0.85;
 }
 
 /* services */
@@ -81,7 +66,7 @@
   grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
   gap: clamp(28px, 6vw, 80px);
   padding-block: clamp(40px, 6vw, 72px);
-  border-top: 2px solid var(--pop);
+  border-top: 1px solid var(--line-strong);
 }
 .mk-svc__head {
   display: flex;
@@ -96,12 +81,13 @@
 .mk-svc__head h2 {
   margin: 0;
   font-size: clamp(40px, 5vw, 60px);
-  line-height: 1.1;
+  line-height: 1.06;
+  padding-block: 0.12em 0.14em;
 }
 .mk-svc__head p {
   margin: 0;
   font-family: var(--serif);
-  font-weight: 300;
+  font-weight: 400;
   font-size: clamp(21px, 2.6vw, 26px);
   color: var(--muted);
 }
@@ -122,7 +108,7 @@
 }
 .mk-svc__name {
   font-family: var(--serif);
-  font-weight: 300;
+  font-weight: 400;
   font-size: 24px;
   letter-spacing: -0.01em;
 }
@@ -165,19 +151,26 @@
   }
 }
 .mk-steps__n {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: var(--pop);
-  color: #fff;
-  font-size: 14px;
-  margin-bottom: 12px;
+  display: block;
+  margin-bottom: 18px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+.mk-steps__n::before {
+  content: "STEP 0";
+}
+.mk-steps__list li {
+  padding: 28px 26px 32px;
+  border-radius: 18px;
 }
 .mk-steps__list h3 {
   margin: 0 0 10px;
   font-size: 32px;
+  font-weight: 400;
+  line-height: 1.1;
+  padding-block: 0.12em 0.14em;
 }
 .mk-steps__list p {
   margin: 0;
@@ -199,7 +192,7 @@
 .mk-with p {
   margin: 0;
   font-family: var(--serif);
-  font-weight: 300;
+  font-weight: 400;
   font-size: clamp(22px, 3vw, 30px);
 }
 .mk-with__link {
@@ -224,15 +217,3 @@
   font-size: clamp(36px, 6vw, 64px);
 }
 
-/* arriving through the major page transition: draw once the new page has risen */
-@media (prefers-reduced-motion: no-preference) {
-  :root:active-view-transition-type(nav-major) .mk-draw__p--1 {
-    animation-delay: 0.7s;
-  }
-  :root:active-view-transition-type(nav-major) .mk-draw__p--2 {
-    animation-delay: 1.05s;
-  }
-  :root:active-view-transition-type(nav-major) .mk-draw__p--3 {
-    animation-delay: 1.4s;
-  }
-}

@@ -7,7 +7,7 @@ import { SiteFooterServer } from "@/components/layout/SiteFooterServer";
 import { PageTransition } from "@/components/site/PageTransition";
 
 export const viewport: Viewport = {
-  themeColor: "#faf7f2",
+  themeColor: "#0a0a0a",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",

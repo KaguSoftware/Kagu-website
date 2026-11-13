@@ -1,0 +1,205 @@
+/* Shared ASCII-art primitives for the public site. */
+.ascii {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: clamp(6px, 1.05vw, 13px);
+  line-height: 1.05;
+  letter-spacing: 0;
+  white-space: pre;
+  user-select: none;
+  overflow: hidden;
+  font-variant-ligatures: none;
+}
+.ascii--shimmer {
+  background: linear-gradient(90deg, #ffffff 0%, #7a7a7a 25%, #ffffff 50%, #7a7a7a 75%, #ffffff 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.ascii--flow {
+  animation: ascii-flow 8s linear infinite;
+}
+@keyframes ascii-flow {
+  to {
+    background-position: -200% 0;
+  }
+}
+.ascii--muted { color: var(--muted); }
+.ascii--ink { color: var(--ink); }
+.ascii--line { color: var(--line-strong); }
+
+/* canvas character field (AsciiField) */
+.ascii-field {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.ascii-field canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  font-family: var(--mono);
+}
+
+/* typewriter: a hidden ghost holds the final size, so typing never shifts layout */
+.tw {
+  position: relative;
+  display: inline-block;
+}
+.tw__ghost {
+  visibility: hidden;
+}
+.tw__live {
+  position: absolute;
+  inset: 0;
+}
+.cursor {
+  display: inline-block;
+  width: 2px;
+  height: 0.9em;
+  margin-left: 0.1em;
+  vertical-align: -0.08em;
+  background: var(--accent);
+  animation: cursor-blink 1.05s steps(1) infinite;
+}
+@keyframes cursor-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* section label: // our work ----------- */
+.sec-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 28px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  text-transform: lowercase;
+}
+.sec-label::before {
+  content: "//";
+  color: var(--muted);
+}
+.sec-label::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: repeating-linear-gradient(90deg, var(--line-strong) 0 6px, transparent 6px 10px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ascii--flow,
+  .cursor {
+    animation: none;
+  }
+}
+
+/*
+  serif word in dense ASCII (AsciiWord / AsciiBanner): fills the container
+  width, capped by --aw-max height; --ar (width / height) is set inline from
+  the measured word, so the box is reserved before the canvas draws.
+*/
+.ascii-word {
+  --aw-max: clamp(96px, 15vw, 210px);
+  position: relative;
+  display: block;
+  width: min(100%, calc(var(--aw-max) * var(--ar, 4)));
+  aspect-ratio: var(--ar, 4);
+  container-type: inline-size;
+  user-select: none;
+}
+.ascii-word__fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: calc(100cqw / var(--ar, 4) * 0.82);
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.06);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* <AsciiArt> wrapper: give it a size from the outside (height / aspect-ratio) */
+.ascii-art {
+  position: relative;
+  overflow: hidden;
+}
+
+/* <AsciiReveal>: ASCII at rest, the real image on demand */
+.ascii-reveal {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  background: #050505;
+}
+.ascii-reveal__art {
+  transition: opacity 0.5s ease, filter 0.5s ease;
+}
+.ascii-reveal__img {
+  opacity: 0;
+  transform: scale(1.02);
+  filter: grayscale(1) contrast(1.05);
+  transition: opacity 0.5s ease, transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.6s ease;
+}
+.ascii-reveal--cover .ascii-reveal__img { object-fit: cover; }
+.ascii-reveal--contain .ascii-reveal__img { object-fit: contain; }
+.ascii-reveal.is-loaded.is-active .ascii-reveal__img {
+  opacity: 1;
+  transform: none;
+}
+.ascii-reveal.is-loaded.is-active .ascii-reveal__art {
+  opacity: 0.2;
+  filter: blur(2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ascii-reveal__img,
+  .ascii-reveal__art {
+    transition: none;
+  }
+}
+
+/* <AsciiLogo>: give it a size from outside */
+.ascii-logo {
+  position: relative;
+}
+
+/* <AsciiVideo>: live ASCII of a real video; the real video on hover / tap */
+.ascii-video {
+  position: relative;
+  overflow: hidden;
+  background: #050505;
+  cursor: pointer;
+}
+.ascii-video__art {
+  transition: opacity 0.5s ease;
+}
+.ascii-video__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  filter: grayscale(1);
+  transition: opacity 0.5s ease;
+}
+.ascii-video.is-real .ascii-video__video {
+  opacity: 1;
+}
+.ascii-video.is-real .ascii-video__art {
+  opacity: 0;
+}
+.ascii-video:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 4px;
+}

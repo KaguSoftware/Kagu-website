@@ -6,11 +6,7 @@
   grid-template-rows: auto 1fr;
   min-height: 640px;
   padding: 28px 22px 24px;
-  background: var(--card);
-  border: 1px solid var(--line);
   border-radius: 20px;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 30px 70px -30px rgba(27, 34, 43, 0.22),
-    0 8px 20px -12px rgba(27, 34, 43, 0.1);
 }
 @media (min-width: 960px) {
   .cf {
@@ -20,6 +16,9 @@
 }
 .cf__title {
   margin: 0 0 26px;
+  font-weight: 400;
+  line-height: 1.1;
+  padding-block: 0.12em 0.14em;
   font-size: clamp(28px, 3.2vw, 34px);
   transition: opacity 0.3s;
 }
@@ -48,7 +47,10 @@
   padding-bottom: 2px;
 }
 .cf__label {
-  font-size: 13px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: var(--muted);
 }
 /* custom dropdown (SiteSelect): underlined trigger like the inputs, soft card list */
@@ -115,7 +117,7 @@
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: 14px;
-  box-shadow: 0 24px 50px -22px rgba(27, 34, 43, 0.28), 0 6px 16px -8px rgba(27, 34, 43, 0.12);
+  box-shadow: 0 24px 50px -22px rgba(0, 0, 0, 0.6), 0 6px 16px -8px rgba(0, 0, 0, 0.6);
   animation: cf-select-in 0.16s ease-out;
 }
 @keyframes cf-select-in {
@@ -134,7 +136,7 @@
   border-radius: 9px;
   color: var(--ink);
   font-family: var(--serif);
-  font-weight: 300;
+  font-weight: 400;
   font-size: 21px;
   letter-spacing: -0.01em;
   cursor: pointer;
@@ -177,7 +179,7 @@ textarea.cf__input {
   box-shadow: 0 1px 0 0 var(--accent);
 }
 .cf__input[aria-invalid="true"] {
-  border-bottom-color: #b4432f;
+  border-bottom-color: var(--danger);
 }
 .cf__input:-webkit-autofill,
 .cf__input:-webkit-autofill:hover,
@@ -191,7 +193,7 @@ textarea.cf__input {
   min-height: 20px; /* reserved: no shift when text appears */
   font-size: 13px;
   line-height: 20px;
-  color: #b4432f;
+  color: var(--danger);
 }
 .cf__hp {
   position: absolute;
@@ -232,7 +234,7 @@ textarea.cf__input {
   min-height: 44px; /* reserved */
   margin: 10px 0 0;
   font-size: 15px;
-  color: #b4432f;
+  color: var(--danger);
 }
 .cf__fail a {
   color: var(--ink);
@@ -274,7 +276,7 @@ textarea.cf__input {
 }
 .cf__thanks {
   font-family: var(--serif);
-  font-weight: 300;
+  font-weight: 400;
   font-size: clamp(36px, 6vw, 52px);
   letter-spacing: -0.02em;
   line-height: 1.05;
@@ -301,4 +303,13 @@ textarea.cf__input {
   .cf--done .cf__mark path {
     animation: none;
   }
+}
+
+.cf__ascii {
+  font-family: var(--mono);
+  white-space: pre;
+  margin: 0 0 14px;
+  font-size: 9px;
+  line-height: 1.1;
+  color: var(--muted);
 }

@@ -8,8 +8,8 @@ import { MenuButton, MobileNav } from "./MobileNav";
 import { navItems, contactHref } from "./navItems";
 
 /*
-  SiteHeader — sticky, translucent cream + blur; hairline appears after the
-  page scrolls. Desktop: links + pill CTA. <=760px: 2-line menu button that
+  SiteHeader — sticky floating glass bar (small blurred surface). Desktop:
+  links + white pill CTA. <=760px: 2-line menu button that
   opens the full-screen sheet (MobileNav). The sheet is a SIBLING of <header>
   because backdrop-filter would otherwise become the containing block of its
   position:fixed box. Styles: src/styles/site-header.css.
@@ -41,9 +41,10 @@ export function SiteHeader() {
       <header
         className={`site-header${scrolled ? " is-scrolled" : ""}${open ? " is-open" : ""}`}
       >
-        <div className="site-wrap site-header__bar">
+        <div className="site-wrap">
+         <div className="site-header__shell glass glass--blur">
           <NavLink href="/" className="site-brand" aria-label="Kagu home" onClick={close}>
-            <KaguMark variant="outline" height={17} />
+            <KaguMark variant="outline" height={16} />
             <span>kagu</span>
           </NavLink>
 
@@ -67,6 +68,7 @@ export function SiteHeader() {
           </nav>
 
           <MenuButton ref={buttonRef} open={open} onToggle={toggle} />
+         </div>
         </div>
       </header>
       <MobileNav open={open} onClose={close} triggerRef={buttonRef} />

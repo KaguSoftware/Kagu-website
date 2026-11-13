@@ -8,7 +8,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { RIBBON, FOLD, WING, KAGU_VIEWBOX } from "@/components/KaguMark";
+import { frame, rule } from "@/components/ascii/asciiArt";
 import { SiteSelect } from "./SiteSelect";
 import "./contact-form.css";
 
@@ -16,6 +16,8 @@ type Stage = "default" | "submitting" | "success" | "error";
 type Errors = { name?: string; email?: string; message?: string };
 
 const TYPES = ["App", "Platform", "Hosting", "AI", "Not sure"] as const;
+
+const SENT_ART = frame(["message sent", rule(24, ".:")], { pad: 3 });
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -86,7 +88,7 @@ export function ContactForm({
   const busy = stage === "submitting";
 
   return (
-    <div className={`cf${done ? " cf--done" : ""}`}>
+    <div className={`cf glass${done ? " cf--done" : ""}`}>
       <h2 className="cf__title">
         {topic === "marketing" ? "Tell us about your brand." : "Tell us about it."}
       </h2>
@@ -148,20 +150,7 @@ export function ContactForm({
       </form>
 
       <div className="cf__done" role="status" aria-live="polite" aria-hidden={!done}>
-        <svg
-          className="cf__mark"
-          viewBox={KAGU_VIEWBOX}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={1.5}
-          strokeLinejoin="round"
-          style={{ overflow: "visible" }}
-          aria-hidden="true"
-        >
-          <path d={RIBBON} pathLength={1} vectorEffect="non-scaling-stroke" />
-          <path d={FOLD} pathLength={1} vectorEffect="non-scaling-stroke" />
-          <path d={WING} pathLength={1} vectorEffect="non-scaling-stroke" />
-        </svg>
+        <pre className="cf__ascii" aria-hidden="true">{SENT_ART}</pre>
         {done ? (
           <>
             <p className="cf__thanks">Thanks.</p>

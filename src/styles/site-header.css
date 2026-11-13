@@ -1,6 +1,6 @@
 /*
   Public-site header (src/components/layout/SiteHeader.tsx).
-  Sticky translucent cream + blur; hairline fades in once scrolled.
+  A slim floating glass bar (small surface, so the real backdrop blur is cheap).
   Tokens come from .site in site.css.
 */
 
@@ -10,79 +10,66 @@
   z-index: 20;
   view-transition-name: site-header; /* stays put during page transitions */
   padding-top: env(safe-area-inset-top, 0px);
-  border-bottom: 1px solid transparent;
+  height: var(--site-header-h);
+  pointer-events: none; /* only the bar itself takes clicks */
 }
-/* no hard edge: paper colour and blur fade out below the bar, so lines scrolling under it dissolve */
-.site-header::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 -32px 0;
-  z-index: -1;
-  pointer-events: none;
-  background: linear-gradient(
-    to bottom,
-    var(--bg) 0%,
-    color-mix(in srgb, var(--bg) 88%, transparent) 50%,
-    transparent 100%
-  );
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
-}
-/* the cream fade only comes back once the closing circle has finished (0.7s) */
-.site-header::before {
-  opacity: 1;
-  transition: opacity 0.25s 0.68s;
-}
-.site-header.is-open::before {
-  opacity: 0;
-  transition: opacity 0.3s 0.1s;
-}
-/* closing: stay cream until the shrinking blue circle has passed each element
-   (the brand is left of the button, so the circle leaves it first) */
-.site-header .site-brand,
-.site-header .site-brand span {
-  transition: color 0.2s 0.4s;
-}
-.site-header .site-menu-btn {
-  transition: color 0.2s 0.58s;
-}
-.site-header.is-open .site-brand {
-  color: var(--bg);
-  transition: color 0.2s 0.3s;
-}
-.site-header.is-open .site-brand span {
-  color: var(--bg);
-  transition: color 0.2s 0.3s;
-}
-.site-header.is-open .site-menu-btn {
-  color: var(--bg);
-  transition: color 0.2s 0.1s;
-}
-.site-header__bar {
+.site-header__shell {
+  pointer-events: auto;
+  margin-top: 10px;
+  height: 50px;
+  padding: 0 8px 0 20px;
+  border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: var(--site-header-h);
   gap: 20px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.site-header.is-scrolled .site-header__shell {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: linear-gradient(180deg, rgba(22, 22, 22, 0.72), rgba(10, 10, 10, 0.6));
+}
+.site-header .site-brand {
+  font-size: 23px;
 }
 .site-header__links {
   display: flex;
   align-items: center;
-  gap: 34px;
-  font-size: 15px;
+  gap: 30px;
+  font-size: 14.5px;
 }
 .site-header__links a:not(.site-btn) {
+  position: relative;
   display: inline-flex;
   align-items: center;
   min-height: 44px;
   color: var(--muted);
   transition: color 0.2s;
 }
+.site-header__links a:not(.site-btn)::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 9px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
 .site-header__links a:not(.site-btn):hover,
 .site-header__links a[aria-current="page"] {
   color: var(--ink);
+}
+.site-header__links a:not(.site-btn):hover::after,
+.site-header__links a[aria-current="page"]::after {
+  transform: scaleX(1);
+}
+.site-header__links .site-btn {
+  height: 36px;
+  padding: 0 18px;
+  font-size: 14px;
 }
 
 /* 2-line menu button that morphs to an X */
@@ -91,7 +78,6 @@
   position: relative;
   width: 44px;
   height: 44px;
-  margin-right: -11px;
   padding: 0;
   border: 0;
   background: none;
@@ -101,8 +87,8 @@
 }
 .site-menu-btn i {
   position: absolute;
-  left: 11px;
-  right: 11px;
+  left: 12px;
+  right: 12px;
   height: 1.5px;
   background: currentColor;
   transition: transform 0.3s var(--ease-out-quint, ease), top 0.3s var(--ease-out-quint, ease);
@@ -128,5 +114,8 @@
   }
   .site-menu-btn {
     display: block;
+  }
+  .site-header__shell {
+    padding-right: 4px;
   }
 }

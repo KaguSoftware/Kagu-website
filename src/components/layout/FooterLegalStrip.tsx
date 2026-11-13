@@ -2,8 +2,8 @@
   Footer legal band: policy links + accepted-payment marks + SSL note.
   REQUIRED on every page for the iyzico merchant approval (Turkish
   distance-sales rules) — keep every link label (from @/lib/legal) and both
-  payment marks. Colour and styling are free: the white marks are drawn in ink
-  to sit on the cream footer. Plain server component.
+  payment marks. Colour and styling are free: the marks are white artwork,
+  dimmed with opacity on the black footer. Plain server component.
 */
 
 import { NavLink } from "@/components/site/NavLink";
