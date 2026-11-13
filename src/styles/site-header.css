@@ -119,3 +119,12 @@
     padding-right: 4px;
   }
 }
+
+/* Over the animating home hero the backdrop blur would be recomputed every
+   frame; a plain translucent fill looks the same over black and costs nothing.
+   (AsciiHero toggles html.hero-under-header.) */
+html.hero-under-header .site-header__shell.glass--blur {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: linear-gradient(180deg, rgba(14, 14, 14, 0.86), rgba(8, 8, 8, 0.8));
+}

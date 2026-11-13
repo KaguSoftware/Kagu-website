@@ -168,9 +168,11 @@
   }
 }
 
-/* <AsciiLogo>: give it a size from outside */
+/* <AsciiLogo>: fills its parent (size the parent: height or aspect-ratio) */
 .ascii-logo {
   position: relative;
+  width: 100%;
+  height: 100%;
 }
 
 /* <AsciiVideo>: live ASCII of a real video; the real video on hover / tap */

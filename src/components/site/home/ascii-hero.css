@@ -72,8 +72,9 @@
   gap: 12px;
 }
 
-/* ---- small glass readout (the only real backdrop blur on the page) ---- */
+/* ---- small glass readout (no backdrop blur: it sits on the animating canvas) ---- */
 .ahero__card {
+  background: linear-gradient(180deg, rgba(20, 20, 20, 0.82), rgba(10, 10, 10, 0.74));
   position: absolute;
   top: calc(var(--site-header-h) + 18px);
   right: var(--site-gutr);

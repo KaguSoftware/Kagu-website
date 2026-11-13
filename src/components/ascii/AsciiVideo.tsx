@@ -14,7 +14,7 @@
   The wrapper needs a size from outside (aspect-ratio / height).
 */
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { AsciiField } from "./AsciiField";
+import { GlAsciiField } from "./gl/GlAsciiField";
 import { videoProgram } from "./videoProgram";
 import "./ascii.css";
 
@@ -82,8 +82,10 @@ export function AsciiVideo({
       aria-label={`${label}: ${real ? "showing the video" : "showing it as ASCII"}. Press to switch.`}
     >
       {!reduce && (
-        <AsciiField
-          program={program}
+        <GlAsciiField
+          kind="video"
+          videoId={videoId}
+          fallback={program}
           fontSize={size}
           fps={20}
           maxCells={14000}

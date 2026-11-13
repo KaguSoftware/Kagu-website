@@ -10,7 +10,7 @@
 */
 import { useEffect, useRef } from "react";
 import { NavLink } from "@/components/site/NavLink";
-import { AsciiField } from "@/components/ascii/AsciiField";
+import { GlAsciiField } from "@/components/ascii/gl/GlAsciiField";
 import { logoProgram } from "@/components/ascii/logoProgram";
 import "./ascii-hero.css";
 
@@ -56,6 +56,9 @@ export function AsciiHero() {
       const vh = stableH;
       const r = hero.getBoundingClientRect();
       const p = clamp(-r.top / (r.height - vh || 1));
+      // header sits over the animating hero: swap its backdrop blur (re-blurred
+      // every frame) for a plain translucent fill while it does
+      document.documentElement.classList.toggle("hero-under-header", r.bottom > 80);
       const reduce = mq.matches;
       control.current.k = reduce ? 0 : easeOut(clamp(p / 0.66));
 
@@ -93,6 +96,7 @@ export function AsciiHero() {
     return () => {
       cancelAnimationFrame(raf);
       window.clearInterval(readout);
+      document.documentElement.classList.remove("hero-under-header");
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
       mq.removeEventListener("change", onScroll);
@@ -102,8 +106,9 @@ export function AsciiHero() {
   return (
     <section className="ahero" ref={heroRef} aria-label="Kagu">
       <div className="ahero__stage">
-        <AsciiField
-          program={logoProgram}
+        <GlAsciiField
+          kind="hero"
+          fallback={logoProgram}
           control={control}
           interactive
           fontSize={fontSize}
@@ -131,7 +136,7 @@ export function AsciiHero() {
           </div>
         </div>
 
-        <div className="ahero__card glass glass--blur" ref={cardRef} aria-hidden="true">
+        <div className="ahero__card glass" ref={cardRef} aria-hidden="true">
           <span className="ahero__card-k">Fig. 01: The mark</span>
           <span>
             Ray-traced in characters, live. Turn <b ref={yawRef}>+00°</b> · Light <b ref={sunRef}>+00°</b>

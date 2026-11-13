@@ -13,7 +13,7 @@
   The wrapper needs a size from outside (aspect-ratio / height). Decorative.
 */
 import { useEffect, useRef } from "react";
-import { AsciiField } from "./AsciiField";
+import { GlAsciiField } from "./gl/GlAsciiField";
 import { createLogoProgram } from "./logoProgram";
 import "./ascii.css";
 
@@ -39,8 +39,9 @@ export function AsciiLogo({
   const fontSize = (w: number, h: number) => Math.max(5, Math.min(10, Math.min(w / 130, h / 50)));
   return (
     <div className={`ascii-logo ${className}`.trim()} aria-hidden="true">
-      <AsciiField
-        program={fitProgram}
+      <GlAsciiField
+        kind="logo"
+        fallback={fitProgram}
         control={control}
         interactive
         still={still}
