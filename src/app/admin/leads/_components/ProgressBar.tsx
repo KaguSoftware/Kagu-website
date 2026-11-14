@@ -1,17 +1,21 @@
-export function ProgressBar({ value }: { value: number }) {
+export function ProgressBar({
+  value,
+  tone,
+}: {
+  value: number;
+  tone?: "ok" | "warn" | "bad" | "muted";
+}) {
   const clamped = Math.max(0, Math.min(100, value));
   return (
-    <div
+    <span
       role="progressbar"
       aria-valuenow={clamped}
       aria-valuemin={0}
       aria-valuemax={100}
-      className="h-1 w-full max-w-32 bg-mint-pale"
+      data-tone={tone}
+      className="ld-meter"
     >
-      <div
-        className="h-full bg-mint-deep transition-[width] duration-500"
-        style={{ width: `${clamped}%` }}
-      />
-    </div>
+      <i style={{ width: `${clamped}%` }} />
+    </span>
   );
 }

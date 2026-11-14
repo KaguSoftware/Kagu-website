@@ -3,28 +3,8 @@
 import { useState } from "react";
 import { updateSettings } from "../_actions/settings";
 import { SubmitButton } from "../_components/SubmitButton";
+import { Field } from "../_components/ui";
 import type { Tables, Clock } from "@/lib/supabase/database.types";
-
-function Text({
-  label,
-  name,
-  defaultValue,
-}: {
-  label: string;
-  name: string;
-  defaultValue?: string | null;
-}) {
-  return (
-    <label className="kagu-field block">
-      <span className="eyebrow mb-2 block">{label}</span>
-      <input
-        name={name}
-        defaultValue={defaultValue ?? undefined}
-        className="w-full border-0 border-b border-neutral bg-transparent py-2 text-base text-ink outline-none"
-      />
-    </label>
-  );
-}
 
 export function SettingsForm({ settings }: { settings: Tables<"site_settings"> }) {
   const [clocks, setClocks] = useState<Clock[]>(
@@ -38,44 +18,50 @@ export function SettingsForm({ settings }: { settings: Tables<"site_settings"> }
     setClocks((prev) => (prev.length === 1 ? prev : prev.filter((_, idx) => idx !== i)));
 
   return (
-    <form action={updateSettings} className="max-w-xl space-y-6">
+    <form action={updateSettings} className="max-w-2xl space-y-9">
       <input type="hidden" name="clocks" value={JSON.stringify(clocks)} />
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <Text label="Founded" name="founded" defaultValue={settings.founded} />
-        <Text label="Location" name="location" defaultValue={settings.location} />
-        <Text label="Email" name="email" defaultValue={settings.email} />
-        <Text label="Domain" name="domain" defaultValue={settings.domain} />
-        <Text label="Timezone" name="timezone" defaultValue={settings.timezone} />
-      </div>
+      <section className="space-y-6">
+        <h2 className="eyebrow">Studio</h2>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <Field label="Founded" name="founded" defaultValue={settings.founded} />
+          <Field label="Location" name="location" defaultValue={settings.location} />
+          <Field label="Email" name="email" defaultValue={settings.email} />
+          <Field label="Domain" name="domain" defaultValue={settings.domain} />
+          <Field label="Timezone" name="timezone" defaultValue={settings.timezone} />
+        </div>
+      </section>
 
-      <div>
-        <span className="eyebrow mb-3 block">World clocks</span>
-        <div className="space-y-3">
+      <section className="space-y-4 border-t border-[var(--line)] pt-6">
+        <h2 className="eyebrow">World clocks</h2>
+        <div className="kagu-field space-y-2">
           {clocks.map((c, i) => (
             <div key={i} className="flex items-center gap-2">
               <input
                 value={c.city}
                 onChange={(e) => update(i, "city", e.target.value)}
                 placeholder="City"
-                className="w-full border-0 border-b border-neutral bg-transparent py-1.5 text-sm text-ink outline-none focus-visible:border-mint-deep"
+                aria-label="City"
+                className="w-full"
               />
               <input
                 value={c.tz}
                 onChange={(e) => update(i, "tz", e.target.value)}
                 placeholder="Europe/Istanbul"
-                className="w-full border-0 border-b border-neutral bg-transparent py-1.5 text-sm text-ink outline-none focus-visible:border-mint-deep"
+                aria-label="Time zone"
+                className="w-full"
               />
               <input
                 value={c.utc}
                 onChange={(e) => update(i, "utc", e.target.value)}
                 placeholder="+03:00"
-                className="w-28 border-0 border-b border-neutral bg-transparent py-1.5 text-sm text-ink outline-none focus-visible:border-mint-deep"
+                aria-label="UTC offset"
+                className="w-32 shrink-0"
               />
               <button
                 type="button"
                 onClick={() => remove(i)}
-                className="px-2 font-mono text-sm text-slate-ink hover:text-ink"
+                className="adm-listrow__x"
                 aria-label="Remove clock"
               >
                 ×
@@ -83,16 +69,12 @@ export function SettingsForm({ settings }: { settings: Tables<"site_settings"> }
             </div>
           ))}
         </div>
-        <button
-          type="button"
-          onClick={add}
-          className="mt-3 text-xs font-mono uppercase tracking-[0.18em] text-slate-ink transition-colors hover:text-mint-deep"
-        >
+        <button type="button" onClick={add} className="adm-btn adm-btn--text">
           + Add clock
         </button>
-      </div>
+      </section>
 
-      <div className="pt-2">
+      <div className="sticky bottom-0 -mx-1 flex items-center gap-3 border-t border-[var(--line)] bg-[var(--bg)] px-1 py-4">
         <SubmitButton>Save settings</SubmitButton>
       </div>
     </form>

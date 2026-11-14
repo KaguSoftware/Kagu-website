@@ -30,7 +30,7 @@ import {
 } from "@/components/start-project/catalog";
 import { updateRequestStatus, type RequestTable } from "../../_actions/requests";
 import { adminToast } from "../../_components/toast";
-import { EmptyState } from "../../_components/ui";
+import { EmptyState, CustomSelect, Tip } from "../../_components/ui";
 import { useRealtimeRows } from "../../_components/use-realtime-rows";
 import type { RequestsParams } from "../page";
 
@@ -43,9 +43,9 @@ type Unified =
 const REQUEST_STATUSES: InquiryStatus[] = ["new", "contacted", "archived"];
 
 const STATUS_CLASSES: Record<InquiryStatus, string> = {
-  new: "border-mint-deep text-mint-deep",
-  contacted: "border-[#3fb27f] text-[#3fb27f]",
-  archived: "border-neutral text-slate-ink",
+  new: "!border-[var(--info)] !text-[var(--info-ink)]",
+  contacted: "!border-[var(--ok)] !text-[var(--ok-ink)]",
+  archived: "!text-[var(--muted)]",
 };
 
 const FEATURE_LABELS = new Map(FEATURES.map((f) => [f.id, f.label]));
@@ -111,23 +111,20 @@ function StatusSelect({
   };
 
   return (
-    <select
+    <CustomSelect
       value={value}
-      onChange={(e) => change(e.target.value as InquiryStatus)}
-      className={`border bg-paper px-2 py-1 font-mono text-[10px] uppercase tracking-[0.14em] outline-none focus-visible:border-mint-deep ${STATUS_CLASSES[value]}`}
-    >
-      {REQUEST_STATUSES.map((s) => (
-        <option key={s} value={s}>
-          {s}
-        </option>
-      ))}
-    </select>
+      onChange={(v) => change(v as InquiryStatus)}
+      options={REQUEST_STATUSES.map((s) => ({ value: s, label: s[0].toUpperCase() + s.slice(1) }))}
+      aria-label="Request status"
+      className="w-36 shrink-0"
+      buttonClassName={`!min-h-9 !py-1.5 !text-sm ${STATUS_CLASSES[value]}`}
+    />
   );
 }
 
 function KindChip({ label }: { label: string }) {
   return (
-    <span className="border border-neutral px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-slate-ink">
+    <span className="shrink-0 rounded-full border border-[var(--line-strong)] px-2 py-0.5 text-[11px] leading-4 text-[var(--muted)]">
       {label}
     </span>
   );
@@ -147,35 +144,30 @@ function FilterSelect({
   allLabel: string;
 }) {
   return (
-    <label className="flex min-w-36 flex-col gap-1.5">
-      <span className="eyebrow">{label}</span>
-      <select
+    <div className="flex w-52 flex-col gap-1.5">
+      <span id={`flt-${label}`} className="eyebrow">
+        {label}
+      </span>
+      <CustomSelect
         value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="border border-neutral bg-paper px-2 py-1.5 text-sm text-ink outline-none focus-visible:border-mint-deep"
-      >
-        <option value="">{allLabel}</option>
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-    </label>
+        onChange={onChange}
+        aria-labelledby={`flt-${label}`}
+        options={[{ value: "", label: allLabel }, ...options]}
+      />
+    </div>
   );
 }
 
 function LiveDot({ live }: { live: boolean }) {
   return (
-    <span
-      className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-[0.14em] text-slate-ink"
-      title={live ? "Realtime connected" : "Realtime unavailable — polling"}
-    >
-      <span
-        className={`inline-block size-1.5 rounded-full ${live ? "bg-mint-deep" : "bg-neutral"}`}
-      />
-      {live ? "Live" : "Polling"}
-    </span>
+    <Tip text={live ? "Realtime connected" : "Realtime unavailable — polling"}>
+      <span className="flex items-center gap-1.5 text-xs text-[var(--muted)]">
+        <span
+          className={`inline-block size-1.5 rounded-full ${live ? "bg-[var(--ok)]" : "bg-[var(--line-strong)]"}`}
+        />
+        {live ? "Live" : "Polling"}
+      </span>
+    </Tip>
   );
 }
 
@@ -228,7 +220,7 @@ export function RequestsList({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end gap-4 border border-neutral p-4">
+      <div className="flex flex-wrap items-end gap-4 border-b border-[var(--line)] pb-5">
         <FilterSelect
           label="Type"
           value={typeFilter}
@@ -260,7 +252,7 @@ export function RequestsList({
             : "Nothing matches these filters."}
         </EmptyState>
       ) : (
-        <ul className="divide-y divide-neutral border border-neutral">
+        <ul className="divide-y divide-[var(--line)] rounded-[var(--radius-ctl)] border border-[var(--line)] bg-[var(--card)]">
           {visible.map((item) =>
             item.kind === "contact" ? (
               <ContactItem key={`c-${item.row.id}`} row={item.row} />
@@ -276,18 +268,18 @@ export function RequestsList({
 
 function ContactItem({ row }: { row: ContactRow }) {
   return (
-    <li className="space-y-2 px-5 py-4">
+    <li className="space-y-2 px-5 py-4 transition-colors hover:bg-[var(--sand)]">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <KindChip label={SOURCE_LABELS[row.source ?? "contact"]} />
           <div>
             <a
               href={`mailto:${row.email}`}
-              className="text-base text-ink transition-colors hover:text-mint-deep"
+              className="text-base text-ink transition-colors hover:text-[var(--accent-ink)]"
             >
               {row.name}
             </a>
-            <p className="font-mono text-xs text-slate-ink">
+            <p className="text-[13px] text-[var(--muted)]">
               {[row.email, row.company, formatDate(row.created_at)]
                 .filter(Boolean)
                 .join(" · ")}
@@ -301,7 +293,7 @@ function ContactItem({ row }: { row: ContactRow }) {
           status={row.status}
         />
       </div>
-      <p className="max-w-2xl whitespace-pre-wrap text-sm text-ink/80">{row.message}</p>
+      <p className="max-w-2xl whitespace-pre-wrap text-sm text-[var(--ink)]">{row.message}</p>
     </li>
   );
 }
@@ -311,18 +303,18 @@ function InquiryItem({ row }: { row: InquiryRow }) {
   const featureLabels = (row.features ?? []).map(labelFor).join(", ");
   const addOns = (row.features ?? []).filter((id) => !id.includes(":")).length;
   return (
-    <li className="space-y-2 px-5 py-4">
+    <li className="space-y-2 px-5 py-4 transition-colors hover:bg-[var(--sand)]">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <KindChip label="Inquiry" />
           <div>
             <a
               href={`mailto:${row.email}`}
-              className="text-base text-ink transition-colors hover:text-mint-deep"
+              className="text-base text-ink transition-colors hover:text-[var(--accent-ink)]"
             >
               {row.name}
             </a>
-            <p className="font-mono text-xs text-slate-ink">
+            <p className="text-[13px] text-[var(--muted)]">
               {[
                 type?.label ?? row.website_type,
                 formatPrice(row.total_price),
@@ -342,8 +334,8 @@ function InquiryItem({ row }: { row: InquiryRow }) {
           status={row.status}
         />
       </div>
-      {featureLabels ? <p className="text-xs text-slate-ink">{featureLabels}</p> : null}
-      {row.notes ? <p className="max-w-2xl text-sm text-ink/80">{row.notes}</p> : null}
+      {featureLabels ? <p className="text-xs text-[var(--muted)]">{featureLabels}</p> : null}
+      {row.notes ? <p className="max-w-2xl text-sm text-[var(--ink)]">{row.notes}</p> : null}
     </li>
   );
 }

@@ -1,0 +1,118 @@
+/* Legal pages — readable dark long-form. */
+.lg {
+  padding-bottom: clamp(56px, 9vw, 120px);
+}
+.lg-label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.lg-hero {
+  padding-top: clamp(56px, 9vw, 112px);
+  padding-bottom: clamp(32px, 5vw, 56px);
+}
+.lg-h1,
+.lg-h2 {
+  font-family: var(--serif);
+  font-weight: 400;
+  margin: 0;
+  overflow-wrap: break-word;
+}
+.lg-h1 {
+  margin-top: 22px;
+  max-width: 18ch;
+  font-size: clamp(40px, 7vw, 88px);
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+  padding-block: 0.12em 0.14em;
+}
+.lg-sub {
+  margin: 14px 0 40px;
+  max-width: 48ch;
+  font-size: clamp(17px, 2vw, 20px);
+  color: var(--muted);
+}
+.lg-seller {
+  display: grid;
+  gap: 18px;
+  max-width: 64ch;
+  margin: 0;
+  padding: 26px 28px;
+  border-radius: 18px;
+}
+.lg-seller__rows {
+  display: grid;
+  gap: 12px;
+}
+.lg-seller__row {
+  display: grid;
+  gap: 2px;
+}
+.lg-seller dd {
+  margin: 0;
+  color: var(--ink);
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+@media (min-width: 640px) {
+  .lg-seller__row {
+    grid-template-columns: 13rem minmax(0, 1fr);
+    gap: 16px;
+    align-items: baseline;
+  }
+}
+.lg-lang {
+  padding-block: clamp(24px, 4vw, 48px);
+}
+.lg-div {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: clamp(32px, 5vw, 56px);
+}
+.lg-div__line {
+  flex: 1;
+  height: 1px;
+  background: var(--line-strong);
+}
+.lg-doc {
+  display: grid;
+  gap: clamp(40px, 6vw, 72px);
+}
+.lg-sec {
+  min-width: 0;
+}
+.lg-h2 {
+  margin: 12px 0 18px;
+  max-width: 32ch;
+  font-size: clamp(26px, 3.4vw, 38px);
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  padding-block: 0.12em 0.14em;
+}
+.lg-text {
+  display: grid;
+  gap: 16px;
+  max-width: 70ch;
+}
+.lg-text p,
+.lg-text li {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.75;
+  color: #d0d0d0;
+  overflow-wrap: break-word;
+}
+.lg-text ul {
+  margin: 0;
+  padding-left: 1.3em;
+  display: grid;
+  gap: 8px;
+  list-style: disc;
+}
+.lg-text li::marker {
+  color: var(--muted);
+}

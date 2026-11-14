@@ -5,6 +5,17 @@ const nextConfig: NextConfig = {
     // AVIF first, WebP fallback — noticeably smaller case screenshots/portraits.
     formats: ["image/avif", "image/webp"],
   },
+  async redirects() {
+    return [
+      { source: "/start-project", destination: "/contact", permanent: true },
+      { source: "/proje-baslat", destination: "/contact", permanent: true },
+      {
+        source: "/start-marketing",
+        destination: "/contact?topic=marketing",
+        permanent: true,
+      },
+    ];
+  },
   experimental: {
     serverActions: {
       // Pasted screenshots in /admin/learnings upload through a Server Action;

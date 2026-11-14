@@ -31,8 +31,8 @@ export function RerunStrategyButton({
 
   const className =
     variant === "solid"
-      ? "inline-flex items-center gap-2 border border-ink px-4 py-2 text-xs font-mono uppercase tracking-[0.18em] text-ink transition-colors hover:bg-ink hover:text-paper disabled:opacity-50"
-      : "text-xs font-mono uppercase tracking-[0.18em] text-mint-deep underline-offset-4 transition-colors hover:underline disabled:opacity-50";
+      ? "adm-btn adm-btn--ghost ld-sm"
+      : "ld-act ld-act--accent";
 
   return (
     <button type="button" disabled={pending} onClick={rerun} className={className}>

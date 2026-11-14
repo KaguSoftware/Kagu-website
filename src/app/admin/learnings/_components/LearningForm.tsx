@@ -42,7 +42,7 @@ export function LearningForm({
   learning?: Tables<"learnings">;
 }) {
   return (
-    <form action={action} className="max-w-3xl space-y-6">
+    <form action={action} className="lr-form">
       {learning ? <input type="hidden" name="id" value={learning.id} /> : null}
       <Field
         label="Title"
@@ -66,7 +66,7 @@ export function LearningForm({
         hint="Comma-separated. Used for filtering."
       />
       <MarkdownEditor defaultValue={learning?.body ?? TEMPLATE} />
-      <div className="flex items-center gap-4 pt-2">
+      <div className="lr-form__acts">
         <SubmitButton pendingLabel="Publishing…">
           {learning ? "Save changes" : "Publish learning"}
         </SubmitButton>

@@ -1,9 +1,17 @@
 import { type ReactNode } from "react";
 import Link from "next/link";
+import { KaguMark } from "@/components/KaguMark";
+import { CustomSelect } from "./CustomSelect";
 
-/* Shared, server-safe admin primitives. Style mirrors the public site:
-   paper bg, ink text, Space Mono (font-mono) labels/eyebrows, neutral hairlines,
-   mint-deep accent, small radii. */
+export { CustomSelect } from "./CustomSelect";
+export type { CustomSelectProps, SelectOption } from "./CustomSelect";
+export { NumberField } from "./NumberField";
+export { DatePicker } from "./DatePicker";
+export { FileField } from "./FileField";
+
+/* Shared admin primitives (server-safe; Select pulls in the client CustomSelect).
+   Look: cream/ink light theme from src/styles/admin.css — Newsreader 300 titles,
+   Geist UI text, 1px hairlines, ink pill buttons, accent only for focus/active. */
 
 export function Eyebrow({ children }: { children: ReactNode }) {
   return <span className="eyebrow">{children}</span>;
@@ -19,14 +27,16 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-4 border-b border-neutral pb-6">
-      <div>
-        <h1 className="display text-2xl">{title}</h1>
+    <div className="adm-page-head">
+      <div className="min-w-0">
+        <h1 className="display adm-page-title">{title}</h1>
         {description ? (
-          <p className="mt-2 max-w-prose text-sm text-slate-ink">{description}</p>
+          <p className="mt-3 max-w-prose text-[15px] leading-relaxed text-slate-ink">
+            {description}
+          </p>
         ) : null}
       </div>
-      {action}
+      {action ? <div className="flex flex-wrap items-center gap-2">{action}</div> : null}
     </div>
   );
 }
@@ -60,9 +70,9 @@ export function Field({
         required={required}
         placeholder={placeholder}
         defaultValue={defaultValue ?? undefined}
-        className="w-full border-0 border-b border-neutral bg-transparent py-2 text-base text-ink outline-none placeholder:text-neutral"
+        className="w-full"
       />
-      {hint ? <span className="mt-1 block text-xs text-slate-ink">{hint}</span> : null}
+      {hint ? <span className="mt-1.5 block text-xs text-slate-ink">{hint}</span> : null}
     </label>
   );
 }
@@ -93,9 +103,9 @@ export function TextArea({
         rows={rows}
         required={required}
         defaultValue={defaultValue ?? undefined}
-        className="w-full resize-y border border-neutral bg-transparent p-3 text-base text-ink outline-none focus-visible:border-mint-deep"
+        className="w-full resize-y"
       />
-      {hint ? <span className="mt-1 block text-xs text-slate-ink">{hint}</span> : null}
+      {hint ? <span className="mt-1.5 block text-xs text-slate-ink">{hint}</span> : null}
     </label>
   );
 }
@@ -113,25 +123,21 @@ export function Select({
   options: { value: string; label: string }[];
   required?: boolean;
 }) {
+  const labelId = `sel-${name}`;
   return (
-    <label className="kagu-field block">
-      <span className="eyebrow mb-2 block">
+    <div className="kagu-field block">
+      <span id={labelId} className="eyebrow mb-2 block">
         {label}
         {required ? <span className="text-mint-deep"> *</span> : null}
       </span>
-      <select
+      <CustomSelect
         name={name}
         required={required}
         defaultValue={defaultValue ?? undefined}
-        className="w-full border border-neutral bg-paper px-3 py-2 text-base text-ink outline-none focus-visible:border-mint-deep"
-      >
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-    </label>
+        options={options}
+        aria-labelledby={labelId}
+      />
+    </div>
   );
 }
 
@@ -145,14 +151,13 @@ export function Checkbox({
   defaultChecked?: boolean;
 }) {
   return (
-    <label className="flex items-center gap-3 text-sm text-ink">
-      <input
-        type="checkbox"
-        name={name}
-        defaultChecked={defaultChecked}
-        value="on"
-        className="size-4 accent-mint-deep"
-      />
+    <label className="adm-check text-sm text-ink">
+      <input type="checkbox" name={name} defaultChecked={defaultChecked} value="on" />
+      <span className="adm-check__box" aria-hidden>
+        <svg viewBox="0 0 12 12" fill="none">
+          <path d="M2 6.5 4.8 9 10 3.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </span>
       <span className="eyebrow">{label}</span>
     </label>
   );
@@ -167,29 +172,55 @@ export function ButtonLink({
   children: ReactNode;
   variant?: "solid" | "ghost";
 }) {
-  const base =
-    "inline-flex items-center gap-2 px-4 py-2 text-xs font-mono uppercase tracking-[0.18em] transition-colors";
-  const styles =
-    variant === "solid"
-      ? "bg-ink text-paper hover:bg-mint-deep hover:text-paper"
-      : "border border-neutral text-ink hover:border-mint-deep";
   return (
-    <Link href={href} className={`${base} ${styles}`}>
+    <Link href={href} className={`adm-btn ${variant === "solid" ? "adm-btn--solid" : "adm-btn--ghost"}`}>
       {children}
     </Link>
   );
 }
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return (
-    <div className={`border border-neutral bg-paper p-5 ${className}`}>{children}</div>
-  );
+  return <div className={`adm-card ${className}`}>{children}</div>;
 }
 
 export function EmptyState({ children }: { children: ReactNode }) {
   return (
-    <p className="border border-dashed border-neutral p-8 text-center text-sm text-slate-ink">
+    <div className="adm-empty">
+      <KaguMark variant="outline" height={22} className="adm-empty__mark" />
+      <p>{children}</p>
+    </div>
+  );
+}
+
+/** Custom-drawn radio around a real <input type="radio"> (group by shared `name`). */
+export function Radio({
+  label,
+  name,
+  value,
+  defaultChecked,
+  required,
+}: {
+  label: string;
+  name: string;
+  value: string;
+  defaultChecked?: boolean;
+  required?: boolean;
+}) {
+  return (
+    <label className="adm-radio text-sm text-ink">
+      <input type="radio" name={name} value={value} defaultChecked={defaultChecked} required={required} />
+      <span className="adm-radio__dot" aria-hidden />
+      <span>{label}</span>
+    </label>
+  );
+}
+
+/** CSS tooltip (no title=). Wrap any focusable/inline element: <Tip text="…">…</Tip>.
+    The wrapper is focusable so keyboard users get the tip too. */
+export function Tip({ text, children }: { text: string; children: ReactNode }) {
+  return (
+    <span data-tip={text} tabIndex={0} className="inline-flex">
       {children}
-    </p>
+    </span>
   );
 }

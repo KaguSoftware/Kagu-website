@@ -1,15 +1,16 @@
 import { ImageResponse } from "next/og";
-import { palette } from "@/lib/brand.config";
+import { ogTexture } from "@/components/ascii/ogTexture";
+import { RIBBON, FOLD, WING, KAGU_VIEWBOX } from "@/components/KaguMark";
 
 export const runtime = "edge";
-export const alt = "Kagu, software for boutique operators";
+export const alt = "Kagu — Software, done right.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 /*
-  OG image for the homepage. Renders the wordmark + eyebrow + statement
-  on paper background. Per-route OG images can override by adding their
-  own opengraph-image.tsx in the route folder later.
+  Link-preview image (WhatsApp, iMessage, Slack, X…) for the site.
+  Same look as the site: cream paper, ink type, the outline mark in black.
+  Per-route OG images can override this with their own opengraph-image.tsx.
 */
 export default function OpengraphImage() {
   return new ImageResponse(
@@ -18,68 +19,58 @@ export default function OpengraphImage() {
         style={{
           width: "100%",
           height: "100%",
-          background: palette.paper,
-          color: palette.ink,
+          background: "#0a0a0a",
+          position: "relative",
+          color: "#f2f2f2",
           display: "flex",
           flexDirection: "column",
-          justifyContent: "space-between",
-          padding: 80,
-          fontFamily: "monospace",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 56,
         }}
       >
         <div
           style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
             display: "flex",
-            justifyContent: "space-between",
-            fontSize: 18,
-            letterSpacing: 4,
-            textTransform: "uppercase",
-            color: palette.slateInk,
+            flexDirection: "column",
+            overflow: "hidden",
+            color: "#262626",
+            fontSize: 17,
+            lineHeight: "17px",
+            opacity: 0.9,
           }}
         >
-          <span>kagu</span>
-          <span>est. 2025 · istanbul</span>
+          {ogTexture(110, 38, 2).map((l, i) => (
+            <div key={i} style={{ whiteSpace: "pre" }}>
+              {l}
+            </div>
+          ))}
         </div>
-
-        <div
-          style={{
-            fontSize: 96,
-            lineHeight: 1,
-            letterSpacing: -1.2,
-            color: palette.slateInk,
-            maxWidth: 1040,
-          }}
-        >
-          Software for boutique operators.
+        <svg width={520} height={234} viewBox={KAGU_VIEWBOX}>
+          {[RIBBON, FOLD, WING].map((d) => (
+            <path
+              key={d}
+              d={d}
+              fill="none"
+              stroke="#f2f2f2"
+              strokeWidth={7}
+              strokeLinejoin="round"
+            />
+          ))}
+        </svg>
+        <div style={{ fontSize: 76, letterSpacing: -2, lineHeight: 1 }}>
+          Software, done right.
         </div>
-
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-end",
-            fontSize: 22,
-          }}
-        >
-          <span style={{ maxWidth: 600, lineHeight: 1.4, color: palette.ink }}>
-            Next.js + Supabase platforms for hospitality and operator tools.
-          </span>
-          <span
-            style={{
-              background: palette.mintDeep,
-              color: palette.ink,
-              padding: "12px 20px",
-              fontSize: 16,
-              letterSpacing: 3,
-              textTransform: "uppercase",
-              border: `1px solid ${palette.ink}`,
-            }}
-          >
-            kagusoftware.com
-          </span>
+        <div style={{ fontSize: 26, color: "#9a9a9a", letterSpacing: 1 }}>
+          kagusoftware.com
         </div>
       </div>
     ),
-    { ...size },
+    size,
   );
 }

@@ -59,11 +59,11 @@ export default async function LearningPage({
   const edited = learning.updated_at.slice(0, 16) !== learning.created_at.slice(0, 16);
 
   return (
-    <div className="space-y-8">
+    <div>
       <ReadingProgress />
-      <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="lr-bar">
         <ButtonLink href="/admin/learnings">← All learnings</ButtonLink>
-        <div className="flex items-center gap-4">
+        <div className="lr-bar__acts">
           <ButtonLink href={`/admin/learnings/${learning.id}/edit`}>Edit</ButtonLink>
           <DeleteButton
             id={learning.id}
@@ -73,25 +73,21 @@ export default async function LearningPage({
         </div>
       </div>
 
-      <div className="xl:grid xl:grid-cols-[1fr_14rem] xl:gap-12">
-        <article className="mx-auto w-full max-w-3xl">
-          <header className="border-b border-neutral pb-8">
+      <div className="lr-layout">
+        <article className="lr-article">
+          <header className="lr-head">
             {learning.tags.length ? (
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="lr-tags">
                 {learning.tags.map((t) => (
                   <TagChip key={t} tag={t} href={`/admin/learnings?tag=${encodeURIComponent(t)}`} />
                 ))}
               </div>
             ) : null}
-            <h1 className="mt-4 text-3xl text-ink">{learning.title}</h1>
-            {learning.summary ? (
-              <p className="mt-4 max-w-prose text-base leading-relaxed text-slate-ink">
-                {learning.summary}
-              </p>
-            ) : null}
-            <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2">
+            <h1 className="lr-head__title">{learning.title}</h1>
+            {learning.summary ? <p className="lr-head__sum">{learning.summary}</p> : null}
+            <div className="lr-head__meta">
               <AuthorChip name={learning.author_name} email={learning.author_email} />
-              <span className="font-mono text-xs uppercase tracking-[0.18em] text-slate-ink">
+              <span className="lr-meta">
                 {relativeDate(learning.created_at)}
                 {edited ? ` · edited ${relativeDate(learning.updated_at)}` : ""}
                 {" · "}
@@ -99,41 +95,24 @@ export default async function LearningPage({
               </span>
             </div>
           </header>
-          <div className="pt-8">
+          <div className="lr-article__body">
             <Markdown source={learning.body} />
           </div>
 
           {older || newer ? (
-            <nav
-              aria-label="More learnings"
-              className="mt-14 grid gap-4 border-t border-neutral pt-8 sm:grid-cols-2"
-            >
+            <nav aria-label="More learnings" className="lr-pn">
               {older ? (
-                <Link
-                  href={`/admin/learnings/${older.id}`}
-                  className="group border border-neutral p-5 transition-colors hover:border-mint-deep"
-                >
-                  <span className="font-mono text-xs uppercase tracking-[0.18em] text-slate-ink">
-                    ← Older
-                  </span>
-                  <p className="mt-2 text-sm text-ink transition-colors group-hover:text-mint-deep">
-                    {older.title}
-                  </p>
+                <Link href={`/admin/learnings/${older.id}`} className="lr-pn__item" data-side="prev">
+                  <span className="lr-pn__dir">← Older</span>
+                  <p className="lr-pn__title">{older.title}</p>
                 </Link>
               ) : (
                 <span aria-hidden />
               )}
               {newer ? (
-                <Link
-                  href={`/admin/learnings/${newer.id}`}
-                  className="group border border-neutral p-5 text-right transition-colors hover:border-mint-deep"
-                >
-                  <span className="font-mono text-xs uppercase tracking-[0.18em] text-slate-ink">
-                    Newer →
-                  </span>
-                  <p className="mt-2 text-sm text-ink transition-colors group-hover:text-mint-deep">
-                    {newer.title}
-                  </p>
+                <Link href={`/admin/learnings/${newer.id}`} className="lr-pn__item" data-side="next">
+                  <span className="lr-pn__dir">Newer →</span>
+                  <p className="lr-pn__title">{newer.title}</p>
                 </Link>
               ) : null}
             </nav>
@@ -141,21 +120,13 @@ export default async function LearningPage({
         </article>
 
         {toc.length > 1 ? (
-          <nav
-            aria-label="Table of contents"
-            className="hidden xl:block"
-          >
-            <div className="sticky top-8 border-l border-neutral pl-5">
+          <nav aria-label="Table of contents" className="hidden xl:block">
+            <div className="lr-toc">
               <p className="eyebrow">On this page</p>
-              <ul className="mt-4 flex flex-col gap-2.5">
+              <ul>
                 {toc.map((entry) => (
                   <li key={entry.id} className={entry.depth === 3 ? "pl-4" : ""}>
-                    <a
-                      href={`#${entry.id}`}
-                      className="text-sm text-slate-ink transition-colors hover:text-mint-deep"
-                    >
-                      {entry.text}
-                    </a>
+                    <a href={`#${entry.id}`}>{entry.text}</a>
                   </li>
                 ))}
               </ul>

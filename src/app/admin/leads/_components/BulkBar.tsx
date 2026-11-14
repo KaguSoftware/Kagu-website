@@ -5,7 +5,13 @@ import { AnimatePresence, motion } from "motion/react";
 import type { PipelineStatus } from "@/lib/supabase/database.types";
 import { bulkUpdateLeadStatus } from "../../_actions/leads";
 import { adminToast } from "../../_components/toast";
+import { CustomSelect } from "../../_components/ui";
 import { PIPELINE_STATUSES, PIPELINE_STATUS_LABELS } from "../_lib/constants";
+
+const STATUS_OPTIONS = PIPELINE_STATUSES.map((s) => ({
+  value: s,
+  label: PIPELINE_STATUS_LABELS[s],
+}));
 
 export function BulkBar({
   selectedIds,
@@ -36,34 +42,29 @@ export function BulkBar({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 16 }}
           transition={{ duration: 0.2 }}
-          className="fixed bottom-6 left-1/2 z-[10001] flex -translate-x-1/2 items-center gap-3 border border-neutral bg-mint-soft px-4 py-3 shadow-[0_18px_44px_-18px_rgba(0,0,0,0.65)]"
+          className="ld-bulk"
         >
-          <span className="text-xs font-mono uppercase tracking-[0.14em] text-ink">
+          <span className="ld-num text-sm font-medium text-ink">
             {selectedIds.length} selected
           </span>
-          <select
+          <CustomSelect
             value={status}
-            onChange={(e) => setStatus(e.target.value as PipelineStatus)}
-            className="border border-neutral bg-paper px-2 py-1.5 text-sm text-ink outline-none"
-          >
-            {PIPELINE_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {PIPELINE_STATUS_LABELS[s]}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => setStatus(v as PipelineStatus)}
+            options={STATUS_OPTIONS}
+            aria-label="Set pipeline status"
+          />
           <button
             type="button"
             disabled={pending}
             onClick={apply}
-            className="bg-mint-deep px-3 py-1.5 text-xs font-mono uppercase tracking-[0.18em] text-paper transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="adm-btn adm-btn--solid ld-sm"
           >
             {pending ? "Applying…" : "Apply"}
           </button>
           <button
             type="button"
             onClick={onDone}
-            className="text-xs font-mono uppercase tracking-[0.18em] text-slate-ink hover:text-ink"
+            className="ld-act"
           >
             Clear
           </button>

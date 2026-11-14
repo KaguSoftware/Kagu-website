@@ -1,5 +1,5 @@
-import { Field, TextArea, Select, ButtonLink } from "../_components/ui";
-import { SubmitButton } from "../_components/SubmitButton";
+import { Field, TextArea, Select, NumberField } from "../_components/ui";
+import { FormShell } from "../_cms/cms";
 import type { Tables } from "@/lib/supabase/database.types";
 
 const KINDS = [
@@ -17,7 +17,11 @@ export function AboutForm({
   block?: Tables<"about_blocks">;
 }) {
   return (
-    <form action={action} className="max-w-xl space-y-6">
+    <FormShell
+      action={action}
+      cancelHref="/admin/about"
+      submitLabel={block ? "Save changes" : "Create block"}
+    >
       {block ? <input type="hidden" name="id" value={block.id} /> : null}
       <Select
         label="Kind"
@@ -45,16 +49,7 @@ export function AboutForm({
         defaultValue={block?.value}
         hint="Used by Metric (the metric's value)."
       />
-      <Field
-        label="Sort order"
-        name="sort_order"
-        type="number"
-        defaultValue={block?.sort_order ?? 0}
-      />
-      <div className="flex items-center gap-4 pt-2">
-        <SubmitButton>{block ? "Save changes" : "Create block"}</SubmitButton>
-        <ButtonLink href="/admin/about">Cancel</ButtonLink>
-      </div>
-    </form>
+      <NumberField label="Sort order" name="sort_order" defaultValue={block?.sort_order ?? 0} />
+    </FormShell>
   );
 }

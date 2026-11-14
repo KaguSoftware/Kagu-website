@@ -4,8 +4,6 @@
 ## Pages
 - [Home](https://kagusoftware.com/): what Kagu does and who it serves — custom-built software for boutique operators, streamlining operations and improving customer experience
 - [Butik Operatör Yazılımı](https://kagusoftware.com/butik-operator-yazilimi): butik operatörler için özel yazılım — Türkçe genel bakış
-- [Start a Project](https://kagusoftware.com/start-project): begin a custom software project — package builder with a live preview and instant estimate
-- [Proje Başlat](https://kagusoftware.com/proje-baslat): Kagu ile proje başlatma süreci, zaman çizelgesi ve fiyat faktörleri
 - [Custom Website Fiyatı](https://kagusoftware.com/custom-website-fiyati): özel web sitesi fiyatları — paket bazlı gerçek fiyatlar ve süreç
 - [Custom Website Pricing](https://kagusoftware.com/custom-website-pricing): real package-based prices for a custom website and how the process works
 - [Full Stack Platform Maliyeti](https://kagusoftware.com/full-stack-platform-maliyeti): full-stack platform nedir, maliyeti neye göre değişir

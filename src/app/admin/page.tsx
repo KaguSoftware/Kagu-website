@@ -24,6 +24,9 @@ export default async function AdminDashboard() {
     })
   );
 
+  const tile =
+    "group flex flex-col justify-between rounded-[var(--radius-ctl)] border border-[var(--line)] bg-[var(--card)] p-6 transition-colors hover:border-[var(--line-strong)] hover:bg-[var(--sand)]";
+
   return (
     <div className="space-y-8">
       <PageHeader
@@ -32,23 +35,16 @@ export default async function AdminDashboard() {
       />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {counts.map((c) => (
-          <Link
-            key={c.href}
-            href={c.href}
-            className="group border border-neutral bg-paper p-6 transition-colors hover:border-mint-deep"
-          >
+          <Link key={c.href} href={c.href} className={`${tile} min-h-32`}>
             <span className="eyebrow">{c.label}</span>
-            <p className="display mt-3 text-4xl text-ink transition-colors group-hover:text-slate-ink">
-              {c.count}
-            </p>
+            <p className="display mt-4 text-4xl text-[var(--ink)]">{c.count}</p>
           </Link>
         ))}
-        <Link
-          href="/admin/settings"
-          className="group border border-neutral bg-paper p-6 transition-colors hover:border-mint-deep"
-        >
+        <Link href="/admin/settings" className={`${tile} min-h-32`}>
           <span className="eyebrow">Site settings</span>
-          <p className="display mt-3 text-base text-ink">Founded · location · clocks →</p>
+          <p className="mt-4 text-sm text-[var(--muted)] transition-colors group-hover:text-[var(--ink)]">
+            Founded · location · clocks →
+          </p>
         </Link>
       </div>
     </div>

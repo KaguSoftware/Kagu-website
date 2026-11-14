@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PageHeader } from "../_components/ui";
 import { LeadsTabs } from "./_components/LeadsTabs";
+import "./leads.css";
 
 export const metadata: Metadata = { title: "Leads" };
 
@@ -16,7 +17,7 @@ export default function LeadsLayout({
         description="Internal lead generation — request scrapes, browse scored leads, review outreach drafts."
       />
       <LeadsTabs />
-      <div className="mt-6">{children}</div>
+      <div className="mt-8">{children}</div>
     </div>
   );
 }

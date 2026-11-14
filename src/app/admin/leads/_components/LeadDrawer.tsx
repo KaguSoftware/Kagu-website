@@ -11,6 +11,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import type { PipelineStatus, Tables } from "@/lib/supabase/database.types";
 import { updateLeadNotes, updateLeadPipelineStatus } from "../../_actions/leads";
 import { adminToast } from "../../_components/toast";
+import { CustomSelect } from "../../_components/ui";
 import {
   AUDIT_FLAG_LABELS,
   PIPELINE_STATUSES,
@@ -21,11 +22,16 @@ import { LeadSeoAction } from "./LeadSeoAction";
 
 type Lead = Tables<"leads">;
 
+const STATUS_OPTIONS = PIPELINE_STATUSES.map((s) => ({
+  value: s,
+  label: PIPELINE_STATUS_LABELS[s],
+}));
+
 function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex justify-between gap-4 border-b border-neutral py-2 text-sm">
-      <span className="shrink-0 text-slate-ink">{label}</span>
-      <span className="text-right text-ink">{children}</span>
+    <div>
+      <dt>{label}</dt>
+      <dd>{children}</dd>
     </div>
   );
 }
@@ -36,7 +42,7 @@ function ExternalLink({ href, children }: { href: string; children: React.ReactN
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="text-mint-deep underline-offset-4 hover:underline"
+      className="ld-link ld-link--accent"
     >
       {children}
     </a>
@@ -62,17 +68,14 @@ function StatusDropdown({ lead }: { lead: Lead }) {
   };
 
   return (
-    <select
-      value={value}
-      onChange={(e) => change(e.target.value as PipelineStatus)}
-      className="border border-neutral bg-paper px-2 py-1.5 text-sm text-ink outline-none focus-visible:border-mint-deep"
-    >
-      {PIPELINE_STATUSES.map((s) => (
-        <option key={s} value={s}>
-          {PIPELINE_STATUS_LABELS[s]}
-        </option>
-      ))}
-    </select>
+    <div className="w-44">
+      <CustomSelect
+        value={value}
+        onChange={(v) => change(v as PipelineStatus)}
+        options={STATUS_OPTIONS}
+        aria-label="Pipeline status"
+      />
+    </div>
   );
 }
 
@@ -98,18 +101,19 @@ function NotesField({ lead }: { lead: Lead }) {
     <div>
       <div className="flex items-center justify-between pb-2">
         <span className="eyebrow">Notes</span>
-        <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-slate-ink">
-          {saved ? "Saved" : "Saving…"}
-        </span>
+        <span className="ld-small">{saved ? "Saved" : "Saving…"}</span>
       </div>
-      <textarea
-        key={lead.id}
-        rows={4}
-        defaultValue={lead.notes ?? ""}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="Internal notes…"
-        className="w-full resize-y border border-neutral bg-transparent p-3 text-sm text-ink outline-none placeholder:text-neutral focus-visible:border-mint-deep"
-      />
+      <div className="kagu-field">
+        <textarea
+          key={lead.id}
+          rows={4}
+          defaultValue={lead.notes ?? ""}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="Internal notes…"
+          aria-label="Notes"
+          className="w-full resize-y"
+        />
+      </div>
     </div>
   );
 }
@@ -136,8 +140,7 @@ export function LeadDrawer({
     <AnimatePresence>
       {lead && (
         <motion.div
-          className="fixed inset-0 z-[10002] flex justify-end backdrop-blur-[2px]"
-          style={{ background: "color-mix(in oklab, var(--paper) 55%, transparent)" }}
+          className="ld-drawer"
           role="dialog"
           aria-modal="true"
           aria-label={`Lead: ${lead.name}`}
@@ -148,7 +151,7 @@ export function LeadDrawer({
           onClick={onClose}
         >
           <motion.aside
-            className="h-full w-[min(94vw,480px)] overflow-y-auto border-l border-neutral bg-mint-pale p-6"
+            className="ld-drawer__panel"
             onClick={(e) => e.stopPropagation()}
             initial={reduced ? { opacity: 0 } : { x: 64, opacity: 0 }}
             animate={reduced ? { opacity: 1 } : { x: 0, opacity: 1 }}
@@ -170,137 +173,126 @@ function DrawerBody({ lead, onClose }: { lead: Lead; onClose: () => void }) {
 
   return (
     <>
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="display text-xl text-ink">{lead.name}</h2>
-                <p className="mt-1 text-xs text-slate-ink">
-                  {[lead.category, lead.district].filter(Boolean).join(" · ")} ·
-                  score <span className="text-ink">{lead.lead_score}</span>
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={onClose}
-                aria-label="Close"
-                className="text-xs font-mono uppercase tracking-[0.18em] text-slate-ink hover:text-ink"
-              >
-                Close ✕
-              </button>
-            </div>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h2 className="ld-drawer__title">{lead.name}</h2>
+          <p className="ld-small ld-num mt-2">
+            {[lead.category, lead.district].filter(Boolean).join(" · ")} · score{" "}
+            <span className="text-ink">{lead.lead_score}</span>
+          </p>
+        </div>
+        <button type="button" onClick={onClose} aria-label="Close" className="ld-close">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+            <path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+        </button>
+      </div>
 
-            <div className="mt-4 flex gap-1 border-b border-neutral">
-              {(["details", "messages"] as const).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setTab(t)}
-                  className={`-mb-px border-b-2 px-3 py-2 text-xs font-mono uppercase tracking-[0.18em] transition-colors ${
-                    tab === t
-                      ? "border-mint-deep text-ink"
-                      : "border-transparent text-slate-ink hover:text-ink"
-                  }`}
-                >
-                  {t === "details" ? "Details" : "Messages"}
-                </button>
-              ))}
-            </div>
+      <div className="ld-subtabs" role="tablist">
+        {(["details", "messages"] as const).map((t) => (
+          <button
+            key={t}
+            type="button"
+            role="tab"
+            aria-selected={tab === t}
+            onClick={() => setTab(t)}
+            className="ld-subtab"
+          >
+            {t === "details" ? "Details" : "Messages"}
+          </button>
+        ))}
+      </div>
 
-            {tab === "details" ? (
-              <div className="mt-4 flex flex-col gap-6">
-                <div className="flex items-center justify-between gap-4">
-                  <span className="eyebrow">Pipeline</span>
-                  <StatusDropdown key={lead.pipeline_status} lead={lead} />
-                </div>
+      {tab === "details" ? (
+        <div className="mt-6 flex flex-col gap-7">
+          <div className="flex items-center justify-between gap-4">
+            <span className="eyebrow">Pipeline</span>
+            <StatusDropdown key={lead.pipeline_status} lead={lead} />
+          </div>
 
-                {lead.screenshot_url && (
-                  // Plain <img>: the screenshots bucket is public and these
-                  // are internal one-off captures — no next/image pipeline.
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={lead.screenshot_url}
-                    alt={`Website screenshot of ${lead.name}`}
-                    className="w-full border border-neutral"
-                  />
-                )}
+          {lead.screenshot_url && (
+            // Plain <img>: the screenshots bucket is public and these
+            // are internal one-off captures — no next/image pipeline.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={lead.screenshot_url}
+              alt={`Website screenshot of ${lead.name}`}
+              className="ld-shot"
+            />
+          )}
 
-                <div>
-                  <DetailRow label="Website">
-                    {lead.website_url ? (
-                      <ExternalLink href={lead.website_url}>
-                        {lead.website_url.replace(/^https?:\/\//, "")}
-                      </ExternalLink>
-                    ) : (
-                      <span className="text-[#e5594e]">None — hottest signal</span>
-                    )}
-                  </DetailRow>
-                  <DetailRow label="Instagram">
-                    {lead.instagram_handle ? (
-                      <ExternalLink href={`https://instagram.com/${lead.instagram_handle}`}>
-                        @{lead.instagram_handle}
-                        {lead.instagram_followers != null
-                          ? ` (${lead.instagram_followers.toLocaleString("en-US")})`
-                          : ""}
-                      </ExternalLink>
-                    ) : (
-                      "—"
-                    )}
-                  </DetailRow>
-                  <DetailRow label="Phone">{lead.phone ?? "—"}</DetailRow>
-                  <DetailRow label="Address">{lead.address ?? "—"}</DetailRow>
-                  <DetailRow label="Rating">
-                    {lead.rating != null
-                      ? `${lead.rating} · ${lead.review_count ?? 0} reviews`
-                      : "—"}
-                  </DetailRow>
-                  <DetailRow label="Maps">
-                    <ExternalLink href={mapsHref}>Open listing</ExternalLink>
-                  </DetailRow>
-                  {lead.contacted_at && (
-                    <DetailRow label="Contacted">
-                      {new Date(lead.contacted_at).toLocaleString("en-GB")}
-                    </DetailRow>
-                  )}
-                </div>
-
-                <LeadSeoAction lead={lead} />
-
-                {lead.audit_flags.length > 0 && (
-                  <div>
-                    <span className="eyebrow mb-2 block">Audit flags</span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {lead.audit_flags.map((flag) => (
-                        <span
-                          key={flag}
-                          className="border border-neutral px-2 py-1 text-xs text-ink"
-                        >
-                          {AUDIT_FLAG_LABELS[flag]}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {lead.review_themes.length > 0 && (
-                  <div>
-                    <span className="eyebrow mb-2 block">Review themes</span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {lead.review_themes.map((theme) => (
-                        <span
-                          key={theme}
-                          className="border border-neutral px-2 py-1 text-xs text-slate-ink"
-                        >
-                          {theme}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <NotesField lead={lead} />
-              </div>
-            ) : (
-              <LeadMessagesPanel leadId={lead.id} />
+          <dl className="ld-dl">
+            <DetailRow label="Website">
+              {lead.website_url ? (
+                <ExternalLink href={lead.website_url}>
+                  {lead.website_url.replace(/^https?:\/\//, "")}
+                </ExternalLink>
+              ) : (
+                <span className="ld-t-bad">None — hottest signal</span>
+              )}
+            </DetailRow>
+            <DetailRow label="Instagram">
+              {lead.instagram_handle ? (
+                <ExternalLink href={`https://instagram.com/${lead.instagram_handle}`}>
+                  @{lead.instagram_handle}
+                  {lead.instagram_followers != null
+                    ? ` (${lead.instagram_followers.toLocaleString("en-US")})`
+                    : ""}
+                </ExternalLink>
+              ) : (
+                "—"
+              )}
+            </DetailRow>
+            <DetailRow label="Phone">{lead.phone ?? "—"}</DetailRow>
+            <DetailRow label="Address">{lead.address ?? "—"}</DetailRow>
+            <DetailRow label="Rating">
+              {lead.rating != null
+                ? `${lead.rating} · ${lead.review_count ?? 0} reviews`
+                : "—"}
+            </DetailRow>
+            <DetailRow label="Maps">
+              <ExternalLink href={mapsHref}>Open listing</ExternalLink>
+            </DetailRow>
+            {lead.contacted_at && (
+              <DetailRow label="Contacted">
+                {new Date(lead.contacted_at).toLocaleString("en-GB")}
+              </DetailRow>
             )}
+          </dl>
+
+          <LeadSeoAction lead={lead} />
+
+          {lead.audit_flags.length > 0 && (
+            <div>
+              <span className="eyebrow mb-2 block">Audit flags</span>
+              <div className="ld-chips">
+                {lead.audit_flags.map((flag) => (
+                  <span key={flag} className="ld-tag">
+                    {AUDIT_FLAG_LABELS[flag]}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {lead.review_themes.length > 0 && (
+            <div>
+              <span className="eyebrow mb-2 block">Review themes</span>
+              <div className="ld-chips">
+                {lead.review_themes.map((theme) => (
+                  <span key={theme} className="ld-tag ld-tag--quiet">
+                    {theme}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <NotesField lead={lead} />
+        </div>
+      ) : (
+        <LeadMessagesPanel leadId={lead.id} />
+      )}
     </>
   );
 }

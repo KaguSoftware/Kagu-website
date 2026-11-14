@@ -26,11 +26,11 @@ export function LeadMessagesPanel({ leadId }: { leadId: string }) {
   }, [leadId, reloadKey]);
 
   if (messages === null) {
-    return <p className="mt-6 text-sm text-slate-ink">Loading messages…</p>;
+    return <p className="ld-sub mt-6">Loading messages…</p>;
   }
   if (messages.length === 0) {
     return (
-      <p className="mt-6 border border-dashed border-neutral p-6 text-center text-sm text-slate-ink">
+      <p className="ld-empty-note mt-6">
         No drafts for this lead yet.
       </p>
     );

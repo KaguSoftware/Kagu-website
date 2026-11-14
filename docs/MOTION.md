@@ -9,6 +9,24 @@ this file is a bug. Cross-references [DESIGN_BASELINE.md](DESIGN_BASELINE.md) §
 
 ---
 
+## 0. Route transitions (public site) — current
+
+This overrides anything below about a GSAP page curtain (that library no longer exists).
+Page changes use React's `<ViewTransition>` (Next 16, no flag). Code: `src/components/site/PageTransition.tsx`
+(wraps main + footer, keyed by pathname), `src/components/site/NavLink.tsx` (use it instead of `next/link`
+on the public site), and `src/styles/view-transitions.css` (all the timings).
+
+- **Major** (a different top-level section, e.g. Home to Work): two distinct steps, 460ms then 630ms. Step 1: the old
+  page drifts back, shrinks and blurs. Step 2: the new page slides up from the bottom.
+- **Minor** (inside a section, e.g. Work to a case study; also browser back/forward and untagged navigations):
+  about 250ms, a quick fade with an 8px lift.
+- The header has `view-transition-name: site-header` and never moves.
+- Reduced motion: instant swap. Browsers without View Transitions just swap.
+- A page's own entrance animation should wait for step 2 when it arrives through a major transition
+  (see `:root:active-view-transition-type(nav-major)` in `contact.css` and `marketing.css`).
+
+---
+
 ## 1. Tokens (committed to [src/styles/tokens.css](../src/styles/tokens.css))
 
 ```

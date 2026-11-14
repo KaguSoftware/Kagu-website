@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, ButtonLink, EmptyState } from "../_components/ui";
 import { DeleteButton } from "../_components/DeleteButton";
 import { deleteProject } from "../_actions/projects";
+import { RowList, Row, Badge } from "../_cms/cms";
 
 export default async function ProjectsPage() {
   const supabase = await createClient();
@@ -25,38 +25,25 @@ export default async function ProjectsPage() {
       {!rows || rows.length === 0 ? (
         <EmptyState>No projects yet.</EmptyState>
       ) : (
-        <ul className="divide-y divide-neutral border border-neutral">
+        <RowList>
           {rows.map((r) => (
-            <li key={r.id} className="flex items-center justify-between gap-4 px-5 py-4">
-              <div className="min-w-0">
-                <Link
-                  href={`/admin/projects/${r.id}/edit`}
-                  className="text-base text-ink transition-colors hover:text-mint-deep"
-                >
-                  {r.project}
-                </Link>
-                <p className="font-mono text-xs text-slate-ink">
-                  {r.clients?.name ?? "—"} · {r.year ?? "—"} · /{r.slug}
-                </p>
-              </div>
-              <div className="flex shrink-0 items-center gap-3">
-                {r.is_featured ? (
-                  <span className="eyebrow text-mint-deep">Featured</span>
-                ) : null}
-                {!r.is_published ? (
-                  <span className="eyebrow text-slate-ink">Draft</span>
-                ) : null}
-                <Link
-                  href={`/admin/projects/${r.id}/edit`}
-                  className="text-xs font-mono uppercase tracking-[0.18em] text-slate-ink transition-colors hover:text-ink"
-                >
-                  Edit
-                </Link>
+            <Row
+              key={r.id}
+              href={`/admin/projects/${r.id}/edit`}
+              title={r.project}
+              meta={`${r.clients?.name ?? "—"} · ${r.year ?? "—"} · /${r.slug}`}
+              badges={
+                <>
+                  {r.is_featured ? <Badge tone="ok">Featured</Badge> : null}
+                  {!r.is_published ? <Badge tone="warn">Draft</Badge> : null}
+                </>
+              }
+              actions={
                 <DeleteButton id={r.id} action={deleteProject} confirm={`Delete "${r.project}"?`} />
-              </div>
-            </li>
+              }
+            />
           ))}
-        </ul>
+        </RowList>
       )}
     </div>
   );

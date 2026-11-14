@@ -1,6 +1,7 @@
 "use client";
 
 import Link, { useLinkStatus } from "next/link";
+import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { useNewRequestCount } from "./use-new-request-count";
 
@@ -48,17 +49,32 @@ function PendingDot() {
 export function SidebarNav({
   newRequests = 0,
   notify = false,
+  variant = "list",
 }: {
   /** Server-counted status='new' rows across both request tables (no zero-flash). */
   newRequests?: number;
   /** Toast on new requests — enabled for only one of the two mounted navs. */
   notify?: boolean;
+  /** "list" = sidebar rows; "pills" = horizontally scrolling mobile pills. */
+  variant?: "list" | "pills";
 }) {
   const pathname = usePathname();
   const requestCount = useNewRequestCount(newRequests, { notify });
+  const ref = useRef<HTMLElement>(null);
+
+  // Pills: keep the active pill in view when the route changes.
+  useEffect(() => {
+    if (variant !== "pills") return;
+    const el = ref.current?.querySelector<HTMLElement>('[aria-current="page"]');
+    el?.scrollIntoView({ inline: "center", block: "nearest" });
+  }, [pathname, variant]);
 
   return (
-    <nav className="flex flex-col gap-1">
+    <nav
+      ref={ref}
+      aria-label="Admin"
+      className={`adm-nav${variant === "pills" ? " adm-nav--pills" : ""}`}
+    >
       {NAV.map((item) => {
         const active = item.exact
           ? pathname === item.href
@@ -70,17 +86,13 @@ export function SidebarNav({
             key={item.href}
             href={item.href}
             aria-current={active ? "page" : undefined}
-            className={`flex items-center gap-2 border-l-2 px-4 py-2 text-xs font-mono uppercase tracking-[0.18em] transition-colors ${
-              active
-                ? "border-mint-deep text-ink"
-                : "border-transparent text-slate-ink hover:text-ink"
-            }`}
+            className="adm-nav__item"
           >
             <span>{item.label}</span>
             {item.href === "/admin/requests" && requestCount > 0 ? (
               <span
                 aria-label={`${requestCount} new request${requestCount === 1 ? "" : "s"}`}
-                className="inline-flex min-w-5 items-center justify-center rounded-full bg-mint-deep px-1.5 py-0.5 font-mono text-[10px] leading-none text-ink"
+                className="adm-badge"
               >
                 {requestCount}
               </span>

@@ -1,0 +1,201 @@
+/* Contact page — big serif headline, quiet rows, glass form card, static ASCII field behind. */
+.cx {
+  position: relative;
+  isolation: isolate;
+  overflow-x: clip;
+  padding-block: 56px calc(env(safe-area-inset-bottom, 0px) + 88px);
+}
+.cx-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  /* faint: it must never compete with the form */
+  opacity: 0.07;
+  display: grid;
+  place-items: center;
+}
+.cx-bg__logo {
+  width: min(120vw, 1500px);
+  aspect-ratio: 2.4 / 1;
+}
+.cx-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 48px;
+}
+.cx-left {
+  min-width: 0;
+}
+.cx-h1 {
+  margin: 0;
+  font-weight: 400;
+  font-size: clamp(56px, 8vw, 116px);
+  /* the word masks below add their own padding for Maname's tall glyphs */
+  line-height: 0.94;
+  letter-spacing: -0.02em;
+  padding-top: 0.12em;
+  padding-bottom: 0.14em;
+}
+.cx-w {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding-top: 0.12em;
+  padding-bottom: 0.14em;
+  margin-top: -0.12em;
+  margin-bottom: -0.14em;
+}
+.cx-w > span {
+  display: inline-block;
+  animation: cx-rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: calc(var(--i) * 60ms);
+}
+.cx-pop {
+  color: var(--muted);
+}
+.cx-sub {
+  margin: 20px 0 0;
+  color: var(--muted);
+  font-size: 18px;
+}
+.cx-rows {
+  list-style: none;
+  margin: 44px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+.cx-rowwrap {
+  position: relative;
+  border-bottom: 1px solid var(--line);
+}
+.cx-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "label arrow" "value arrow";
+  align-items: center;
+  column-gap: 16px;
+  row-gap: 6px;
+  min-height: 48px;
+  padding: 22px 0;
+  color: var(--ink);
+}
+.cx-row__label {
+  grid-area: label;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.cx-row__value {
+  grid-area: value;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(24px, 6.4vw, 32px);
+  letter-spacing: -0.005em;
+  line-height: 1.2;
+  padding-block: 0.08em 0.1em;
+}
+.cx-row__arrow {
+  grid-area: arrow;
+  color: var(--muted);
+  transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1), color 0.2s;
+}
+.cx-row:hover .cx-row__arrow,
+.cx-row:focus-visible .cx-row__arrow {
+  transform: translateX(6px);
+  color: var(--ink);
+}
+.cx-time {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 26px 0 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.cx-time__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+.cx-time__t {
+  display: inline-block;
+  min-width: 4.2ch;
+}
+.cx-right {
+  position: relative;
+  min-width: 0;
+  scroll-margin-top: calc(var(--site-header-h) + 20px);
+}
+.cx-fade {
+  animation: cx-fade 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: 0.3s;
+}
+.cx-fade--2 {
+  animation-delay: 0.42s;
+}
+
+@media (min-width: 960px) {
+  .cx {
+    padding-block: 88px 120px;
+  }
+  .cx-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 520px);
+    gap: 88px;
+    align-items: start;
+  }
+  .cx-left {
+    position: sticky;
+    top: calc(var(--site-header-h) + 32px);
+  }
+  .cx-row__value {
+    font-size: clamp(26px, 2.4vw, 34px);
+  }
+}
+
+@keyframes cx-rise {
+  from {
+    transform: translateY(105%);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes cx-fade {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cx-w > span,
+  .cx-fade {
+    animation: none;
+  }
+}
+
+/* arriving through the major page transition: wait until the new page has risen */
+:root:active-view-transition-type(nav-major) .cx-w > span {
+  animation-delay: calc(var(--i) * 60ms + 0.7s);
+}
+:root:active-view-transition-type(nav-major) .cx-fade {
+  animation-delay: 1s;
+}
+:root:active-view-transition-type(nav-major) .cx-fade--2 {
+  animation-delay: 1.12s;
+}

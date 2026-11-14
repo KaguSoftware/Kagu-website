@@ -7,7 +7,7 @@ import type { Tables } from "@/lib/supabase/database.types";
 import { cancelSeoStrategyJob, retrySeoStrategyJob } from "../../_actions/seo-strategy-jobs";
 import { RerunStrategyButton } from "./RerunStrategyButton";
 import { adminToast } from "../../_components/toast";
-import { EmptyState } from "../../_components/ui";
+import { EmptyState, Tip } from "../../_components/ui";
 import { JobStatusBadge } from "./JobStatusBadge";
 import { ProgressBar } from "./ProgressBar";
 import { useRealtimeRows } from "../../_components/use-realtime-rows";
@@ -25,17 +25,11 @@ const displayUrl = (url: string) =>
 
 function LiveDot({ live }: { live: boolean }) {
   return (
-    <span
-      className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-[0.14em] text-slate-ink"
-      title={live ? "Realtime connected" : "Realtime unavailable — polling"}
-    >
-      <span
-        className={`inline-block size-1.5 rounded-full ${
-          live ? "bg-[#3fb27f]" : "animate-pulse bg-[#d9a13b]"
-        }`}
-      />
-      {live ? "Live" : "Polling"}
-    </span>
+    <Tip text={live ? "Realtime connected" : "Realtime unavailable — polling"}>
+      <span className="ld-live" data-live={live}>
+        {live ? "Live" : "Polling"}
+      </span>
+    </Tip>
   );
 }
 
@@ -55,7 +49,7 @@ function JobActions({ job }: { job: StrategyJob }) {
         type="button"
         disabled={pending}
         onClick={() => run(cancelSeoStrategyJob, "Cancellation requested.")}
-        className="text-xs font-mono uppercase tracking-[0.18em] text-slate-ink underline-offset-4 transition-colors hover:text-ink hover:underline disabled:opacity-50"
+        className="ld-act"
       >
         {pending ? "…" : "Cancel"}
       </button>
@@ -67,7 +61,7 @@ function JobActions({ job }: { job: StrategyJob }) {
         type="button"
         disabled={pending}
         onClick={() => run(retrySeoStrategyJob, "Strategy queued again.")}
-        className="text-xs font-mono uppercase tracking-[0.18em] text-mint-deep underline-offset-4 transition-colors hover:underline disabled:opacity-50"
+        className="ld-act ld-act--accent"
       >
         {pending ? "…" : "Retry"}
       </button>
@@ -79,7 +73,7 @@ function JobActions({ job }: { job: StrategyJob }) {
         <RerunStrategyButton jobId={job.id} variant="link" />
         <Link
           href={`/admin/leads/seo/${job.id}`}
-          className="text-xs font-mono uppercase tracking-[0.18em] text-mint-deep underline-offset-4 transition-colors hover:underline"
+          className="ld-act ld-act--accent"
         >
           View →
         </Link>
@@ -119,74 +113,71 @@ export function StrategyJobsLive({
       <div className="flex justify-end pb-2">
         <LiveDot live={live} />
       </div>
-      <div className="overflow-x-auto border border-neutral">
-        <table className="w-full text-left text-sm">
+      <div className="ld-wrap">
+        <table className="ld-table">
           <thead>
-            <tr className="border-b border-neutral">
-              <th className="eyebrow px-4 py-3 font-normal">Website</th>
-              <th className="eyebrow px-4 py-3 font-normal">Status</th>
-              <th className="eyebrow px-4 py-3 font-normal">Progress</th>
-              <th className="eyebrow px-4 py-3 font-normal">Pages planned</th>
-              <th className="eyebrow px-4 py-3 font-normal">Demand queries</th>
-              <th className="eyebrow px-4 py-3 font-normal">Audit</th>
-              <th className="eyebrow px-4 py-3 font-normal">Requested</th>
-              <th className="eyebrow px-4 py-3 font-normal" />
+            <tr>
+              <th>Website</th>
+              <th>Status</th>
+              <th>Progress</th>
+              <th>Pages planned</th>
+              <th>Demand queries</th>
+              <th>Audit</th>
+              <th>Requested</th>
+              <th />
             </tr>
           </thead>
           <tbody>
             {rows.map((job) => (
-              <tr key={job.id} className="border-b border-neutral last:border-0">
-                <td className="px-4 py-3">
+              <tr key={job.id}>
+                <td>
                   {job.status === "done" ? (
                     <Link
                       href={`/admin/leads/seo/${job.id}`}
-                      className="text-ink underline-offset-4 hover:underline"
+                      className="ld-link"
                     >
                       {displayUrl(job.url)}
                     </Link>
                   ) : (
-                    <span className="text-ink">{displayUrl(job.url)}</span>
+                    <span>{displayUrl(job.url)}</span>
                   )}
                   {job.context ? (
-                    <p
-                      className="mt-1 max-w-md truncate text-xs text-slate-ink"
-                      title={job.context}
-                    >
-                      {job.context}
-                    </p>
+                    <Tip text={job.context}>
+                      <p className="ld-small mt-1 max-w-md truncate">{job.context}</p>
+                    </Tip>
                   ) : null}
                   {job.error ? (
-                    <p className="mt-1 max-w-md text-xs text-[#e5594e]">{job.error}</p>
+                    <p className="ld-small ld-t-bad mt-1 max-w-md">{job.error}</p>
                   ) : null}
                 </td>
-                <td className="px-4 py-3">
+                <td>
                   <JobStatusBadge status={job.status} />
                 </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <ProgressBar value={job.progress} />
-                    <span className="text-xs text-slate-ink">{job.progress}%</span>
+                <td>
+                  <div className="ld-meter-row">
+                    <ProgressBar value={job.progress} tone={job.status === "done" ? "ok" : job.status === "failed" ? "bad" : undefined} />
+                    <span className="ld-small">{job.progress}%</span>
                   </div>
                 </td>
-                <td className="px-4 py-3 text-ink">
+                <td>
                   {job.status === "done" ? job.pages_planned : "—"}
                 </td>
-                <td className="px-4 py-3 text-ink">
+                <td>
                   {job.status === "done" ? job.demand_queries : "—"}
                 </td>
-                <td className="px-4 py-3">
+                <td>
                   {job.audit_score !== null ? (
-                    <span className={`font-mono ${seoAuditScoreClass(job.audit_score)}`}>
+                    <span className={seoAuditScoreClass(job.audit_score)}>
                       {job.audit_score}
                     </span>
                   ) : (
-                    <span className="text-slate-ink">—</span>
+                    <span className="ld-t-muted">—</span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-xs text-slate-ink">
+                <td className="ld-w ld-small">
                   {new Date(job.created_at).toLocaleString("en-GB")}
                 </td>
-                <td className="px-4 py-3 text-right">
+                <td className="ld-r">
                   <JobActions job={job} />
                 </td>
               </tr>

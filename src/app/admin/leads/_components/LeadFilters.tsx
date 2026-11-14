@@ -5,7 +5,9 @@
   are shareable and the back button works; changing a filter resets the page.
 */
 
+import { useId } from "react";
 import { useRouter } from "next/navigation";
+import { CustomSelect } from "../../_components/ui";
 import type { LeadsListParams } from "../list/page";
 import {
   AUDIT_FLAG_LABELS,
@@ -35,22 +37,20 @@ function FilterSelect({
   options: { value: string; label: string }[];
   allLabel?: string;
 }) {
+  const labelId = useId();
+  const all = allLabel !== undefined ? [{ value: "", label: allLabel }, ...options] : options;
   return (
-    <label className="flex min-w-36 flex-col gap-1.5">
-      <span className="eyebrow">{label}</span>
-      <select
+    <div className="ld-filters__f flex flex-col gap-1.5">
+      <span id={labelId} className="eyebrow">
+        {label}
+      </span>
+      <CustomSelect
         value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="border border-neutral bg-paper px-2 py-1.5 text-sm text-ink outline-none focus-visible:border-mint-deep"
-      >
-        {allLabel !== undefined && <option value="">{allLabel}</option>}
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-    </label>
+        onChange={onChange}
+        options={all}
+        aria-labelledby={labelId}
+      />
+    </div>
   );
 }
 
@@ -75,7 +75,7 @@ export function LeadFilters({
   };
 
   return (
-    <div className="flex flex-wrap items-end gap-4 border border-neutral p-4">
+    <div className="ld-filters">
       <FilterSelect
         label="District"
         value={params.district ?? ""}
@@ -135,7 +135,7 @@ export function LeadFilters({
             sort: undefined,
           })
         }
-        className="ml-auto py-1.5 text-xs font-mono uppercase tracking-[0.18em] text-slate-ink underline-offset-4 hover:text-ink hover:underline"
+        className="ld-act ml-auto"
       >
         Reset
       </button>

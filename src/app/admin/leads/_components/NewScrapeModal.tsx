@@ -10,9 +10,16 @@ import { useEffect, useState, useTransition } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { createScrapeJob } from "../../_actions/scrape-jobs";
 import { adminToast } from "../../_components/toast";
+import { CustomSelect } from "../../_components/ui";
 import { CATEGORY_SUGGESTIONS, ISTANBUL_DISTRICTS } from "../_lib/constants";
+import { SuggestInput } from "./SuggestInput";
 
 const OTHER = "__other__";
+
+const DISTRICT_OPTIONS = [
+  ...ISTANBUL_DISTRICTS.map((d) => ({ value: d as string, label: d as string })),
+  { value: OTHER, label: "Other…" },
+];
 
 export function NewScrapeModal() {
   const [open, setOpen] = useState(false);
@@ -51,7 +58,7 @@ export function NewScrapeModal() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 bg-ink px-4 py-2 text-xs font-mono uppercase tracking-[0.18em] text-paper transition-colors hover:bg-mint-deep"
+        className="adm-btn adm-btn--solid"
       >
         New scrape
       </button>
@@ -59,8 +66,7 @@ export function NewScrapeModal() {
       <AnimatePresence>
         {open && (
           <motion.div
-            className="fixed inset-0 z-[10002] flex items-center justify-center p-5 backdrop-blur-[3px]"
-            style={{ background: "color-mix(in oklab, var(--paper) 64%, transparent)" }}
+            className="adm-confirm"
             role="dialog"
             aria-modal="true"
             aria-label="Request a scrape"
@@ -71,52 +77,40 @@ export function NewScrapeModal() {
             onClick={() => setOpen(false)}
           >
             <motion.div
-              className="w-[min(94vw,420px)] border border-neutral bg-mint-pale p-6 shadow-[0_28px_64px_-22px_rgba(0,0,0,0.65)]"
+              className="adm-confirm__card ld-modal"
               onClick={(e) => e.stopPropagation()}
               initial={reduced ? { opacity: 0 } : { opacity: 0, y: 14, scale: 0.97 }}
               animate={reduced ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
               exit={reduced ? { opacity: 0 } : { opacity: 0, y: 14, scale: 0.97 }}
               transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
             >
-              <span className="eyebrow text-mint-deep">New scrape</span>
-              <form action={submit} className="mt-4 flex flex-col gap-5">
-                <label className="kagu-field block">
+              <h2 className="adm-confirm__title">New scrape</h2>
+              <form action={submit}>
+                <div className="kagu-field block">
                   <span className="eyebrow mb-2 block">
                     Category <span className="text-mint-deep">*</span>
                   </span>
-                  <input
+                  <SuggestInput
                     name="category"
                     required
                     minLength={2}
-                    list="category-suggestions"
+                    suggestions={CATEGORY_SUGGESTIONS}
                     placeholder="e.g. dentist"
-                    className="w-full border-0 border-b border-neutral bg-transparent py-2 text-base text-ink outline-none placeholder:text-neutral"
                   />
-                  <datalist id="category-suggestions">
-                    {CATEGORY_SUGGESTIONS.map((c) => (
-                      <option key={c} value={c} />
-                    ))}
-                  </datalist>
-                </label>
+                </div>
 
-                <label className="kagu-field block">
-                  <span className="eyebrow mb-2 block">
+                <div className="kagu-field block">
+                  <span id="scrape-district-label" className="eyebrow mb-2 block">
                     District <span className="text-mint-deep">*</span>
                   </span>
-                  <select
+                  <CustomSelect
                     name="district"
                     value={district}
-                    onChange={(e) => setDistrict(e.target.value)}
-                    className="w-full border border-neutral bg-paper px-3 py-2 text-base text-ink outline-none focus-visible:border-mint-deep"
-                  >
-                    {ISTANBUL_DISTRICTS.map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
-                    ))}
-                    <option value={OTHER}>Other…</option>
-                  </select>
-                </label>
+                    onChange={setDistrict}
+                    options={DISTRICT_OPTIONS}
+                    aria-labelledby="scrape-district-label"
+                  />
+                </div>
 
                 {district === OTHER && (
                   <label className="kagu-field block">
@@ -128,23 +122,23 @@ export function NewScrapeModal() {
                       required
                       minLength={2}
                       placeholder="e.g. İzmit"
-                      className="w-full border-0 border-b border-neutral bg-transparent py-2 text-base text-ink outline-none placeholder:text-neutral"
+                      className="w-full"
                     />
                   </label>
                 )}
 
-                <div className="flex items-center justify-end gap-2">
+                <div className="adm-confirm__actions">
                   <button
                     type="button"
                     onClick={() => setOpen(false)}
-                    className="px-4 py-2 text-xs font-mono uppercase tracking-[0.18em] text-slate-ink transition-colors hover:text-ink"
+                    className="adm-btn adm-btn--text"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={pending}
-                    className="inline-flex items-center gap-2 bg-mint-deep px-4 py-2 text-xs font-mono uppercase tracking-[0.18em] text-paper transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="adm-btn adm-btn--solid"
                   >
                     {pending ? "Queuing…" : "Queue job"}
                   </button>

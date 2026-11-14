@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, type DragEvent, type ClipboardEvent } from "react";
+import { FileField } from "../../_components/ui";
 import { uploadLearningImage } from "../../_actions/learnings";
 import { adminToast } from "../../_components/toast";
 import { Markdown } from "./Markdown";
@@ -40,7 +41,7 @@ export function MarkdownEditor({ defaultValue = "" }: { defaultValue?: string })
   const [tab, setTab] = useState<"write" | "preview">("write");
   const [dragging, setDragging] = useState(false);
   const ref = useRef<HTMLTextAreaElement>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [pickKey, setPickKey] = useState(0);
 
   /** Insert markdown around the current selection and restore focus. */
   const insert = (before: string, after: string, placeholder: string, block?: boolean) => {
@@ -99,111 +100,97 @@ export function MarkdownEditor({ defaultValue = "" }: { defaultValue?: string })
     void uploadImages(Array.from(e.dataTransfer.files));
   };
 
-  const tabClass = (active: boolean) =>
-    `px-4 py-2 font-mono text-xs uppercase tracking-[0.18em] transition-colors border-b-2 ${
-      active
-        ? "border-mint-deep text-ink"
-        : "border-transparent text-slate-ink hover:text-ink"
-    }`;
-
   return (
-    <div className="kagu-field">
-      <span className="eyebrow mb-2 block">
+    <div>
+      <span className="eyebrow lr-ed__label">
         Documentation <span className="text-mint-deep">*</span>
       </span>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 border border-b-0 border-neutral px-2">
-        <div className="flex">
-          <button type="button" onClick={() => setTab("write")} className={tabClass(tab === "write")}>
-            Write
-          </button>
-          <button type="button" onClick={() => setTab("preview")} className={tabClass(tab === "preview")}>
-            Preview
-          </button>
-        </div>
-        {tab === "write" ? (
-          <div className="flex flex-wrap items-center gap-1 py-1">
-            {TOOLBAR.map((t) => (
-              <button
-                key={t.title}
-                type="button"
-                title={t.title}
-                onClick={() => insert(t.before, t.after, t.placeholder, t.block)}
-                className="px-2 py-1 font-mono text-xs text-slate-ink transition-colors hover:text-mint-deep"
-              >
-                {t.label}
-              </button>
-            ))}
-            <button
-              type="button"
-              title="Upload image"
-              onClick={() => fileRef.current?.click()}
-              className="px-2 py-1 font-mono text-xs text-slate-ink transition-colors hover:text-mint-deep"
-            >
-              Img
+      <div className="lr-ed">
+        <div className="lr-ed__bar">
+          <div className="lr-seg" role="group" aria-label="Editor mode">
+            <button type="button" aria-pressed={tab === "write"} onClick={() => setTab("write")}>
+              Write
             </button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/png,image/jpeg,image/webp,image/gif"
-              multiple
-              hidden
-              onChange={(e) => {
-                void uploadImages(Array.from(e.target.files ?? []));
-                e.target.value = "";
-              }}
-            />
+            <button type="button" aria-pressed={tab === "preview"} onClick={() => setTab("preview")}>
+              Preview
+            </button>
           </div>
-        ) : null}
+          {tab === "write" ? (
+            <div className="lr-tools">
+              {TOOLBAR.map((t) => (
+                <button
+                  key={t.title}
+                  type="button"
+                  aria-label={t.title}
+                  data-tip={t.title}
+                  onClick={() => insert(t.before, t.after, t.placeholder, t.block)}
+                  className="lr-tool"
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+
+        <div
+          className="lr-ed__pane"
+          onDragOver={(e) => {
+            if (e.dataTransfer.types.includes("Files")) {
+              e.preventDefault();
+              setDragging(true);
+            }
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={onDrop}
+        >
+          {/* The textarea stays mounted (CSS-hidden in preview) so the form value
+              always submits. */}
+          <textarea
+            ref={ref}
+            name="body"
+            required
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onPaste={onPaste}
+            spellCheck
+            hidden={tab === "preview"}
+            className="lr-ed__ta"
+          />
+          {tab === "preview" ? (
+            <div className="lr-ed__preview">
+              {value.trim() ? (
+                <Markdown source={value} />
+              ) : (
+                <p className="lr-ed__empty">Nothing to preview yet.</p>
+              )}
+            </div>
+          ) : null}
+          {dragging ? <div className="lr-ed__drag">Drop image to upload</div> : null}
+        </div>
       </div>
 
-      <div
-        className="relative"
-        onDragOver={(e) => {
-          if (e.dataTransfer.types.includes("Files")) {
-            e.preventDefault();
-            setDragging(true);
-          }
-        }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={onDrop}
-      >
-        {/* The textarea stays mounted (CSS-hidden in preview) so the form value
-            always submits. */}
-        <textarea
-          ref={ref}
-          name="body"
-          required
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onPaste={onPaste}
-          spellCheck
-          className={`min-h-[28rem] w-full resize-y border border-neutral bg-transparent p-4 font-mono text-sm leading-relaxed text-ink outline-none focus-visible:border-mint-deep ${
-            tab === "preview" ? "hidden" : ""
-          }`}
+      <div className="lr-ed__upload">
+        {/* Unnamed on purpose: the file is uploaded via uploadLearningImage and
+            must never be submitted with the form. Re-keyed after each pick so
+            the same file can be chosen again. */}
+        <FileField
+          key={pickKey}
+          name=""
+          accept="image/png,image/jpeg,image/webp,image/gif"
+          multiple
+          onFiles={(files) => {
+            void uploadImages(files);
+            setPickKey((k) => k + 1);
+          }}
         />
-        {tab === "preview" ? (
-          <div className="min-h-[28rem] border border-neutral p-6">
-            {value.trim() ? (
-              <Markdown source={value} />
-            ) : (
-              <p className="text-sm text-slate-ink">Nothing to preview yet.</p>
-            )}
-          </div>
-        ) : null}
-        {dragging ? (
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center border-2 border-dashed border-mint-deep bg-paper/80">
-            <span className="font-mono text-xs uppercase tracking-[0.18em] text-mint-deep">
-              Drop image to upload
-            </span>
-          </div>
-        ) : null}
       </div>
 
-      <span className="mt-1.5 block text-xs text-slate-ink">
+      <span className="lr-ed__hint">
         Markdown with GitHub extras: tables, task lists, ```code blocks```, and
         callouts (&gt; [!NOTE] / [!TIP] / [!WARNING]). Paste or drop screenshots
-        directly into the editor.
+        directly into the editor, or use the upload zone below.
       </span>
     </div>
   );

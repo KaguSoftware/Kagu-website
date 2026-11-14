@@ -18,23 +18,27 @@ import {
   PIPELINE_STATUS_LABELS,
 } from "../_lib/constants";
 import { BulkBar } from "./BulkBar";
+import { LeadCheck } from "./LeadCheck";
 import { LeadDrawer } from "./LeadDrawer";
 
 type Lead = Tables<"leads">;
 
-function ScorePill({ score }: { score: number }) {
-  const tone =
-    score >= 70
-      ? "border-[#3fb27f] text-[#3fb27f]"
-      : score >= 40
-        ? "border-[#d9a13b] text-[#d9a13b]"
-        : "border-neutral text-slate-ink";
+/* Score as number + slim bar (toned by the same 70 / 40 thresholds as before). */
+function ScoreCell({ score }: { score: number }) {
+  const tone = score >= 70 ? "ok" : score >= 40 ? "warn" : "muted";
   return (
-    <span
-      className={`inline-block min-w-9 border px-1.5 py-0.5 text-center text-xs font-mono ${tone}`}
-    >
-      {score}
-    </span>
+    <div className="ld-meter-row">
+      <span className="w-7 text-right font-medium text-ink">{score}</span>
+      <span
+        className="ld-meter"
+        data-tone={tone}
+        role="img"
+        aria-label={`Lead score ${score} of 100`}
+        style={{ maxWidth: 64 }}
+      >
+        <i style={{ width: `${Math.max(0, Math.min(100, score))}%` }} />
+      </span>
+    </div>
   );
 }
 
@@ -101,25 +105,26 @@ export function LeadsTable({
 
   return (
     <div>
-      <p className="pb-2 text-xs text-slate-ink">{totalCount} leads</p>
-      <div className="overflow-x-auto border border-neutral">
-        <table className="w-full text-left text-sm">
+      <p className="ld-small ld-num pb-3">{totalCount.toLocaleString("en-US")} leads</p>
+      <div className="ld-wrap ld-wrap--tall">
+        <table className="ld-table">
           <thead>
-            <tr className="border-b border-neutral">
-              <th className="px-4 py-3">
-                <input
-                  type="checkbox"
-                  aria-label="Select all on page"
+            <tr>
+              <th style={{ width: 48 }}>
+                <LeadCheck
+                  label="Select all on page"
                   checked={visibleSelected.length === leads.length}
+                  indeterminate={
+                    visibleSelected.length > 0 && visibleSelected.length < leads.length
+                  }
                   onChange={toggleAll}
-                  className="size-4 accent-mint-deep"
                 />
               </th>
-              <th className="eyebrow px-4 py-3 font-normal">Business</th>
-              <th className="eyebrow px-4 py-3 font-normal">Score</th>
-              <th className="eyebrow px-4 py-3 font-normal">Flags</th>
-              <th className="eyebrow px-4 py-3 font-normal">Rating</th>
-              <th className="eyebrow px-4 py-3 font-normal">Pipeline</th>
+              <th>Business</th>
+              <th>Score</th>
+              <th>Flags</th>
+              <th>Rating</th>
+              <th>Pipeline</th>
             </tr>
           </thead>
           <tbody>
@@ -127,51 +132,46 @@ export function LeadsTable({
               <tr
                 key={lead.id}
                 onClick={() => setOpenLeadId(lead.id)}
-                className="cursor-pointer border-b border-neutral transition-colors last:border-0 hover:bg-mint-pale"
+                data-click
               >
-                <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                  <input
-                    type="checkbox"
-                    aria-label={`Select ${lead.name}`}
+                <td onClick={(e) => e.stopPropagation()}>
+                  <LeadCheck
+                    label={`Select ${lead.name}`}
                     checked={selected.has(lead.id)}
                     onChange={() => toggle(lead.id)}
-                    className="size-4 accent-mint-deep"
                   />
                 </td>
-                <td className="px-4 py-3">
-                  <span className="text-ink">{lead.name}</span>
-                  <p className="text-xs text-slate-ink">
+                <td>
+                  <span className="font-medium text-ink">{lead.name}</span>
+                  <p className="ld-small">
                     {[lead.category, lead.district].filter(Boolean).join(" · ")}
                   </p>
                 </td>
-                <td className="px-4 py-3">
-                  <ScorePill score={lead.lead_score} />
+                <td>
+                  <ScoreCell score={lead.lead_score} />
                 </td>
-                <td className="max-w-56 px-4 py-3">
-                  <div className="flex flex-wrap gap-1">
+                <td className="max-w-64">
+                  <div className="ld-chips">
                     {lead.audit_flags.slice(0, 3).map((flag) => (
-                      <span
-                        key={flag}
-                        className="border border-neutral px-1.5 py-0.5 text-[10px] text-slate-ink"
-                      >
+                      <span key={flag} className="ld-tag ld-tag--quiet">
                         {AUDIT_FLAG_LABELS[flag]}
                       </span>
                     ))}
                     {lead.audit_flags.length > 3 && (
-                      <span className="text-[10px] text-slate-ink">
+                      <span className="ld-small self-center">
                         +{lead.audit_flags.length - 3}
                       </span>
                     )}
                   </div>
                 </td>
-                <td className="px-4 py-3 text-xs text-slate-ink">
+                <td className="ld-small ld-w">
                   {lead.rating != null
                     ? `${lead.rating} (${lead.review_count ?? 0})`
                     : "—"}
                 </td>
-                <td className="px-4 py-3">
+                <td>
                   <span
-                    className={`inline-block border px-2 py-0.5 text-[10px] font-mono uppercase tracking-[0.14em] ${PIPELINE_STATUS_CLASSES[lead.pipeline_status]}`}
+                    className={`ld-pill ${PIPELINE_STATUS_CLASSES[lead.pipeline_status]}`}
                   >
                     {PIPELINE_STATUS_LABELS[lead.pipeline_status]}
                   </span>

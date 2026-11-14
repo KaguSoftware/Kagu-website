@@ -1,0 +1,219 @@
+/* Marketing page: drawn-in logo hero, three service sections, short steps. */
+.mk-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 40px;
+  align-items: center;
+  padding-block: clamp(48px, 10vw, 120px) clamp(40px, 7vw, 88px);
+}
+@media (min-width: 900px) {
+  .mk-hero {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  }
+}
+.mk-hero h1 {
+  /* fits the 5fr column next to the reel without breaking the word */
+  font-size: clamp(42px, 6.6vw, 104px);
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+  margin: 0;
+  padding-block: 0.12em 0.14em;
+}
+.mk-svc__ic {
+  color: var(--pop);
+}
+.mk-svc__name {
+  color: var(--pop-ink);
+}
+.mk-hero p {
+  margin: 28px 0 32px;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(24px, 4vw, 36px);
+  color: var(--muted);
+  letter-spacing: -0.01em;
+}
+
+/* hero ascii art + banner */
+.mk-reel {
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+.mk-reel__video {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: #050505;
+}
+.mk-reel figcaption {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.mk-chart {
+  margin-top: 18px;
+  opacity: 0.85;
+}
+
+/* services */
+.mk-svc {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: clamp(28px, 6vw, 80px);
+  padding-block: clamp(40px, 6vw, 72px);
+  border-top: 1px solid var(--line-strong);
+}
+.mk-svc__head {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-self: start;
+}
+.mk-svc__ic {
+  width: 72px;
+  height: auto;
+}
+.mk-svc__head h2 {
+  margin: 0;
+  font-size: clamp(40px, 5vw, 60px);
+  line-height: 1.06;
+  padding-block: 0.12em 0.14em;
+}
+.mk-svc__head p {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(21px, 2.6vw, 26px);
+  color: var(--muted);
+}
+.mk-svc__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+  align-self: start;
+}
+.mk-svc__list li {
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+  gap: 4px 24px;
+  align-items: baseline;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+}
+.mk-svc__name {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 24px;
+  letter-spacing: -0.01em;
+}
+.mk-svc__text {
+  color: var(--muted);
+  font-size: 16px;
+}
+@media (max-width: 760px) {
+  .mk-svc {
+    grid-template-columns: 1fr;
+  }
+  .mk-svc__ic {
+    width: 56px;
+  }
+  .mk-svc__list li {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* how it goes */
+.mk-steps {
+  padding-block: clamp(48px, 7vw, 88px);
+  border-top: 1px solid var(--line);
+}
+.mk-steps h2 {
+  margin: 0 0 clamp(24px, 4vw, 40px);
+  font-size: clamp(36px, 5vw, 56px);
+}
+.mk-steps__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 28px;
+}
+@media (min-width: 820px) {
+  .mk-steps__list {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 40px;
+  }
+}
+.mk-steps__n {
+  display: block;
+  margin-bottom: 18px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+.mk-steps__n::before {
+  content: "STEP 0";
+}
+.mk-steps__list li {
+  padding: 28px 26px 32px;
+  border-radius: 18px;
+}
+.mk-steps__list h3 {
+  margin: 0 0 10px;
+  font-size: 32px;
+  font-weight: 400;
+  line-height: 1.1;
+  padding-block: 0.12em 0.14em;
+}
+.mk-steps__list p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 17px;
+  max-width: 28ch;
+}
+
+/* pointer to the work page */
+.mk-with {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px 32px;
+  padding-block: 32px;
+  border-top: 1px solid var(--line);
+}
+.mk-with p {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(22px, 3vw, 30px);
+}
+.mk-with__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--pop-ink);
+  text-decoration: none;
+}
+.mk-with__link:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.mk-close {
+  padding-block: clamp(56px, 9vw, 112px) clamp(72px, 11vw, 140px);
+  border-top: 1px solid var(--line);
+}
+.mk-close h2 {
+  margin: 0 0 28px;
+  font-size: clamp(36px, 6vw, 64px);
+}
+

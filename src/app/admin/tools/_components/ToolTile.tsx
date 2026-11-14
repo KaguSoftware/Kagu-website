@@ -1,10 +1,9 @@
 "use client";
 
 /*
-  ToolTile — one launcher tile on /admin/tools. The page is a workspace door,
-  so each tile gets some life: a staggered entrance, a mouse-tracking mint
-  glow, the bird mark drifting in as a watermark, and an arrow that takes off
-  on hover. All motion respects prefers-reduced-motion via Framer's hooks.
+  ToolTile — one launcher tile on /admin/tools. A staggered entrance, a quiet
+  mouse-tracking glow, the outline bird mark as a faint watermark, and an arrow
+  that nudges on hover. Motion respects prefers-reduced-motion.
 */
 
 import { useRef } from "react";
@@ -18,7 +17,7 @@ export type Tool = {
   title: string;
   description: string;
   stats: string[];
-  /** Pulsing status dot label, e.g. "live" */
+  /** Status dot label, e.g. "live" */
   status?: string;
 };
 
@@ -45,60 +44,51 @@ export function ToolTile({ tool, index }: { tool: Tool; index: number }) {
         ref={ref}
         href={tool.href}
         onMouseMove={onMove}
-        className="group relative flex min-h-56 flex-col justify-between overflow-hidden border border-neutral bg-mint-pale p-6 transition-colors duration-300 hover:border-mint-deep sm:p-7"
+        className="group relative flex min-h-56 flex-col justify-between overflow-hidden rounded-[var(--radius-ctl)] border border-[var(--line)] bg-[var(--card)] p-6 transition-colors duration-300 hover:border-[var(--line-strong)] sm:p-7"
       >
-        {/* mouse-tracking mint glow */}
         <span
           aria-hidden
           className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
           style={{
             background:
-              "radial-gradient(220px circle at var(--mx, 70%) var(--my, 30%), color-mix(in oklab, var(--mint-deep) 16%, transparent), transparent 70%)",
+              "radial-gradient(240px circle at var(--mx, 70%) var(--my, 30%), color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%)",
           }}
         />
 
-        {/* bird watermark drifting in from the corner */}
         <span
           aria-hidden
-          className="pointer-events-none absolute -right-8 -bottom-10 w-3/5 rotate-[-9deg] opacity-[0.07] transition-all duration-500 ease-out group-hover:translate-x-[-6px] group-hover:translate-y-[-4px] group-hover:rotate-[-4deg] group-hover:opacity-[0.16]"
+          className="pointer-events-none absolute -right-8 -bottom-10 w-3/5 rotate-[-9deg] text-[var(--ink)] opacity-[0.05] transition-all duration-500 ease-out group-hover:translate-x-[-6px] group-hover:translate-y-[-4px] group-hover:rotate-[-4deg] group-hover:opacity-[0.1]"
         >
-          <KaguMark style={{ width: "100%", height: "auto", color: "var(--mint-deep)" }} />
+          <KaguMark variant="outline" style={{ width: "100%", height: "auto" }} />
         </span>
 
         <div className="relative flex items-start justify-between gap-4">
-          <span className="border border-neutral px-2 py-0.5 font-mono text-xs uppercase tracking-[0.18em] text-slate-ink transition-colors group-hover:border-mint-deep group-hover:text-mint-deep">
-            {tool.eyebrow}
-          </span>
+          <span className="eyebrow">{tool.eyebrow}</span>
           <span
             aria-hidden
-            className="font-mono text-lg text-slate-ink transition-all duration-300 group-hover:translate-x-1.5 group-hover:-translate-y-0.5 group-hover:text-mint-deep"
+            className="text-lg text-[var(--muted)] transition-all duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-1 group-hover:text-[var(--ink)]"
           >
             ↗
           </span>
         </div>
 
         <div className="relative mt-8">
-          <h2 className="display text-2xl text-ink transition-colors duration-300 group-hover:text-mint-deep">
-            {tool.title}
-          </h2>
-          <p className="mt-2 max-w-[36ch] text-sm leading-relaxed text-slate-ink">
+          <h2 className="display text-2xl text-[var(--ink)]">{tool.title}</h2>
+          <p className="mt-2 max-w-[36ch] text-sm leading-relaxed text-[var(--muted)]">
             {tool.description}
           </p>
-          <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-neutral pt-4">
+          <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-[var(--line)] pt-4">
             {tool.status ? (
-              <span className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em] text-slate-ink">
+              <span className="inline-flex items-center gap-2 text-xs text-[var(--ok-ink)]">
                 <span aria-hidden className="relative inline-block size-2">
-                  <span className="absolute inset-0 animate-ping rounded-full bg-mint-deep/60 motion-reduce:animate-none" />
-                  <span className="absolute inset-[2px] rounded-full bg-mint-deep" />
+                  <span className="absolute inset-0 animate-ping rounded-full bg-[var(--ok)] opacity-50 motion-reduce:animate-none" />
+                  <span className="absolute inset-[2px] rounded-full bg-[var(--ok)]" />
                 </span>
                 {tool.status}
               </span>
             ) : null}
             {tool.stats.map((s) => (
-              <span
-                key={s}
-                className="font-mono text-xs uppercase tracking-[0.18em] text-slate-ink"
-              >
+              <span key={s} className="text-xs text-[var(--muted)]">
                 {s}
               </span>
             ))}

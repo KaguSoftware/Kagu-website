@@ -1,6 +1,6 @@
-import { Field, TextArea, ButtonLink } from "../_components/ui";
-import { SubmitButton } from "../_components/SubmitButton";
+import { Field, TextArea, NumberField } from "../_components/ui";
 import { ListField } from "../_components/ListField";
+import { FormShell } from "../_cms/cms";
 import type { Tables } from "@/lib/supabase/database.types";
 
 export function CapabilityForm({
@@ -11,7 +11,11 @@ export function CapabilityForm({
   capability?: Tables<"capabilities">;
 }) {
   return (
-    <form action={action} className="max-w-xl space-y-6">
+    <FormShell
+      action={action}
+      cancelHref="/admin/capabilities"
+      submitLabel={capability ? "Save changes" : "Create"}
+    >
       {capability ? <input type="hidden" name="id" value={capability.id} /> : null}
       <Field label="Title" name="title" defaultValue={capability?.title} required />
       <TextArea label="Body" name="body" defaultValue={capability?.body} required rows={4} />
@@ -27,16 +31,7 @@ export function CapabilityForm({
         defaultValue={capability?.slug}
         hint="Leave blank to auto-generate."
       />
-      <Field
-        label="Sort order"
-        name="sort_order"
-        type="number"
-        defaultValue={capability?.sort_order ?? 0}
-      />
-      <div className="flex items-center gap-4 pt-2">
-        <SubmitButton>{capability ? "Save changes" : "Create"}</SubmitButton>
-        <ButtonLink href="/admin/capabilities">Cancel</ButtonLink>
-      </div>
-    </form>
+      <NumberField label="Sort order" name="sort_order" defaultValue={capability?.sort_order ?? 0} />
+    </FormShell>
   );
 }

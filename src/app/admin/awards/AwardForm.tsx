@@ -1,5 +1,5 @@
-import { Field, ButtonLink } from "../_components/ui";
-import { SubmitButton } from "../_components/SubmitButton";
+import { Field, NumberField } from "../_components/ui";
+import { FormShell } from "../_cms/cms";
 import type { Tables } from "@/lib/supabase/database.types";
 
 export function AwardForm({
@@ -10,22 +10,19 @@ export function AwardForm({
   award?: Tables<"awards">;
 }) {
   return (
-    <form action={action} className="max-w-xl space-y-6">
+    <FormShell
+      action={action}
+      cancelHref="/admin/awards"
+      submitLabel={award ? "Save changes" : "Create award"}
+    >
       {award ? <input type="hidden" name="id" value={award.id} /> : null}
       <Field label="Title" name="title" defaultValue={award?.title} required />
-      <Field label="Year" name="year" defaultValue={award?.year} />
-      <Field label="Issuer" name="issuer" defaultValue={award?.issuer} />
-      <Field label="URL" name="url" defaultValue={award?.url} placeholder="https://…" />
-      <Field
-        label="Sort order"
-        name="sort_order"
-        type="number"
-        defaultValue={award?.sort_order ?? 0}
-      />
-      <div className="flex items-center gap-4 pt-2">
-        <SubmitButton>{award ? "Save changes" : "Create award"}</SubmitButton>
-        <ButtonLink href="/admin/awards">Cancel</ButtonLink>
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <Field label="Year" name="year" defaultValue={award?.year} />
+        <Field label="Issuer" name="issuer" defaultValue={award?.issuer} />
       </div>
-    </form>
+      <Field label="URL" name="url" defaultValue={award?.url} placeholder="https://…" />
+      <NumberField label="Sort order" name="sort_order" defaultValue={award?.sort_order ?? 0} />
+    </FormShell>
   );
 }

@@ -1,0 +1,425 @@
+/*
+  Public-site theme — premium, minimal, DARK and strictly black & white.
+  Complex ASCII art (src/components/ascii) is the "software" signal.
+  Everything is scoped to `.site` (the wrapper rendered by src/app/(site)/layout.tsx
+  and the root not-found), so the admin panel keeps the dark tokens.css theme.
+
+  Legacy token names (--paper, --ink, --mint-*, --color-*) are REMAPPED here so
+  existing components render light: background = cream, text = ink.
+  New clean tokens: --bg --card --ink --muted --line --accent --accent-ink
+  --soft --serif --sans.
+*/
+
+html {
+  scrollbar-gutter: stable;
+}
+/* Black behind overscroll / short pages on public routes. */
+html:has(.site),
+html:has(.site) body {
+  background: #0a0a0a;
+}
+/* Custom scrollbars everywhere on the public site (page + any scroll container). */
+html:has(.site),
+.site * {
+  scrollbar-width: thin;
+  scrollbar-color: #333333 transparent;
+}
+html:has(.site)::-webkit-scrollbar,
+.site *::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+html:has(.site)::-webkit-scrollbar-track,
+.site *::-webkit-scrollbar-track {
+  background: transparent;
+}
+html:has(.site)::-webkit-scrollbar-thumb,
+.site *::-webkit-scrollbar-thumb {
+  background: #333333;
+  border-radius: 999px;
+  border: 3px solid #0a0a0a;
+}
+html:has(.site)::-webkit-scrollbar-thumb:hover,
+.site *::-webkit-scrollbar-thumb:hover {
+  background: #555555;
+}
+.site ::selection {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.site {
+  /* ---- new clean tokens ---- */
+  /* strictly black & white: no hue anywhere, UI or art */
+  --bg: #0a0a0a;
+  --card: #111111;
+  --ink: #f2f2f2;
+  --muted: #9a9a9a;
+  --line: #222222;
+  --line-strong: #333333;
+  --accent: #f2f2f2;
+  --accent-ink: #ffffff;
+  --mark: var(--ink); /* the logo is drawn in white */
+  --soft: #181818;
+  --pop: #f2f2f2;
+  --pop-ink: #ffffff;
+  --pop-soft: rgba(255, 255, 255, 0.08);
+  --on-pop: #0a0a0a;
+  --danger: #ff6b6b;
+  --mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --serif: var(--font-maname), "Iowan Old Style", Georgia, serif;
+  --sans: var(--font-geist), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --site-gut: max(20px, env(safe-area-inset-left, 0px));
+  --site-gutr: max(20px, env(safe-area-inset-right, 0px));
+  --site-header-h: 68px;
+
+  /* ---- legacy names remapped (see tokens.css; inverted on purpose in dark) ---- */
+  --paper: var(--bg);
+  --slate-ink: var(--muted);
+  --mint-deep: var(--accent);
+  --mint-text: var(--accent-ink);
+  --mint-soft: var(--soft);
+  --mint-pale: var(--card);
+  --neutral: var(--line);
+
+  --color-bg: var(--bg);
+  --color-text: var(--ink);
+  --color-display: var(--ink);
+  --color-accent: var(--accent);
+  --color-surface-1: var(--card);
+  --color-surface-2: var(--soft);
+  --color-surface-3: var(--accent);
+  --color-hairline: var(--line);
+
+  /* ---- fonts ---- */
+  --font-display: var(--serif);
+  --font-body: var(--sans);
+  --font-sans: var(--sans);
+  --font-mono: var(--mono);
+
+  color-scheme: dark;
+  /* Maname's fi / fl ligatures render with a gap */
+  font-variant-ligatures: no-common-ligatures;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.6;
+}
+/* page-stage wraps main + footer for the page transition (PageTransition.tsx);
+   it needs its own solid background so the outgoing page never shows through */
+.site > .page-stage {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--bg);
+}
+.page-stage > main {
+  flex: 1 0 auto;
+  min-width: 0;
+}
+
+.site h1,
+.site h2,
+.site h3,
+.site h4,
+.site .display {
+  font-family: var(--serif);
+  font-weight: 400;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+}
+.site .eyebrow {
+  font-family: var(--sans);
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+.site ::selection {
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
+  color: var(--ink);
+}
+.site :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.site-wrap {
+  width: 100%;
+  max-width: 1160px;
+  margin: 0 auto;
+  padding-left: var(--site-gut);
+  padding-right: var(--site-gutr);
+}
+.site-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---- brand lockup (header, footer, menu) ---- */
+.site-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--mark);
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 25px;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.site-brand span {
+  color: var(--ink);
+  /* Maname sits low in its line box; lift it to the logo's centre line */
+  position: relative;
+  top: -0.16em;
+}
+.site-brand svg {
+  width: auto;
+  display: block;
+}
+.site-brand--sm {
+  font-size: 21px;
+  gap: 8px;
+}
+
+/* ---- pill button ---- */
+.site-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--ink);
+  color: var(--bg) !important;
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.site-btn:hover {
+  transform: translateY(-1px);
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.08);
+}
+.site-btn--ghost {
+  background: none;
+  color: var(--ink) !important;
+  border: 1px solid var(--line-strong);
+}
+.site-btn--ghost:hover {
+  background: none;
+  border-color: var(--muted);
+  box-shadow: none;
+}
+
+/* ---- footer ---- */
+.site-footer {
+  position: relative;
+  padding-top: clamp(40px, 6vw, 80px);
+  font-size: 14px;
+  color: var(--muted);
+}
+.site-footer a {
+  transition: color 0.2s;
+}
+.site-footer a:hover {
+  color: var(--ink);
+}
+/* the turning ASCII Kagu mark, centrepiece above the wordmark */
+.site-footer__art {
+  position: relative;
+  pointer-events: none;
+  margin-bottom: clamp(8px, 2vw, 24px);
+}
+.site-footer__logo {
+  display: block;
+  width: min(100%, 880px);
+  height: clamp(200px, 30vw, 380px);
+  margin-inline: auto;
+}
+/* the wordmark: a full-width serif slab in ASCII */
+.site-footer__word {
+  position: relative;
+  margin-bottom: clamp(40px, 6vw, 72px);
+}
+.site-footer .site-footer__banner {
+  --aw-max: 320px;
+}
+.site-footer__cols {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1.1fr 1.1fr 1.2fr;
+  gap: 40px 32px;
+  padding-bottom: clamp(48px, 6vw, 80px);
+}
+.site-footer__brand p {
+  margin: 18px 0 20px;
+  max-width: 26ch;
+  line-height: 1.55;
+}
+.site-footer__col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+.site-footer__col h3 {
+  margin: 0 0 12px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.4;
+  padding: 0;
+  color: color-mix(in srgb, var(--muted) 75%, transparent);
+}
+.site-footer__col a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  overflow-wrap: anywhere;
+}
+.site-footer__col span {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+}
+@media (max-width: 960px) {
+  .site-footer__cols {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+  .site-footer__brand {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 560px) {
+  .site-footer__cols {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* legal strip (iyzico-required): every element must stay; styling is ours */
+.site-legal {
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  padding-block: 24px calc(env(safe-area-inset-bottom, 0px) + 28px);
+  font-size: 12.5px;
+}
+.site-legal__inner {
+  display: grid;
+  gap: 18px;
+}
+.site-legal__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 24px;
+  letter-spacing: 0.04em;
+}
+.site-legal__links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  transition: color 0.2s;
+}
+.site-legal__links a:hover {
+  color: var(--ink);
+}
+.site-legal__pay {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px 24px;
+  flex-wrap: wrap;
+}
+.site-legal__marks {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px 22px;
+}
+/* white PNG artwork, dimmed on black */
+.site-legal__band,
+.site-legal__iyzico {
+  width: auto;
+  max-width: 100%;
+  opacity: 0.55;
+}
+.site-legal__band {
+  height: 20px;
+}
+.site-legal__iyzico {
+  height: 24px;
+}
+.site-legal__ssl {
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+.site-legal__copy {
+  font-size: 12px;
+  color: color-mix(in srgb, var(--muted) 75%, transparent);
+}
+
+/* ---- 404 ---- */
+.site-notfound {
+  min-height: 62svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  text-align: center;
+  padding: 80px var(--site-gutr) 80px var(--site-gut);
+}
+.site-notfound svg {
+  width: min(220px, 56vw);
+  height: auto;
+  color: var(--mark);
+}
+.site-notfound h1 {
+  margin: 0;
+  font-size: clamp(36px, 6vw, 56px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site *,
+  .site *::before,
+  .site *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ---- glass ----
+   .glass        cheap: translucent fill + hairline highlight + inner sheen. No blur,
+                 so it costs nothing over animated canvases. Use freely.
+   .glass--blur  adds a real backdrop blur. Expensive over moving content: only on
+                 SMALL surfaces (header, a hero plaque), never on large areas. */
+.glass {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.025));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.03),
+    0 20px 60px -30px rgba(0, 0, 0, 0.9);
+}
+.glass--blur {
+  background: linear-gradient(180deg, rgba(20, 20, 20, 0.55), rgba(10, 10, 10, 0.4));
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  backdrop-filter: blur(14px) saturate(120%);
+}

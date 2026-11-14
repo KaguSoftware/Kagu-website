@@ -36,24 +36,14 @@ export function CodeBlock({ children, ...props }: ComponentPropsWithoutRef<"pre"
   };
 
   return (
-    <div className="my-6 overflow-hidden border border-neutral bg-mint-pale">
-      <div className="flex items-center justify-between border-b border-neutral px-4 py-1.5">
-        <span className="font-mono text-xs uppercase tracking-[0.18em] text-slate-ink">
-          {language || "code"}
-        </span>
-        <button
-          type="button"
-          onClick={copy}
-          className={`font-mono text-xs uppercase tracking-[0.18em] transition-colors ${
-            copied ? "text-mint-deep" : "text-slate-ink hover:text-ink"
-          }`}
-        >
+    <div className="lr-code">
+      <div className="lr-code__head">
+        <span className="lr-code__lang">{language || "code"}</span>
+        <button type="button" onClick={copy} data-copied={copied} className="lr-copy">
           {copied ? "Copied" : "Copy"}
         </button>
       </div>
-      <pre {...props} className="overflow-x-auto p-4 text-sm leading-relaxed">
-        {children}
-      </pre>
+      <pre {...props}>{children}</pre>
     </div>
   );
 }
